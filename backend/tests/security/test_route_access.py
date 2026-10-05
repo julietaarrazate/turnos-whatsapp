@@ -14,6 +14,9 @@ PUBLIC_ROUTES = {
     "POST /api/v1/auth/invitations/accept",
     # Propuesta pública: solo con el token, lista blanca del snapshot (ARCHITECTURE §8.4).
     "GET /api/v1/public/proposals/{token}",
+    # Aceptar / rechazar: solo con el token, hash del contenido visto y rate limit por IP.
+    "POST /api/v1/public/proposals/{token}/accept",
+    "POST /api/v1/public/proposals/{token}/reject",
 }
 
 

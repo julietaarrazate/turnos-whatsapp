@@ -80,6 +80,7 @@ class EventOut(EventSummary):
     lost_reason: str | None
     cancel_reason: str | None
     notes: str | None
+    accepted_budget_version_id: UUID | None  # baseline (§3.3)
     history: list[StatusChangeOut]
 
 

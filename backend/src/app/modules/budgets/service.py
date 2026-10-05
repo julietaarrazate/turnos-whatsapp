@@ -16,6 +16,7 @@ from typing import Any, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import delete, func, or_, select, tuple_
+from sqlalchemy.orm import aliased
 
 from app.core.counters import next_number
 from app.core.db import AppSession
@@ -614,8 +615,9 @@ def list_budgets(
         .group_by(BudgetVersion.budget_id)
         .subquery()
     )
+    accepted = aliased(BudgetVersion)
     query = (
-        select(Budget, BudgetVersion, Event, Client.name)
+        select(Budget, BudgetVersion, Event, Client.name, accepted.version_no)
         .join(latest, latest.c.budget_id == Budget.id)
         .join(
             BudgetVersion,
@@ -624,6 +626,10 @@ def list_budgets(
         )
         .join(Event, Event.id == Budget.event_id)
         .join(Client, Client.id == Event.client_id)
+        .outerjoin(
+            accepted,
+            (accepted.id == Event.accepted_budget_version_id) & (accepted.budget_id == Budget.id),
+        )
         .where(Budget.organization_id == ctx.organization_id, Event.deleted_at.is_(None))
     )
     if q and q.strip():
@@ -659,8 +665,9 @@ def list_budgets(
                 version_status=VersionStatus(version.status),
                 sale_net=version.sale_net,
                 updated_at=version.updated_at,
+                approved_version_no=approved_no,
             )
-            for budget, version, event, client_name in page
+            for budget, version, event, client_name, approved_no in page
         ],
         next_cursor=_encode_cursor(page[-1][1].updated_at, page[-1][0].id)
         if len(rows) > limit

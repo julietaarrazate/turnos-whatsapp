@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink, Send } from "lucide-react";
+import { BadgeCheck, Copy, ExternalLink, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { useSession } from "@/features/auth/session";
+import { budgetKey, EVENTS_KEY } from "@/features/budgets/keys";
 import type { BudgetEditor } from "@/features/budgets/use-budget-editor";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Budget, Proposal, Schemas } from "@/lib/api/types";
@@ -156,12 +157,82 @@ function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: Budget
   );
 }
 
-/** Generar propuesta, compartirla y ver el estado de las enviadas (P-01, P-07, P-08). */
+function ApproveDialog({ proposal, onDone }: { proposal: Proposal; onDone: (approved: boolean) => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => dialog.current?.showModal(), []);
+  const approve = useMutation({
+    mutationFn: async (body: Schemas["ApproveIn"]) =>
+      unwrap(
+        await api.POST("/api/v1/proposals/{proposal_id}/approve", {
+          params: { path: { proposal_id: proposal.id } },
+          body,
+        }),
+      ),
+    onSuccess: () => {
+      onDone(true);
+      dialog.current?.close();
+    },
+  });
+  return (
+    <dialog
+      ref={dialog}
+      aria-label="Aprobar propuesta"
+      onClose={() => onDone(false)}
+      className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-ink/30"
+    >
+      <form
+        className="flex flex-col gap-4 p-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const form = new FormData(e.currentTarget);
+          approve.mutate({ po_number: textValue(form, "po_number"), comment: textValue(form, "comment") });
+        }}
+      >
+        <h2 className="text-lg font-semibold">Aprobar propuesta #{proposal.number}</h2>
+        <p className="text-sm text-ink-muted">
+          Para cuando el cliente confirma por otro medio (orden de compra, email, teléfono). La versión {proposal.version_no} pasa a
+          ser la aprobada del evento: producción y el control de costos parten de ella.
+        </p>
+        <TextField label="N° de orden de compra (opcional)" name="po_number" maxLength={100} autoFocus />
+        <TextAreaField label="Comentario (opcional)" name="comment" rows={2} maxLength={2000} placeholder="Ej.: confirmó por mail el 3/10" />
+        {approve.isError ? <Notice tone="error">{errorMessage(approve.error)}</Notice> : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={() => dialog.current?.close()}>
+            Cancelar
+          </Button>
+          <Button type="submit" loading={approve.isPending}>
+            Aprobar
+          </Button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
+
+function decisionText(p: Proposal): string | null {
+  if (!p.decided_at) return null;
+  const when = formatDateTime(p.decided_at);
+  if (p.status === "REJECTED") {
+    const who = p.decided_by_name ?? "El cliente";
+    return `${who} la rechazó ${when}${p.decision_comment ? `: “${p.decision_comment}”` : ""}`;
+  }
+  if (p.approval_method === "MANUAL") {
+    return `Aprobada ${when}${p.po_number ? ` · OC ${p.po_number}` : ""}${p.decision_comment ? ` · ${p.decision_comment}` : ""}`;
+  }
+  const who = [p.decided_by_name, p.decided_by_email ? `(${p.decided_by_email})` : null].filter(Boolean).join(" ");
+  return `Aceptada online por ${who} ${when}${p.decision_comment ? `: “${p.decision_comment}”` : ""}`;
+}
+
+const APPROVABLE: Proposal["status"][] = ["SENT", "VIEWED", "EXPIRED"];
+const OPEN_EVENT = ["SENT", "NEGOTIATION"];
+
+/** Generar propuesta, compartirla y ver el estado de las enviadas (P-01, P-05 a P-08). */
 export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: BudgetEditor }) {
   const { can } = useSession();
   const queryClient = useQueryClient();
   const [sending, setSending] = useState(false);
   const [sharePath, setSharePath] = useState<string | null>(null);
+  const [approving, setApproving] = useState<Proposal | null>(null);
   const proposals = useQuery({
     queryKey: proposalsKey(budget.id),
     queryFn: async () =>
@@ -172,7 +243,26 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
       unwrap(await api.POST("/api/v1/proposals/{proposal_id}/revoke", { params: { path: { proposal_id: id } } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: proposalsKey(budget.id) }),
   });
+  const refreshAll = () => {
+    void queryClient.invalidateQueries({ queryKey: proposalsKey(budget.id) });
+    void queryClient.invalidateQueries({ queryKey: budgetKey(budget.id) });
+    void queryClient.invalidateQueries({ queryKey: EVENTS_KEY });
+  };
+  const markLost = useMutation({
+    mutationFn: async (reason: string) =>
+      unwrap(
+        await api.POST("/api/v1/events/{event_id}/status", {
+          params: { path: { event_id: budget.event.id } },
+          body: { to_status: "LOST", reason },
+        }),
+      ),
+    onSuccess: () => refreshAll(),
+  });
   const hasLines = budget.version.sections.some((s) => s.lines.length > 0);
+  const latest = proposals.data?.[0];
+  // §3.1: un rechazo no marca el evento como perdido; solo se sugiere.
+  const suggestLost =
+    latest?.status === "REJECTED" && OPEN_EVENT.includes(budget.event.status) && can("proposal.decide");
 
   return (
     <section aria-label="Propuestas" className="mb-4 rounded-xl border border-line bg-surface">
@@ -187,6 +277,22 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
       <div className="flex flex-col gap-3 px-4 py-3">
         {sharePath ? <ShareBox path={sharePath} budget={budget} /> : null}
         {revoke.isError ? <Notice tone="error">{errorMessage(revoke.error)}</Notice> : null}
+        {markLost.isError ? <Notice tone="error">{errorMessage(markLost.error)}</Notice> : null}
+        {suggestLost && latest ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm">
+            <span className="flex-1">El cliente rechazó la propuesta. Podés mandar otra versión o marcar el evento como perdido.</span>
+            <Button
+              size="sm"
+              variant="secondary"
+              loading={markLost.isPending}
+              onClick={() =>
+                markLost.mutate(`Rechazó la propuesta #${latest.number}${latest.decision_comment ? `: ${latest.decision_comment}` : ""}`)
+              }
+            >
+              Marcar como perdido
+            </Button>
+          </div>
+        ) : null}
         {proposals.data?.length ? (
           <ul className="divide-y divide-line">
             {proposals.data.map((p) => (
@@ -200,16 +306,24 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
                   enviada {formatDateTime(p.sent_at)} · vence {formatDay(p.valid_until)}
                   {p.view_count ? ` · vista ${p.view_count} ${p.view_count === 1 ? "vez" : "veces"}` : " · sin abrir"}
                 </span>
-                {can("proposal.send") && (p.status === "SENT" || p.status === "VIEWED") ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-auto text-danger"
-                    onClick={() => window.confirm("¿Anular esta propuesta? El link deja de funcionar.") && revoke.mutate(p.id)}
-                  >
-                    Anular
-                  </Button>
-                ) : null}
+                <span className="ml-auto flex gap-1">
+                  {can("proposal.decide") && APPROVABLE.includes(p.status) ? (
+                    <Button size="sm" variant="secondary" onClick={() => setApproving(p)}>
+                      <BadgeCheck className="size-4" aria-hidden /> Aprobar
+                    </Button>
+                  ) : null}
+                  {can("proposal.send") && (p.status === "SENT" || p.status === "VIEWED") ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-danger"
+                      onClick={() => window.confirm("¿Anular esta propuesta? El link deja de funcionar.") && revoke.mutate(p.id)}
+                    >
+                      Anular
+                    </Button>
+                  ) : null}
+                </span>
+                {decisionText(p) ? <p className="basis-full text-ink-muted">{decisionText(p)}</p> : null}
               </li>
             ))}
           </ul>
@@ -217,6 +331,15 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
           <p className="text-sm text-ink-muted">Todavía no se envió ninguna.</p>
         )}
       </div>
+      {approving ? (
+        <ApproveDialog
+          proposal={approving}
+          onDone={(approved) => {
+            setApproving(null);
+            if (approved) refreshAll();
+          }}
+        />
+      ) : null}
       {sending ? (
         <SendDialog
           budget={budget}

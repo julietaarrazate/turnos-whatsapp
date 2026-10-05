@@ -1,24 +1,32 @@
 import type { PublicProposal } from "@/lib/api/types";
-import { formatDay } from "@/lib/format/date";
+import { formatDateTime, formatDay } from "@/lib/format/date";
 import { formatMoney } from "@/lib/format/number";
+
+import { DecisionBox } from "./decision-box";
 
 const STATUS_NOTICE: Partial<Record<PublicProposal["status"], string>> = {
   EXPIRED: "Esta propuesta venció. Pedí una actualización a la productora.",
   SUPERSEDED: "Hay una versión más reciente de esta propuesta. Pedile el link nuevo a la productora.",
-  ACCEPTED: "Propuesta aceptada. ¡Gracias!",
-  REJECTED: "Propuesta rechazada.",
 };
+
+function decisionNotice(decision: NonNullable<PublicProposal["decision"]>): string {
+  const when = formatDateTime(decision.decided_at);
+  if (decision.status === "REJECTED") return `Propuesta rechazada el ${when}.`;
+  if (decision.method === "MANUAL") return `Propuesta aprobada el ${when}. ¡Gracias!`;
+  const who = decision.decided_by_name ? ` por ${decision.decided_by_name}` : "";
+  return `Propuesta aceptada${who} el ${when}. ¡Gracias!`;
+}
 
 function money(value: string | null | undefined, currency: string): string {
   return value ? formatMoney(value, currency) : "";
 }
 
 /** La propuesta tal como la ve el cliente. Solo usa campos del snapshot público. */
-export function PublicProposalView({ data }: { data: PublicProposal }) {
+export function PublicProposalView({ data, token }: { data: PublicProposal; token: string }) {
   const p = data.proposal;
   const t = p.totals;
   const detailed = p.display_mode === "DETAILED";
-  const notice = STATUS_NOTICE[data.status];
+  const notice = data.decision ? decisionNotice(data.decision) : STATUS_NOTICE[data.status];
   const includesIva = p.iva_display === "IVA_INCLUDED";
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-6 px-4 py-8 sm:py-12">
@@ -111,6 +119,8 @@ export function PublicProposalView({ data }: { data: PublicProposal }) {
           ) : null}
         </section>
       ) : null}
+
+      {data.can_decide ? <DecisionBox token={token} contentHash={data.content_hash} total={money(t.total, p.currency)} /> : null}
 
       <footer className="mt-auto border-t border-line pt-4 text-xs text-ink-muted">
         {p.organization.legal_name ?? p.organization.name}

@@ -2,16 +2,17 @@
 
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import datetime
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID
 
 from sqlalchemy import func, or_, select, tuple_
 
 from app.core.counters import next_number
 from app.core.db import AppSession
+from app.core.enums import Role
 from app.core.errors import AppError, not_found
-from app.modules.audit import diff, record
-from app.modules.auth import TenantContext
+from app.modules.audit import ActorType, diff, record
+from app.modules.auth import ClientInfo, TenantContext
 from app.modules.clients import Client, get_active, get_or_create_by_name
 from app.modules.events.models import Event, EventStatus, EventStatusChange
 from app.modules.events.schemas import (
@@ -26,6 +27,19 @@ from app.modules.events.schemas import (
 from app.modules.identity import Membership, MembershipStatus, User
 
 S = EventStatus
+
+
+class Actor(Protocol):
+    """Quién dispara un cambio: un usuario (TenantContext) o el cliente desde el link público
+    (sin usuario)."""
+
+    @property
+    def organization_id(self) -> UUID: ...
+    @property
+    def user_id(self) -> UUID | None: ...
+    @property
+    def client(self) -> ClientInfo: ...
+
 
 # Transiciones manuales (§3.1). Las automáticas las disparan presupuestos y propuestas.
 _MANUAL: dict[EventStatus, set[EventStatus]] = {
@@ -51,9 +65,7 @@ _FIELDS = (
 _REQUIRED = {"client_id", "name", "event_days", "setup_days", "teardown_days"}
 
 
-def _audit(
-    db: AppSession, ctx: TenantContext, action: str, entity_id: UUID, **changes: Any
-) -> None:
+def _audit(db: AppSession, ctx: Actor, action: str, entity_id: UUID, **changes: Any) -> None:
     record(
         db,
         organization_id=ctx.organization_id,
@@ -61,6 +73,7 @@ def _audit(
         entity_type="event",
         entity_id=entity_id,
         actor_user_id=ctx.user_id,
+        actor_type=ActorType.USER if ctx.user_id else ActorType.PUBLIC_TOKEN,
         ip=ctx.client.ip,
         user_agent=ctx.client.user_agent,
         **changes,
@@ -74,9 +87,7 @@ def _jsonable(values: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def get_event(
-    db: AppSession, ctx: TenantContext, event_id: UUID, *, for_update: bool = False
-) -> Event:
+def get_event(db: AppSession, ctx: Actor, event_id: UUID, *, for_update: bool = False) -> Event:
     query = select(Event).where(
         Event.id == event_id,
         Event.organization_id == ctx.organization_id,
@@ -105,7 +116,7 @@ def _check_responsible(db: AppSession, ctx: TenantContext, user_id: UUID | None)
 
 
 def _set_status(
-    db: AppSession, ctx: TenantContext, event: Event, to: EventStatus, reason: str | None = None
+    db: AppSession, ctx: Actor, event: Event, to: EventStatus, reason: str | None = None
 ) -> None:
     previous = event.status
     event.status = to.value
@@ -223,6 +234,7 @@ def event_out(db: AppSession, ctx: TenantContext, event: Event) -> EventOut:
         lost_reason=event.lost_reason,
         cancel_reason=event.cancel_reason,
         notes=event.notes,
+        accepted_budget_version_id=event.accepted_budget_version_id,
         history=[
             StatusChangeOut(
                 from_status=EventStatus(h.from_status) if h.from_status else None,
@@ -348,3 +360,66 @@ def on_proposal_sent(db: AppSession, ctx: TenantContext, event_id: UUID) -> None
         _set_status(db, ctx, event, S.SENT)
     elif current is S.SENT:
         _set_status(db, ctx, event, S.NEGOTIATION)
+
+
+# Mientras el evento está en estas etapas, el cliente puede aceptar o rechazar online.
+_DECIDABLE = {S.SENT, S.NEGOTIATION}
+# La aprobación manual además cubre adicionales: cambia la baseline de un evento aprobado.
+_MANUALLY_APPROVABLE = _DECIDABLE | {S.APPROVED, S.IN_PRODUCTION}
+
+
+def accepts_decisions(db: AppSession, ctx: Actor, event_id: UUID, *, manual: bool) -> bool:
+    event = get_event(db, ctx, event_id)
+    allowed = _MANUALLY_APPROVABLE if manual else _DECIDABLE
+    return EventStatus(event.status) in allowed
+
+
+def on_proposal_accepted(db: AppSession, ctx: Actor, event_id: UUID, version_id: UUID) -> None:
+    """§6 `ProposalAccepted`: la versión pasa a ser la baseline y el evento, APPROVED. Con el
+    evento ya aprobado o en producción (adicionales) solo cambia la baseline."""
+    event = get_event(db, ctx, event_id, for_update=True)
+    current = EventStatus(event.status)
+    if current not in _MANUALLY_APPROVABLE:
+        raise AppError(
+            409, "event_not_open", "El evento ya no admite aprobar propuestas en este estado"
+        )
+    previous = event.accepted_budget_version_id
+    event.accepted_budget_version_id = version_id
+    if current in _DECIDABLE:
+        _set_status(db, ctx, event, S.APPROVED)
+    _audit(
+        db,
+        ctx,
+        "event.baseline_changed",
+        event.id,
+        before={"accepted_budget_version_id": str(previous) if previous else None},
+        after={"accepted_budget_version_id": str(version_id)},
+    )
+
+
+def notification_recipients(
+    db: AppSession, ctx: Actor, event_id: UUID, *, include_owners: bool
+) -> tuple[str, list[str]]:
+    """Nombre del evento y a quién avisar: el responsable (o los OWNER si no tiene) y,
+    si se pide, también los OWNER."""
+    event = get_event(db, ctx, event_id)
+    emails: list[str] = []
+    if event.responsible_user_id is not None:
+        email = db.execute(
+            select(User.email).where(User.id == event.responsible_user_id)
+        ).scalar_one_or_none()
+        if email:
+            emails.append(email)
+    if include_owners or not emails:
+        owners = db.execute(
+            select(User.email)
+            .join(Membership, Membership.user_id == User.id)
+            .where(
+                Membership.organization_id == ctx.organization_id,
+                Membership.role == Role.OWNER.value,
+                Membership.status == MembershipStatus.ACTIVE,
+            )
+            .order_by(User.email)
+        ).scalars()
+        emails.extend(e for e in owners if e not in emails)
+    return event.name, emails

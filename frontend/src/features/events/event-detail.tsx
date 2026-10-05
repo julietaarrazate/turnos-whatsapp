@@ -143,6 +143,9 @@ export function EventDetailPage({ id }: { id: string }) {
                   <span className="block text-sm text-ink-muted">
                     v{budget.version_no}
                     {budget.version_status === "DRAFT" ? " (borrador)" : ""}
+                    {budget.approved_version_no ? (
+                      <span className="ml-2 rounded bg-success/10 px-1.5 py-0.5 text-xs text-success">Aprobado v{budget.approved_version_no}</span>
+                    ) : null}
                   </span>
                 </span>
                 <span className="font-medium tabular-nums">{formatMoney(budget.sale_net)}</span>

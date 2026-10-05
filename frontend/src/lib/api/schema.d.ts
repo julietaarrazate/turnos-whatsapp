@@ -937,6 +937,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/proposals/{proposal_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve
+         * @description Aprobación manual con OC (MANAGER+): la versión pasa a ser la baseline del evento.
+         */
+        post: operations["approve_api_v1_proposals__proposal_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals/{proposal_id}/revoke": {
         parameters: {
             query?: never;
@@ -968,6 +988,46 @@ export interface paths {
         get: operations["public_view_api_v1_public_proposals__token__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/proposals/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Public Accept
+         * @description Aceptar online con nombre y email; queda la evidencia (IP, navegador, hash).
+         */
+        post: operations["public_accept_api_v1_public_proposals__token__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/proposals/{token}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Public Reject
+         * @description Rechazar con motivo.
+         */
+        post: operations["public_reject_api_v1_public_proposals__token__reject_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1072,6 +1132,35 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptIn */
+        AcceptIn: {
+            /** Comment */
+            comment?: string | null;
+            /** Content Hash */
+            content_hash: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * ApprovalMethod
+         * @enum {string}
+         */
+        ApprovalMethod: "ONLINE" | "MANUAL";
+        /**
+         * ApproveIn
+         * @description Aprobación manual (P-06): el cliente confirmó por otro canal, típicamente con una OC.
+         */
+        ApproveIn: {
+            /** Comment */
+            comment?: string | null;
+            /** Po Number */
+            po_number?: string | null;
+        };
         /** AuditLogOut */
         AuditLogOut: {
             /** Action */
@@ -1179,6 +1268,8 @@ export interface components {
         };
         /** BudgetSummary */
         BudgetSummary: {
+            /** Approved Version No */
+            approved_version_no: number | null;
             /** Client Name */
             client_name: string;
             currency: components["schemas"]["BudgetCurrency"];
@@ -1556,6 +1647,8 @@ export interface components {
         };
         /** EventOut */
         EventOut: {
+            /** Accepted Budget Version Id */
+            accepted_budget_version_id: string | null;
             /** Cancel Reason */
             cancel_reason: string | null;
             /** City */
@@ -2485,6 +2578,7 @@ export interface components {
         };
         /** ProposalOut */
         ProposalOut: {
+            approval_method: components["schemas"]["ApprovalMethod"] | null;
             /**
              * Budget Id
              * Format: uuid
@@ -2494,6 +2588,14 @@ export interface components {
             content_hash: string;
             /** Currency */
             currency: string;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Email */
+            decided_by_email: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            /** Decision Comment */
+            decision_comment: string | null;
             display_mode: components["schemas"]["DisplayMode"];
             /** First Viewed At */
             first_viewed_at: string | null;
@@ -2507,6 +2609,8 @@ export interface components {
             last_viewed_at: string | null;
             /** Number */
             number: number;
+            /** Po Number */
+            po_number: string | null;
             /**
              * Sent At
              * Format: date-time
@@ -2531,6 +2635,18 @@ export interface components {
          * @enum {string}
          */
         ProposalStatus: "SENT" | "VIEWED" | "ACCEPTED" | "REJECTED" | "EXPIRED" | "SUPERSEDED" | "REVOKED";
+        /** PublicDecision */
+        PublicDecision: {
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            method: components["schemas"]["ApprovalMethod"] | null;
+            status: components["schemas"]["ProposalStatus"];
+        };
         /** PublicEvent */
         PublicEvent: {
             /** City */
@@ -2579,6 +2695,7 @@ export interface components {
             can_decide: boolean;
             /** Content Hash */
             content_hash: string;
+            decision: components["schemas"]["PublicDecision"] | null;
             proposal: components["schemas"]["PublicSnapshot"];
             status: components["schemas"]["ProposalStatus"];
             /**
@@ -2644,6 +2761,17 @@ export interface components {
         RefreshCostsIn: {
             /** Line Ids */
             line_ids?: string[] | null;
+        };
+        /** RejectIn */
+        RejectIn: {
+            /** Content Hash */
+            content_hash: string;
+            /** Email */
+            email?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Reason */
+            reason: string;
         };
         /**
          * Role
@@ -5505,6 +5633,41 @@ export interface operations {
             };
         };
     };
+    approve_api_v1_proposals__proposal_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     revoke_api_v1_proposals__proposal_id__revoke_post: {
         parameters: {
             query?: never;
@@ -5546,6 +5709,76 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_accept_api_v1_public_proposals__token__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_reject_api_v1_public_proposals__token__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

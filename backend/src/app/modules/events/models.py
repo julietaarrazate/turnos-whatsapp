@@ -2,7 +2,16 @@ from datetime import date, datetime
 from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, SmallInteger, String, Text, func
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    SmallInteger,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, IdMixin, SoftDeleteMixin, TimestampMixin, tenant_fk, tenant_unique
@@ -33,6 +42,14 @@ class Event(IdMixin, TimestampMixin, SoftDeleteMixin, Base):
     __table_args__ = (
         tenant_unique(),
         tenant_fk("client_id", "clients"),
+        # Ciclo events → budget_versions → budgets → events: la FK se crea aparte (use_alter).
+        ForeignKeyConstraint(
+            ["organization_id", "accepted_budget_version_id"],
+            ["budget_versions.organization_id", "budget_versions.id"],
+            ondelete="RESTRICT",
+            use_alter=True,
+            name="fk_events_accepted_budget_version",
+        ),
         Index("uq_events_org_number", "organization_id", "number", unique=True),
         Index("ix_events_org_status", "organization_id", "status"),
         CheckConstraint(check_in("status", EventStatus), name="status"),
@@ -58,6 +75,9 @@ class Event(IdMixin, TimestampMixin, SoftDeleteMixin, Base):
     status: Mapped[str] = mapped_column(String(20), default=EventStatus.LEAD.value)
     lost_reason: Mapped[str | None] = mapped_column(Text)
     cancel_reason: Mapped[str | None] = mapped_column(Text)
+    # Baseline: la versión aceptada por el cliente (o aprobada con OC). Producción y
+    # presupuestado vs real parten de acá (§3.3).
+    accepted_budget_version_id: Mapped[UUID | None]
     notes: Mapped[str | None] = mapped_column(Text)
 
 

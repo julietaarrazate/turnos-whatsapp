@@ -1,6 +1,87 @@
 {
   "components": {
     "schemas": {
+      "AcceptIn": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "content_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 320,
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content_hash",
+          "name",
+          "email"
+        ],
+        "title": "AcceptIn",
+        "type": "object"
+      },
+      "ApprovalMethod": {
+        "enum": [
+          "ONLINE",
+          "MANUAL"
+        ],
+        "title": "ApprovalMethod",
+        "type": "string"
+      },
+      "ApproveIn": {
+        "description": "Aprobación manual (P-06): el cliente confirmó por otro canal, típicamente con una OC.",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "po_number": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Po Number"
+          }
+        },
+        "title": "ApproveIn",
+        "type": "object"
+      },
       "AuditLogOut": {
         "properties": {
           "action": {
@@ -302,6 +383,17 @@
       },
       "BudgetSummary": {
         "properties": {
+          "approved_version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Version No"
+          },
           "client_name": {
             "title": "Client Name",
             "type": "string"
@@ -364,7 +456,8 @@
           "version_no",
           "version_status",
           "sale_net",
-          "updated_at"
+          "updated_at",
+          "approved_version_no"
         ],
         "title": "BudgetSummary",
         "type": "object"
@@ -1593,6 +1686,18 @@
       },
       "EventOut": {
         "properties": {
+          "accepted_budget_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted Budget Version Id"
+          },
           "cancel_reason": {
             "anyOf": [
               {
@@ -1759,6 +1864,7 @@
           "lost_reason",
           "cancel_reason",
           "notes",
+          "accepted_budget_version_id",
           "history"
         ],
         "title": "EventOut",
@@ -4827,6 +4933,16 @@
       },
       "ProposalOut": {
         "properties": {
+          "approval_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "budget_id": {
             "format": "uuid",
             "title": "Budget Id",
@@ -4839,6 +4955,51 @@
           "currency": {
             "title": "Currency",
             "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Email"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Name"
+          },
+          "decision_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Comment"
           },
           "display_mode": {
             "$ref": "#/components/schemas/DisplayMode"
@@ -4878,6 +5039,17 @@
           "number": {
             "title": "Number",
             "type": "integer"
+          },
+          "po_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Po Number"
           },
           "sent_at": {
             "format": "date-time",
@@ -4920,7 +5092,13 @@
           "first_viewed_at",
           "last_viewed_at",
           "view_count",
-          "content_hash"
+          "content_hash",
+          "decided_at",
+          "decided_by_name",
+          "decided_by_email",
+          "decision_comment",
+          "approval_method",
+          "po_number"
         ],
         "title": "ProposalOut",
         "type": "object"
@@ -4938,6 +5116,48 @@
         ],
         "title": "ProposalStatus",
         "type": "string"
+      },
+      "PublicDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Name"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          }
+        },
+        "required": [
+          "status",
+          "decided_at",
+          "decided_by_name",
+          "method"
+        ],
+        "title": "PublicDecision",
+        "type": "object"
       },
       "PublicEvent": {
         "additionalProperties": false,
@@ -5138,6 +5358,16 @@
             "title": "Content Hash",
             "type": "string"
           },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublicDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "proposal": {
             "$ref": "#/components/schemas/PublicSnapshot"
           },
@@ -5155,7 +5385,8 @@
           "can_decide",
           "content_hash",
           "proposal",
-          "valid_until"
+          "valid_until",
+          "decision"
         ],
         "title": "PublicProposal",
         "type": "object"
@@ -5383,6 +5614,54 @@
           }
         },
         "title": "RefreshCostsIn",
+        "type": "object"
+      },
+      "RejectIn": {
+        "additionalProperties": false,
+        "properties": {
+          "content_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "format": "email",
+                "maxLength": 320,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content_hash",
+          "reason"
+        ],
+        "title": "RejectIn",
         "type": "object"
       },
       "Role": {
@@ -10692,6 +10971,60 @@
         ]
       }
     },
+    "/api/v1/proposals/{proposal_id}/approve": {
+      "post": {
+        "description": "Aprobación manual con OC (MANAGER+): la versión pasa a ser la baseline del evento.",
+        "operationId": "approve_api_v1_proposals__proposal_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve",
+        "tags": [
+          "proposals"
+        ]
+      }
+    },
     "/api/v1/proposals/{proposal_id}/revoke": {
       "post": {
         "operationId": "revoke_api_v1_proposals__proposal_id__revoke_post",
@@ -10775,6 +11108,116 @@
           }
         },
         "summary": "Public View",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/public/proposals/{token}/accept": {
+      "post": {
+        "description": "Aceptar online con nombre y email; queda la evidencia (IP, navegador, hash).",
+        "operationId": "public_accept_api_v1_public_proposals__token__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 20,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProposal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Accept",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/public/proposals/{token}/reject": {
+      "post": {
+        "description": "Rechazar con motivo.",
+        "operationId": "public_reject_api_v1_public_proposals__token__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 20,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProposal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Reject",
         "tags": [
           "public"
         ]
