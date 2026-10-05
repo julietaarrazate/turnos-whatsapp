@@ -7,8 +7,8 @@ from app.core.db import DbContext, session_scope
 from app.core.enums import Role
 from app.core.ids import uuid7
 from app.core.security import hash_password
-from app.modules.catalog import seed_catalog_defaults
 from app.modules.identity import Membership, Organization, User
+from app.modules.organizations import provision_organization
 
 DEFAULT_PASSWORD = "contraseña-segura-123"
 _DEFAULT_HASH = hash_password(DEFAULT_PASSWORD)  # argon2 es lento a propósito: se calcula una vez
@@ -29,7 +29,7 @@ def create_org(name: str = "Productora", **fields: object) -> UUID:
     with session_scope(DbContext(organization_id=org_id)) as s:
         s.add(Organization(id=org_id, name=name, **fields))
         s.flush()
-        seed_catalog_defaults(s, org_id)
+        provision_organization(s, org_id)
     return org_id
 
 
