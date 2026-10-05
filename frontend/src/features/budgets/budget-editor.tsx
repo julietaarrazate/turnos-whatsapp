@@ -203,6 +203,14 @@ function VersionBar({ budget, editor, editable }: { budget: Budget; editor: Edit
           v{v.version_no} {v.status === "DRAFT" ? "· borrador" : `· ${formatDate(v.frozen_at ?? v.updated_at)}`}
         </span>
       ))}
+      {budget.versions.length > 1 ? (
+        <Link
+          href={`/budgets/${budget.id}/compare?from=${budget.versions[budget.versions.length - 2].version_no}&to=${budget.versions[budget.versions.length - 1].version_no}`}
+          className="text-accent hover:underline"
+        >
+          Comparar
+        </Link>
+      ) : null}
       <span className="flex-1" />
       {editable && version.status === "DRAFT" && !freezing ? (
         <>

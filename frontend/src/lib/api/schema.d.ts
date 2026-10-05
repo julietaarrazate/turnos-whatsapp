@@ -215,6 +215,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budgets/{budget_id}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare Versions
+         * @description Qué cambió entre dos versiones: ítems agregados, quitados y modificados (por line_key).
+         */
+        get: operations["compare_versions_api_v1_budgets__budget_id__compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets/{budget_id}/draft": {
         parameters: {
             query?: never;
@@ -1283,6 +1303,45 @@ export interface components {
             /** Tax Id */
             tax_id?: string | null;
         };
+        /** CompareOut */
+        CompareOut: {
+            /** Added */
+            added: number;
+            /** Cost After */
+            cost_after: string | null;
+            /** Cost Before */
+            cost_before: string | null;
+            /** Lines */
+            lines: components["schemas"]["LineDiff"][];
+            /** Margin Delta Points */
+            margin_delta_points: string | null;
+            /** Margin Net After */
+            margin_net_after: string | null;
+            /** Margin Net Before */
+            margin_net_before: string | null;
+            /** Modified */
+            modified: number;
+            /** Profit After */
+            profit_after: string | null;
+            /** Profit Before */
+            profit_before: string | null;
+            /** Removed */
+            removed: number;
+            /** Reordered */
+            reordered: number;
+            /** Sale Net After */
+            sale_net_after: string;
+            /** Sale Net Before */
+            sale_net_before: string;
+            /** Total After */
+            total_after: string;
+            /** Total Before */
+            total_before: string;
+            /** Version After */
+            version_after: number;
+            /** Version Before */
+            version_before: number;
+        };
         /** ContactIn */
         ContactIn: {
             /** Email */
@@ -1368,6 +1427,11 @@ export interface components {
             changes: components["schemas"]["CostChange"][];
             totals: components["schemas"]["TotalsDelta"];
         };
+        /**
+         * DiffKind
+         * @enum {string}
+         */
+        DiffKind: "ADDED" | "REMOVED" | "MODIFIED";
         /**
          * DuplicateIn
          * @description Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.
@@ -1540,6 +1604,15 @@ export interface components {
             /** Venue */
             venue?: string | null;
         };
+        /** FieldChange */
+        FieldChange: {
+            /** After */
+            after: string | null;
+            /** Before */
+            before: string | null;
+            /** Field */
+            field: string;
+        };
         /** FreezeIn */
         FreezeIn: {
             /** Change Note */
@@ -1675,6 +1748,27 @@ export interface components {
             unit_cost_includes_iva: boolean;
             /** Unit Cost Iva Rate */
             unit_cost_iva_rate: string;
+        };
+        /** LineDiff */
+        LineDiff: {
+            /** Changes */
+            changes: components["schemas"]["FieldChange"][];
+            kind: components["schemas"]["DiffKind"];
+            /**
+             * Line Key
+             * Format: uuid
+             */
+            line_key: string;
+            /** Name */
+            name: string;
+            /** Sale After */
+            sale_after: string | null;
+            /** Sale Before */
+            sale_before: string | null;
+            /** Section After */
+            section_after: string | null;
+            /** Section Before */
+            section_before: string | null;
         };
         /**
          * LineIn
@@ -3167,6 +3261,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_versions_api_v1_budgets__budget_id__compare_get: {
+        parameters: {
+            query: {
+                from: number;
+                to: number;
+            };
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareOut"];
                 };
             };
             /** @description Validation Error */

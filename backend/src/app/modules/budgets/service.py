@@ -12,7 +12,7 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 from dataclasses import replace
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import delete, func, or_, select, tuple_
@@ -58,13 +58,17 @@ from app.modules.budgets.schemas import (
     BudgetSummary,
     ChargeOut,
     ChargeRate,
+    CompareOut,
     CostChange,
     CostsPreview,
+    DiffKind,
     DuplicateIn,
     DuplicateOut,
+    FieldChange,
     FreezeIn,
     FxOut,
     LineCost,
+    LineDiff,
     LineIn,
     LineMargin,
     LineOut,
@@ -1486,4 +1490,130 @@ def duplicate(
         budget=budget_out(db, ctx, budget, version),
         costs_changed=len(cost_changes),
         rules_changed=len(rule_changes),
+    )
+
+
+# --- Comparar versiones (§8) -----------------------------------------------------------------
+
+# Campos que cuentan como modificación, con el permiso que hace falta para verlos.
+_DIFF_FIELDS: tuple[tuple[str, Permission | None], ...] = (
+    ("name_internal", None),
+    ("description_client", None),
+    ("quantity", None),
+    ("days", None),
+    ("supplier_name", None),
+    ("unit_cost_amount", Permission.COST_VIEW),
+    ("unit_cost_includes_iva", Permission.COST_VIEW),
+    ("pricing_mode", None),
+    ("markup_applied", Permission.MARGIN_VIEW),
+    ("discount_rate", None),
+    ("sale_total", None),
+)
+
+
+def _text(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        normalized = value.normalize()
+        return format(normalized, "f")
+    return str(value)
+
+
+def _version_by_no(db: AppSession, budget: Budget, version_no: int) -> BudgetVersion:
+    version = db.execute(
+        select(BudgetVersion).where(
+            BudgetVersion.budget_id == budget.id, BudgetVersion.version_no == version_no
+        )
+    ).scalar_one_or_none()
+    if version is None:
+        raise not_found()
+    return version
+
+
+def compare_versions(
+    db: AppSession, ctx: TenantContext, budget_id: UUID, before_no: int, after_no: int
+) -> CompareOut:
+    budget = _budget(db, ctx, budget_id)
+    before = _version_by_no(db, budget, before_no)
+    after = _version_by_no(db, budget, after_no)
+    visible = [field for field, perm in _DIFF_FIELDS if perm is None or ctx.can(perm)]
+    titles = {
+        s.id: (s.section_key, s.title_client)
+        for s in [*_sections(db, before.id), *_sections(db, after.id)]
+    }
+    old = {line.line_key: line for line in _lines(db, before.id)}
+    new = {line.line_key: line for line in _lines(db, after.id)}
+    old_order = {key: i for i, key in enumerate(old)}
+    new_order = {key: i for i, key in enumerate(new)}
+
+    diffs: list[LineDiff] = []
+    reordered = 0
+    for key in [*new, *(k for k in old if k not in new)]:
+        a, b = old.get(key), new.get(key)
+        if a is None or b is None:
+            line = cast(BudgetLine, b or a)
+            diffs.append(
+                LineDiff(
+                    line_key=key,
+                    name=line.name_internal,
+                    kind=DiffKind.ADDED if a is None else DiffKind.REMOVED,
+                    section_before=titles[a.section_id][1] if a else None,
+                    section_after=titles[b.section_id][1] if b else None,
+                    sale_before=a.sale_total if a else None,
+                    sale_after=b.sale_total if b else None,
+                    changes=[],
+                )
+            )
+            continue
+        changes = [
+            FieldChange(field=f, before=_text(getattr(a, f)), after=_text(getattr(b, f)))
+            for f in visible
+            if _text(getattr(a, f)) != _text(getattr(b, f))
+        ]
+        section_a, section_b = titles[a.section_id], titles[b.section_id]
+        if section_a[0] != section_b[0]:
+            changes.append(FieldChange(field="section", before=section_a[1], after=section_b[1]))
+        if changes:
+            diffs.append(
+                LineDiff(
+                    line_key=key,
+                    name=b.name_internal,
+                    kind=DiffKind.MODIFIED,
+                    section_before=section_a[1],
+                    section_after=section_b[1],
+                    sale_before=a.sale_total,
+                    sale_after=b.sale_total,
+                    changes=changes,
+                )
+            )
+        elif old_order[key] != new_order[key]:
+            reordered += 1
+
+    costs = ctx.can(Permission.COST_VIEW)
+    margins = ctx.can(Permission.MARGIN_VIEW)
+    delta = (
+        ((after.margin_net - before.margin_net) * 100).quantize(Decimal("0.01"))
+        if margins and after.margin_net is not None and before.margin_net is not None
+        else None
+    )
+    return CompareOut(
+        version_before=before.version_no,
+        version_after=after.version_no,
+        added=sum(d.kind is DiffKind.ADDED for d in diffs),
+        removed=sum(d.kind is DiffKind.REMOVED for d in diffs),
+        modified=sum(d.kind is DiffKind.MODIFIED for d in diffs),
+        reordered=reordered,
+        lines=diffs,
+        sale_net_before=before.sale_net,
+        sale_net_after=after.sale_net,
+        total_before=before.total,
+        total_after=after.total,
+        cost_before=before.cost_direct if costs else None,
+        cost_after=after.cost_direct if costs else None,
+        profit_before=before.profit if margins else None,
+        profit_after=after.profit if margins else None,
+        margin_net_before=before.margin_net if margins else None,
+        margin_net_after=after.margin_net if margins else None,
+        margin_delta_points=delta,
     )

@@ -239,6 +239,7 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
 
 # Query params obligatorios (con IDs del mundo que se usa).
 SAMPLE_QUERIES: dict[tuple[str, str], Callable[[OrgWorld], dict[str, str]]] = {
+    ("GET", "/api/v1/budgets/{budget_id}/compare"): lambda _: {"from": "1", "to": "1"},
     ("GET", "/api/v1/pricing/resolve"): lambda w: {
         "product_id": str(w.ids["product_id"]),
         "client_id": str(w.ids["client_id"]),

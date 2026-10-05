@@ -40,3 +40,4 @@ export type LineUpdate = Schemas["LineUpdate"];
 export type VersionUpdate = Schemas["VersionUpdate"];
 export type CostsPreview = Schemas["CostsPreview"];
 export type RulesPreview = Schemas["RulesPreview"];
+export type CompareOut = Schemas["CompareOut"];

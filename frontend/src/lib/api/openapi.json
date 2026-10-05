@@ -965,6 +965,167 @@
         "title": "ClientUpdate",
         "type": "object"
       },
+      "CompareOut": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "cost_after": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost After"
+          },
+          "cost_before": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Before"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/LineDiff"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "margin_delta_points": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Delta Points"
+          },
+          "margin_net_after": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Net After"
+          },
+          "margin_net_before": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Net Before"
+          },
+          "modified": {
+            "title": "Modified",
+            "type": "integer"
+          },
+          "profit_after": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit After"
+          },
+          "profit_before": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Before"
+          },
+          "removed": {
+            "title": "Removed",
+            "type": "integer"
+          },
+          "reordered": {
+            "title": "Reordered",
+            "type": "integer"
+          },
+          "sale_net_after": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Net After",
+            "type": "string"
+          },
+          "sale_net_before": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Net Before",
+            "type": "string"
+          },
+          "total_after": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total After",
+            "type": "string"
+          },
+          "total_before": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Before",
+            "type": "string"
+          },
+          "version_after": {
+            "title": "Version After",
+            "type": "integer"
+          },
+          "version_before": {
+            "title": "Version Before",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_before",
+          "version_after",
+          "added",
+          "removed",
+          "modified",
+          "reordered",
+          "lines",
+          "sale_net_before",
+          "sale_net_after",
+          "total_before",
+          "total_after",
+          "cost_before",
+          "cost_after",
+          "profit_before",
+          "profit_after",
+          "margin_net_before",
+          "margin_net_after",
+          "margin_delta_points"
+        ],
+        "title": "CompareOut",
+        "type": "object"
+      },
       "ContactIn": {
         "properties": {
           "email": {
@@ -1213,6 +1374,15 @@
         ],
         "title": "CostsPreview",
         "type": "object"
+      },
+      "DiffKind": {
+        "enum": [
+          "ADDED",
+          "REMOVED",
+          "MODIFIED"
+        ],
+        "title": "DiffKind",
+        "type": "string"
       },
       "DuplicateIn": {
         "description": "Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.",
@@ -1866,6 +2036,43 @@
         "title": "EventUpdate",
         "type": "object"
       },
+      "FieldChange": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "before",
+          "after"
+        ],
+        "title": "FieldChange",
+        "type": "object"
+      },
       "FreezeIn": {
         "properties": {
           "change_note": {
@@ -2218,6 +2425,87 @@
           "supplier_product_id"
         ],
         "title": "LineCost",
+        "type": "object"
+      },
+      "LineDiff": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/FieldChange"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DiffKind"
+          },
+          "line_key": {
+            "format": "uuid",
+            "title": "Line Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sale_after": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale After"
+          },
+          "sale_before": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sale Before"
+          },
+          "section_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section After"
+          },
+          "section_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Before"
+          }
+        },
+        "required": [
+          "line_key",
+          "name",
+          "kind",
+          "section_before",
+          "section_after",
+          "sale_before",
+          "sale_after",
+          "changes"
+        ],
+        "title": "LineDiff",
         "type": "object"
       },
       "LineIn": {
@@ -6710,6 +6998,70 @@
           }
         },
         "summary": "Get Budget",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/api/v1/budgets/{budget_id}/compare": {
+      "get": {
+        "description": "Qué cambió entre dos versiones: ítems agregados, quitados y modificados (por line_key).",
+        "operationId": "compare_versions_api_v1_budgets__budget_id__compare_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "From",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "To",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare Versions",
         "tags": [
           "budgets"
         ]
