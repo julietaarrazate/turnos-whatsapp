@@ -856,3 +856,11 @@ def category_info(
     """Categoría (no borrada) y su IVA por defecto, para líneas libres."""
     category = _category(db, ctx, category_id)
     return category, category.default_iva_rate
+
+
+def current_prices(
+    db: AppSession, ctx: TenantContext, offer_ids: list[UUID]
+) -> dict[UUID, PriceHistory]:
+    """Costo vigente hoy de cada oferta (las que no tienen costo no aparecen)."""
+    del ctx  # el alcance lo da RLS; se recibe por consistencia con el resto de la API
+    return current_and_upcoming(db, offer_ids, today_ar())[0]

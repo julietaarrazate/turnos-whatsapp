@@ -12,9 +12,14 @@ from app.modules.budgets.schemas import (
     BudgetCreate,
     BudgetOut,
     BudgetPage,
+    CostsPreview,
+    DuplicateIn,
+    DuplicateOut,
     FreezeIn,
     LineIn,
     LineUpdate,
+    RefreshCostsIn,
+    RulesPreview,
     SectionIn,
     SectionUpdate,
     VersionUpdate,
@@ -26,6 +31,8 @@ router = APIRouter(prefix="/api/v1/budgets", tags=["budgets"])
 View = Annotated[TenantContext, Depends(require(Permission.ORG_VIEW))]
 Edit = Annotated[TenantContext, Depends(require(Permission.BUDGET_EDIT))]
 # Lock optimista: el lock_version que vio el cliente (ARCHITECTURE §4.5).
+CostView = Annotated[TenantContext, Depends(require(Permission.COST_VIEW))]
+MarginView = Annotated[TenantContext, Depends(require(Permission.MARGIN_VIEW))]
 IfMatch = Annotated[str, Header(alias="If-Match", max_length=40)]
 IdempotencyKey = Annotated[str | None, Header(alias="Idempotency-Key", max_length=100)]
 
@@ -171,3 +178,49 @@ def delete_line(
     budget_id: UUID, line_id: UUID, if_match: IfMatch, ctx: Edit, db: DbSession
 ) -> BudgetOut:
     return service.delete_line(db, ctx, budget_id, line_id, service.parse_if_match(if_match))
+
+
+@router.get("/{budget_id}/draft/refresh-costs")
+def preview_refresh_costs(budget_id: UUID, ctx: CostView, db: DbSession) -> CostsPreview:
+    """Qué líneas tienen un costo más nuevo en el catálogo y cómo cambiarían los totales."""
+    return service.preview_refresh_costs(db, ctx, budget_id)
+
+
+@router.post("/{budget_id}/draft/refresh-costs")
+def refresh_costs(
+    budget_id: UUID, body: RefreshCostsIn, if_match: IfMatch, ctx: Edit, db: DbSession
+) -> BudgetOut:
+    """Toma el costo vigente del catálogo para las líneas indicadas (o todas)."""
+    return service.refresh_costs(db, ctx, budget_id, service.parse_if_match(if_match), body)
+
+
+@router.get("/{budget_id}/draft/reapply-rules")
+def preview_reapply_rules(budget_id: UUID, ctx: MarginView, db: DbSession) -> RulesPreview:
+    """Qué markups y cargos cambiarían con las reglas de hoy, y el efecto en los totales."""
+    return service.preview_reapply_rules(db, ctx, budget_id)
+
+
+@router.post("/{budget_id}/draft/reapply-rules")
+def reapply_rules(budget_id: UUID, if_match: IfMatch, ctx: Edit, db: DbSession) -> BudgetOut:
+    return service.reapply_rules(db, ctx, budget_id, service.parse_if_match(if_match))
+
+
+@router.post("/{budget_id}/duplicate", status_code=status.HTTP_201_CREATED)
+def duplicate(
+    budget_id: UUID,
+    body: DuplicateIn,
+    ctx: Edit,
+    db: DbSession,
+    idempotency_key: IdempotencyKey = None,
+) -> DuplicateOut:
+    """Duplicar para otro evento: copia la última versión con los costos y reglas de hoy."""
+    return run_idempotent(
+        db,
+        organization_id=ctx.organization_id,
+        user_id=ctx.user_id,
+        key=idempotency_key,
+        scope=f"budget.{budget_id}.duplicate",
+        payload=body.model_dump(mode="json"),
+        model=DuplicateOut,
+        run=lambda: service.duplicate(db, ctx, budget_id, body),
+    )

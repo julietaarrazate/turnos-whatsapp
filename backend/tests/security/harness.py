@@ -230,6 +230,11 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
         "unit_cost_amount": "50000",
     },
     ("PATCH", "/api/v1/budgets/{budget_id}/draft/lines/{line_id}"): {"quantity": "2"},
+    ("POST", "/api/v1/budgets/{budget_id}/draft/refresh-costs"): {},
+    ("POST", "/api/v1/budgets/{budget_id}/draft/reapply-rules"): {},
+    ("POST", "/api/v1/budgets/{budget_id}/duplicate"): lambda w: {
+        "event": {"client_id": str(w.ids["client_id"]), "name": "Copia"}
+    },
 }
 
 # Query params obligatorios (con IDs del mundo que se usa).

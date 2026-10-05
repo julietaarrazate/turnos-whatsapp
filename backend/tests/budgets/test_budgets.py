@@ -327,3 +327,100 @@ def test_event_update_and_listing_filters() -> None:
     budgets = _ok(owner.get("/api/v1/budgets", params={"event_id": str(event_id)}))["items"]
     assert [b["id"] for b in budgets] == [str(world.ids["budget_id"])]
     assert budgets[0]["sale_net"] == "1400.00"
+
+
+def _record_cost(client: TestClient, world: OrgWorld, amount: str) -> None:
+    _ok(client.post(f"/api/v1/offers/{world.ids['offer_id']}/prices", json={"amount": amount}), 201)
+
+
+def test_refresh_costs_preview_and_apply() -> None:
+    world = build_org("a")
+    owner = logged_in(world.members[Role.OWNER])
+    budget = _budget(owner, world)
+    empty = _ok(owner.get(f"/api/v1/budgets/{budget['id']}/draft/refresh-costs"))
+    assert empty["changes"] == []
+
+    _record_cost(owner, world, "1500")
+    preview = _ok(owner.get(f"/api/v1/budgets/{budget['id']}/draft/refresh-costs"))
+    change = preview["changes"][0]
+    assert (change["old_unit_cost"], change["new_unit_cost"]) == ("1000.000000", "1500.000000")
+    assert change["amount_changed"] is True
+    assert (preview["totals"]["sale_net_before"], preview["totals"]["sale_net_after"]) == (
+        "1400.00",
+        "2100.00",
+    )
+    # La vista previa no cambia nada.
+    assert _line(_budget(owner, world))["sale_total"] == "1400.00"
+
+    applied = _ok(_draft(owner, budget, "POST", "/refresh-costs", json={}))
+    assert _line(applied)["sale_total"] == "2100.00"
+    assert _line(applied)["cost"]["cost_as_of"] is not None
+    again = _ok(owner.get(f"/api/v1/budgets/{budget['id']}/draft/refresh-costs"))
+    assert again["changes"] == []
+
+
+def test_refresh_costs_only_selected_lines() -> None:
+    world = build_org("a")
+    owner = logged_in(world.members[Role.OWNER])
+    budget = _budget(owner, world)
+    _record_cost(owner, world, "1500")
+    untouched = _ok(_draft(owner, budget, "POST", "/refresh-costs", json={"line_ids": []}))
+    assert _line(untouched)["sale_total"] == "1400.00"
+
+
+def test_reapply_rules_updates_markups_and_charges() -> None:
+    world = build_org("a")
+    owner = logged_in(world.members[Role.OWNER])
+    owner.put(
+        "/api/v1/pricing/markup-rules",
+        json={
+            "scope": "CATEGORY",
+            "scope_id": str(world.ids["product_category_id"]),
+            "value": "0.5",
+        },
+    )
+    owner.post("/api/v1/pricing/sale-charges", json={"name": "Comisión", "rate": "0.05"})
+    budget = _budget(owner, world)
+    preview = _ok(owner.get(f"/api/v1/budgets/{budget['id']}/draft/reapply-rules"))
+    change = preview["changes"][0]
+    assert (change["old_markup"], change["new_markup"]) == ("0.400000", "0.500000")
+    assert [c["name"] for c in preview["charges_after"]] == ["Comisión", "IIBB"]
+    assert preview["totals"]["sale_net_after"] == "1500.00"
+
+    applied = _ok(_draft(owner, budget, "POST", "/reapply-rules", json={}))
+    assert _line(applied)["sale_total"] == "1500.00"
+    charges = [c["name"] for c in applied["version"]["margins"]["sale_charges_detail"]]
+    assert charges == ["Comisión", "IIBB"]
+
+    production = logged_in(world.members[Role.PRODUCTION])
+    assert production.get(f"/api/v1/budgets/{budget['id']}/draft/reapply-rules").status_code == 403
+
+
+def test_duplicate_to_new_event_with_current_costs_and_days() -> None:
+    world = build_org("a")
+    owner = logged_in(world.members[Role.OWNER])
+    budget = _budget(owner, world)
+    line_id = _line(budget)["id"]
+    budget = _ok(
+        _draft(owner, budget, "PATCH", f"/lines/{line_id}", json={"charge_mode": "PER_DAY"})
+    )
+    _record_cost(owner, world, "2000")
+
+    copy = _ok(
+        owner.post(
+            f"/api/v1/budgets/{budget['id']}/duplicate",
+            json={"event": {"client_name": "Otro cliente", "name": "Gira", "event_days": 3}},
+        ),
+        201,
+    )
+    assert copy["costs_changed"] == 1
+    duplicated = copy["budget"]
+    assert duplicated["id"] != budget["id"]
+    assert duplicated["event"]["client_name"] == "Otro cliente"
+    line = _line(duplicated)
+    assert line["line_key"] != _line(budget)["line_key"]
+    assert line["days"] == 3  # usaba los días del evento original (1) → los del nuevo
+    assert line["cost"]["unit_cost_amount"] == "2000.000000"
+    assert line["sale_total"] == "8400.00"  # 2.000 × 3 días × 1,40
+    # El original no cambia.
+    assert _line(_budget(owner, world))["sale_total"] == "1400.00"

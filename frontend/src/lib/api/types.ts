@@ -38,3 +38,5 @@ export type BudgetSection = Schemas["SectionOut"];
 export type BudgetLine = Schemas["LineOut"];
 export type LineUpdate = Schemas["LineUpdate"];
 export type VersionUpdate = Schemas["VersionUpdate"];
+export type CostsPreview = Schemas["CostsPreview"];
+export type RulesPreview = Schemas["RulesPreview"];

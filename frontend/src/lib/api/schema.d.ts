@@ -294,6 +294,51 @@ export interface paths {
         patch: operations["update_line_api_v1_budgets__budget_id__draft_lines__line_id__patch"];
         trace?: never;
     };
+    "/api/v1/budgets/{budget_id}/draft/reapply-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Reapply Rules
+         * @description Qué markups y cargos cambiarían con las reglas de hoy, y el efecto en los totales.
+         */
+        get: operations["preview_reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_get"];
+        put?: never;
+        /** Reapply Rules */
+        post: operations["reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/draft/refresh-costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Refresh Costs
+         * @description Qué líneas tienen un costo más nuevo en el catálogo y cómo cambiarían los totales.
+         */
+        get: operations["preview_refresh_costs_api_v1_budgets__budget_id__draft_refresh_costs_get"];
+        put?: never;
+        /**
+         * Refresh Costs
+         * @description Toma el costo vigente del catálogo para las líneas indicadas (o todas).
+         */
+        post: operations["refresh_costs_api_v1_budgets__budget_id__draft_refresh_costs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets/{budget_id}/draft/sections": {
         parameters: {
             query?: never;
@@ -327,6 +372,26 @@ export interface paths {
         head?: never;
         /** Update Section */
         patch: operations["update_section_api_v1_budgets__budget_id__draft_sections__section_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate
+         * @description Duplicar para otro evento: copia la última versión con los costos y reglas de hoy.
+         */
+        post: operations["duplicate_api_v1_budgets__budget_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/budgets/{budget_id}/versions": {
@@ -1124,6 +1189,13 @@ export interface components {
             /** Rate */
             rate: string;
         };
+        /** ChargeRate */
+        ChargeRate: {
+            /** Name */
+            name: string;
+            /** Rate */
+            rate: string;
+        };
         /** ClientIn */
         ClientIn: {
             /** Address */
@@ -1245,6 +1317,31 @@ export interface components {
             /** Position */
             position: string | null;
         };
+        /** CostChange */
+        CostChange: {
+            /** Amount Changed */
+            amount_changed: boolean;
+            /**
+             * Line Id
+             * Format: uuid
+             */
+            line_id: string;
+            /** Name */
+            name: string;
+            /**
+             * New As Of
+             * Format: date
+             */
+            new_as_of: string;
+            /** New Unit Cost */
+            new_unit_cost: string;
+            /** Old As Of */
+            old_as_of: string | null;
+            /** Old Unit Cost */
+            old_unit_cost: string;
+            /** Supplier Name */
+            supplier_name: string | null;
+        };
         /** CostOut */
         CostOut: {
             /** Amount */
@@ -1264,6 +1361,31 @@ export interface components {
              * Format: date
              */
             valid_from: string;
+        };
+        /** CostsPreview */
+        CostsPreview: {
+            /** Changes */
+            changes: components["schemas"]["CostChange"][];
+            totals: components["schemas"]["TotalsDelta"];
+        };
+        /**
+         * DuplicateIn
+         * @description Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.
+         */
+        DuplicateIn: {
+            event?: components["schemas"]["EventIn"] | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** DuplicateOut */
+        DuplicateOut: {
+            budget: components["schemas"]["BudgetOut"];
+            /** Costs Changed */
+            costs_changed: number;
+            /** Rules Changed */
+            rules_changed: number;
         };
         /**
          * EventIn
@@ -2170,6 +2292,11 @@ export interface components {
             /** Unit Id */
             unit_id?: string | null;
         };
+        /** RefreshCostsIn */
+        RefreshCostsIn: {
+            /** Line Ids */
+            line_ids?: string[] | null;
+        };
         /**
          * Role
          * @enum {string}
@@ -2181,11 +2308,39 @@ export interface components {
          * @enum {string}
          */
         RoundingIncrement: "0.01" | "1" | "10" | "100" | "1000";
+        /** RuleChange */
+        RuleChange: {
+            /** Has Manual Markup */
+            has_manual_markup: boolean;
+            /**
+             * Line Id
+             * Format: uuid
+             */
+            line_id: string;
+            /** Name */
+            name: string;
+            /** New Markup */
+            new_markup: string;
+            new_source: components["schemas"]["MarkupSource"];
+            /** Old Markup */
+            old_markup: string;
+            old_source: components["schemas"]["MarkupSource"];
+        };
         /**
          * RuleMode
          * @enum {string}
          */
         RuleMode: "MARKUP" | "MARGIN";
+        /** RulesPreview */
+        RulesPreview: {
+            /** Changes */
+            changes: components["schemas"]["RuleChange"][];
+            /** Charges After */
+            charges_after: components["schemas"]["ChargeRate"][];
+            /** Charges Before */
+            charges_before: components["schemas"]["ChargeRate"][];
+            totals: components["schemas"]["TotalsDelta"];
+        };
         /** SaleChargeIn */
         SaleChargeIn: {
             /**
@@ -2446,6 +2601,21 @@ export interface components {
          * @enum {string}
          */
         TaxCondition: "RI" | "MONOTRIBUTO" | "EXENTO";
+        /** TotalsDelta */
+        TotalsDelta: {
+            /** Margin Net After */
+            margin_net_after: string | null;
+            /** Margin Net Before */
+            margin_net_before: string | null;
+            /** Profit After */
+            profit_after: string | null;
+            /** Profit Before */
+            profit_before: string | null;
+            /** Sale Net After */
+            sale_net_after: string;
+            /** Sale Net Before */
+            sale_net_before: string;
+        };
         /** UnitOut */
         UnitOut: {
             /** Allows Decimals */
@@ -3227,6 +3397,138 @@ export interface operations {
             };
         };
     };
+    preview_reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulesPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_refresh_costs_api_v1_budgets__budget_id__draft_refresh_costs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostsPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_costs_api_v1_budgets__budget_id__draft_refresh_costs_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshCostsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_section_api_v1_budgets__budget_id__draft_sections_post: {
         parameters: {
             query?: never;
@@ -3323,6 +3625,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_api_v1_budgets__budget_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateOut"];
                 };
             };
             /** @description Validation Error */

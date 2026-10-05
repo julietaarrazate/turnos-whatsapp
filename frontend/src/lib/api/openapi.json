@@ -555,6 +555,25 @@
         "title": "ChargeOut",
         "type": "object"
       },
+      "ChargeRate": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "rate"
+        ],
+        "title": "ChargeRate",
+        "type": "object"
+      },
       "ClientIn": {
         "properties": {
           "address": {
@@ -1062,6 +1081,73 @@
         "title": "ContactOut",
         "type": "object"
       },
+      "CostChange": {
+        "properties": {
+          "amount_changed": {
+            "title": "Amount Changed",
+            "type": "boolean"
+          },
+          "line_id": {
+            "format": "uuid",
+            "title": "Line Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "new_as_of": {
+            "format": "date",
+            "title": "New As Of",
+            "type": "string"
+          },
+          "new_unit_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "New Unit Cost",
+            "type": "string"
+          },
+          "old_as_of": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old As Of"
+          },
+          "old_unit_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Old Unit Cost",
+            "type": "string"
+          },
+          "supplier_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Name"
+          }
+        },
+        "required": [
+          "line_id",
+          "name",
+          "supplier_name",
+          "old_unit_cost",
+          "new_unit_cost",
+          "old_as_of",
+          "new_as_of",
+          "amount_changed"
+        ],
+        "title": "CostChange",
+        "type": "object"
+      },
       "CostOut": {
         "properties": {
           "amount": {
@@ -1106,6 +1192,90 @@
           "stale"
         ],
         "title": "CostOut",
+        "type": "object"
+      },
+      "CostsPreview": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/CostChange"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/TotalsDelta"
+          }
+        },
+        "required": [
+          "changes",
+          "totals"
+        ],
+        "title": "CostsPreview",
+        "type": "object"
+      },
+      "DuplicateIn": {
+        "description": "Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.",
+        "properties": {
+          "event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "DuplicateIn",
+        "type": "object"
+      },
+      "DuplicateOut": {
+        "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/BudgetOut"
+          },
+          "costs_changed": {
+            "title": "Costs Changed",
+            "type": "integer"
+          },
+          "rules_changed": {
+            "title": "Rules Changed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "budget",
+          "costs_changed",
+          "rules_changed"
+        ],
+        "title": "DuplicateOut",
         "type": "object"
       },
       "EventIn": {
@@ -4275,6 +4445,28 @@
         "title": "ProductUpdate",
         "type": "object"
       },
+      "RefreshCostsIn": {
+        "properties": {
+          "line_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 1000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Ids"
+          }
+        },
+        "title": "RefreshCostsIn",
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "OWNER",
@@ -4299,6 +4491,50 @@
         "title": "RoundingIncrement",
         "type": "string"
       },
+      "RuleChange": {
+        "properties": {
+          "has_manual_markup": {
+            "title": "Has Manual Markup",
+            "type": "boolean"
+          },
+          "line_id": {
+            "format": "uuid",
+            "title": "Line Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "new_markup": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "New Markup",
+            "type": "string"
+          },
+          "new_source": {
+            "$ref": "#/components/schemas/MarkupSource"
+          },
+          "old_markup": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Old Markup",
+            "type": "string"
+          },
+          "old_source": {
+            "$ref": "#/components/schemas/MarkupSource"
+          }
+        },
+        "required": [
+          "line_id",
+          "name",
+          "old_markup",
+          "new_markup",
+          "old_source",
+          "new_source",
+          "has_manual_markup"
+        ],
+        "title": "RuleChange",
+        "type": "object"
+      },
       "RuleMode": {
         "enum": [
           "MARKUP",
@@ -4306,6 +4542,42 @@
         ],
         "title": "RuleMode",
         "type": "string"
+      },
+      "RulesPreview": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/RuleChange"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "charges_after": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeRate"
+            },
+            "title": "Charges After",
+            "type": "array"
+          },
+          "charges_before": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeRate"
+            },
+            "title": "Charges Before",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/TotalsDelta"
+          }
+        },
+        "required": [
+          "changes",
+          "charges_before",
+          "charges_after",
+          "totals"
+        ],
+        "title": "RulesPreview",
+        "type": "object"
       },
       "SaleChargeIn": {
         "properties": {
@@ -5217,6 +5489,78 @@
         ],
         "title": "TaxCondition",
         "type": "string"
+      },
+      "TotalsDelta": {
+        "properties": {
+          "margin_net_after": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Net After"
+          },
+          "margin_net_before": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Net Before"
+          },
+          "profit_after": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit After"
+          },
+          "profit_before": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Before"
+          },
+          "sale_net_after": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Net After",
+            "type": "string"
+          },
+          "sale_net_before": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Net Before",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sale_net_before",
+          "sale_net_after",
+          "profit_before",
+          "profit_after",
+          "margin_net_before",
+          "margin_net_after"
+        ],
+        "title": "TotalsDelta",
+        "type": "object"
       },
       "UnitOut": {
         "properties": {
@@ -6765,6 +7109,207 @@
         ]
       }
     },
+    "/api/v1/budgets/{budget_id}/draft/reapply-rules": {
+      "get": {
+        "description": "Qué markups y cargos cambiarían con las reglas de hoy, y el efecto en los totales.",
+        "operationId": "preview_reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Reapply Rules",
+        "tags": [
+          "budgets"
+        ]
+      },
+      "post": {
+        "operationId": "reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reapply Rules",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/api/v1/budgets/{budget_id}/draft/refresh-costs": {
+      "get": {
+        "description": "Qué líneas tienen un costo más nuevo en el catálogo y cómo cambiarían los totales.",
+        "operationId": "preview_refresh_costs_api_v1_budgets__budget_id__draft_refresh_costs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostsPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Refresh Costs",
+        "tags": [
+          "budgets"
+        ]
+      },
+      "post": {
+        "description": "Toma el costo vigente del catálogo para las líneas indicadas (o todas).",
+        "operationId": "refresh_costs_api_v1_budgets__budget_id__draft_refresh_costs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshCostsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Costs",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
     "/api/v1/budgets/{budget_id}/draft/sections": {
       "post": {
         "operationId": "add_section_api_v1_budgets__budget_id__draft_sections_post",
@@ -6957,6 +7502,77 @@
           }
         },
         "summary": "Update Section",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/api/v1/budgets/{budget_id}/duplicate": {
+      "post": {
+        "description": "Duplicar para otro evento: copia la última versión con los costos y reglas de hoy.",
+        "operationId": "duplicate_api_v1_budgets__budget_id__duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Duplicate",
         "tags": [
           "budgets"
         ]
