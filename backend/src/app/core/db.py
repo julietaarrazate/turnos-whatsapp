@@ -5,8 +5,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
+from typing import Annotated
 from uuid import UUID
 
+from fastapi import Depends
 from sqlalchemy import (
     Connection,
     DateTime,
@@ -58,6 +60,8 @@ class DbContext:
 
     organization_id: UUID | None = None
     user_id: UUID | None = None
+    # Hash de un token público (invitación, propuesta): capacidad para leer esa fila puntual.
+    token_hash: str | None = None
 
 
 _CONTEXT_KEY = "db_context"
@@ -65,10 +69,14 @@ _CONTEXT_KEY = "db_context"
 
 def _apply_context(connection: Connection, ctx: DbContext) -> None:
     connection.execute(
-        text("SELECT set_config('app.org_id', :org, true), set_config('app.user_id', :usr, true)"),
+        text(
+            "SELECT set_config('app.org_id', :org, true), set_config('app.user_id', :usr, true),"
+            " set_config('app.token_hash', :tok, true)"
+        ),
         {
             "org": str(ctx.organization_id) if ctx.organization_id else "",
             "usr": str(ctx.user_id) if ctx.user_id else "",
+            "tok": ctx.token_hash or "",
         },
     )
 
@@ -117,3 +125,20 @@ def session_scope(ctx: DbContext | None = None) -> Iterator[AppSession]:
             yield session
     finally:
         session.close()
+
+
+def get_db() -> Iterator[AppSession]:
+    """Una transacción por request.
+
+    Se usa con ``scope="function"``: el commit ocurre ANTES de enviar la respuesta. Con el
+    scope por defecto, un commit fallido igual devolvería 200 (verificado en FastAPI 0.142).
+    """
+    session = get_sessionmaker()()
+    try:
+        with session.begin():
+            yield session
+    finally:
+        session.close()
+
+
+DbSession = Annotated[AppSession, Depends(get_db, scope="function")]

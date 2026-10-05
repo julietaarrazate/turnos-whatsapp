@@ -7,6 +7,7 @@ import os
 from collections.abc import Iterator
 
 os.environ.setdefault("ENV", "test")
+os.environ.setdefault("COOKIE_SECURE", "false")
 os.environ.setdefault(
     "DATABASE_URL", "postgresql+psycopg://app_runtime:app_runtime@localhost:5432/app_test"
 )
@@ -18,10 +19,14 @@ os.environ.setdefault(
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine, text
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
+from app.core.rate_limit import limiter
+from app.main import create_app
 from app.models_registry import metadata
+from app.modules.notifications import console_backend
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -54,3 +59,28 @@ def _clean_tables(migrator_engine: Engine) -> Iterator[None]:
     tables = ", ".join(t.name for t in metadata.sorted_tables)
     with migrator_engine.begin() as conn:
         conn.execute(text(f"TRUNCATE {tables} CASCADE"))
+
+
+@pytest.fixture(autouse=True)
+def _reset_in_memory_state() -> None:
+    limiter.reset()
+    console_backend.sent.clear()
+
+
+@pytest.fixture
+def settings() -> Iterator[Settings]:
+    """Settings mutables para un test; se restauran al terminar."""
+    current = get_settings()
+    snapshot = current.model_copy()
+    yield current
+    for field in Settings.model_fields:
+        setattr(current, field, getattr(snapshot, field))
+
+
+def make_client() -> TestClient:
+    return TestClient(create_app(), headers={"X-Requested-With": "fetch"})
+
+
+@pytest.fixture
+def client() -> TestClient:
+    return make_client()
