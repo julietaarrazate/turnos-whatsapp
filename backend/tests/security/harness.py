@@ -153,6 +153,7 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
     created = proposals.create_proposal(s, ctx, sent.id, sent.version.lock_version, ProposalIn())
     return {
         "proposal_id": created.proposal.id,
+        "sent_budget_id": sent.id,
         "event_id": budget.event.id,
         "budget_id": budget.id,
         "section_id": section_id,
@@ -243,6 +244,7 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("POST", "/api/v1/budgets/{budget_id}/draft/reapply-rules"): {},
     ("POST", "/api/v1/budgets/{budget_id}/proposals"): {},
     ("POST", "/api/v1/proposals/{proposal_id}/revoke"): {},
+    ("POST", "/api/v1/proposals/{proposal_id}/approve"): {"po_number": "OC-1"},
     ("POST", "/api/v1/budgets/{budget_id}/duplicate"): lambda w: {
         "event": {"client_id": str(w.ids["client_id"]), "name": "Copia"}
     },

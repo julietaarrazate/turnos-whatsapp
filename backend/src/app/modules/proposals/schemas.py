@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.modules.budgets import DisplayMode, IvaDisplay
-from app.modules.proposals.models import ProposalStatus
+from app.modules.proposals.models import ApprovalMethod, ProposalStatus
 
 
 class ProposalIn(BaseModel):
@@ -35,9 +35,22 @@ class ProposalOut(BaseModel):
     last_viewed_at: datetime | None
     view_count: int
     content_hash: str
+    decided_at: datetime | None
+    decided_by_name: str | None
+    decided_by_email: str | None
+    decision_comment: str | None
+    approval_method: ApprovalMethod | None
+    po_number: str | None
 
 
 class ProposalCreated(BaseModel):
     proposal: ProposalOut
     # Solo se muestra al generar: en la base queda el hash (§8.4).
     public_path: str
+
+
+class ApproveIn(BaseModel):
+    """Aprobación manual (P-06): el cliente confirmó por otro canal, típicamente con una OC."""
+
+    po_number: str | None = Field(default=None, max_length=100)
+    comment: str | None = Field(default=None, max_length=2000)

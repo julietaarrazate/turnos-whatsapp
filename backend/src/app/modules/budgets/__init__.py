@@ -4,6 +4,7 @@ from app.modules.budgets.public import (
     DisplayMode,
     IvaDisplay,
     SendableVersion,
+    budget_event_id,
     public_snapshot,
     sendable_version,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "DisplayMode",
     "IvaDisplay",
     "SendableVersion",
+    "budget_event_id",
     "ensure_budget",
     "freeze_for_proposal",
     "parse_if_match",

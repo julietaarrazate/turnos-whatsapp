@@ -33,5 +33,5 @@ export default async function Page({ params }: PageProps<"/p/[token]">) {
       </main>
     );
   }
-  return <PublicProposalView data={result.data} />;
+  return <PublicProposalView data={result.data} token={token} />;
 }

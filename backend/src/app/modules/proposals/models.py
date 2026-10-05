@@ -24,6 +24,12 @@ class ProposalStatus(StrEnum):
 
 
 ACTIVE = (ProposalStatus.SENT, ProposalStatus.VIEWED)
+DECIDED = (ProposalStatus.ACCEPTED, ProposalStatus.REJECTED)
+
+
+class ApprovalMethod(StrEnum):
+    ONLINE = "ONLINE"  # el cliente desde el link
+    MANUAL = "MANUAL"  # la productora, con OC u otra confirmación
 
 
 class ActivityType(StrEnum):
@@ -57,6 +63,7 @@ class Proposal(IdMixin, TimestampMixin, Base):
             postgresql_where=text("status IN ('SENT', 'VIEWED')"),
         ),
         CheckConstraint(check_in("status", ProposalStatus), name="status"),
+        CheckConstraint(check_in("approval_method", ApprovalMethod), name="approval_method"),
     )
 
     organization_id: Mapped[UUID] = _org_fk()

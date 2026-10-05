@@ -1,12 +1,12 @@
 """DTOs de la propuesta pública (ARCHITECTURE §8.4). `extra="forbid"` en todos: si el snapshot
 trajera una clave que no está acá, la validación falla en lugar de publicarla."""
 
-from datetime import date
+from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.modules.budgets import DisplayMode, IvaDisplay
-from app.modules.proposals.models import ProposalStatus
+from app.modules.proposals.models import ApprovalMethod, ProposalStatus
 
 
 class _Public(BaseModel):
@@ -74,9 +74,37 @@ class PublicSnapshot(_Public):
     payment_terms: str | None
 
 
+class PublicDecision(_Public):
+    status: ProposalStatus  # ACCEPTED o REJECTED
+    decided_at: datetime
+    decided_by_name: str | None
+    method: ApprovalMethod | None  # MANUAL: la aprobó la productora (p. ej. con una OC)
+
+
 class PublicProposal(_Public):
     status: ProposalStatus  # EXPIRED y SUPERSEDED se muestran en solo lectura
     can_decide: bool
     content_hash: str
     proposal: PublicSnapshot
     valid_until: date
+    decision: PublicDecision | None
+
+
+# --- Lo que manda el cliente --------------------------------------------------------------
+
+
+class _Decision(_Public):
+    # Lo que el cliente estaba viendo: si no coincide, no se registra la decisión (I7).
+    content_hash: str = Field(min_length=64, max_length=64)
+
+
+class AcceptIn(_Decision):
+    name: str = Field(min_length=1, max_length=200)
+    email: EmailStr = Field(max_length=320)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class RejectIn(_Decision):
+    reason: str = Field(min_length=1, max_length=2000)
+    name: str | None = Field(default=None, max_length=200)
+    email: EmailStr | None = Field(default=None, max_length=320)

@@ -84,6 +84,18 @@ def sendable_version(
     )
 
 
+def budget_event_id(db: AppSession, organization_id: UUID, budget_id: UUID) -> UUID:
+    """El evento del presupuesto (para propuestas, también desde el link público)."""
+    event_id = db.execute(
+        select(Budget.event_id).where(
+            Budget.id == budget_id, Budget.organization_id == organization_id
+        )
+    ).scalar_one_or_none()
+    if event_id is None:
+        raise not_found()
+    return event_id
+
+
 def _money(value: Decimal) -> str:
     return str(value.quantize(CENT))
 

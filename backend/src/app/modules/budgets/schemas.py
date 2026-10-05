@@ -316,6 +316,7 @@ class BudgetSummary(BaseModel):
     version_status: VersionStatus
     sale_net: Decimal
     updated_at: datetime
+    approved_version_no: int | None  # la versión que es baseline del evento, si es de este
 
 
 class BudgetPage(BaseModel):
