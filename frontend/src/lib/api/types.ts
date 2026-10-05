@@ -41,3 +41,5 @@ export type VersionUpdate = Schemas["VersionUpdate"];
 export type CostsPreview = Schemas["CostsPreview"];
 export type RulesPreview = Schemas["RulesPreview"];
 export type CompareOut = Schemas["CompareOut"];
+export type Proposal = Schemas["ProposalOut"];
+export type PublicProposal = Schemas["PublicProposal"];

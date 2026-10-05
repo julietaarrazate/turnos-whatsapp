@@ -55,8 +55,8 @@ def test_new_budget_creates_event_and_client_inline_and_is_idempotent() -> None:
     assert (version["version_no"], version["status"]) == (1, "DRAFT")
     assert [s["title_client"] for s in version["sections"]] == ["General"]
     assert version["total"] == "0.00"
-    # El harness ya creó un presupuesto en esta organización.
-    assert first["number"] == 2
+    # El harness ya creó dos presupuestos en esta organización (uno enviado).
+    assert first["number"] == 3
     events = _ok(quoter.get("/api/v1/events", params={"q": "convención"}))["items"]
     assert [e["number"] for e in events] == [2]
 
@@ -299,7 +299,9 @@ def test_event_status_transitions() -> None:
 
     reopened = _ok(manager.post(f"/api/v1/events/{event_id}/status", json={"to_status": "QUOTING"}))
     assert reopened["status"] == "QUOTING"
-    assert [h["to_status"] for h in reopened["history"]] == ["LEAD", "QUOTING", "LOST", "QUOTING"]
+    # El harness ya envió una propuesta de este evento (QUOTING → SENT).
+    history = [h["to_status"] for h in reopened["history"]]
+    assert history == ["LEAD", "QUOTING", "SENT", "LOST", "QUOTING"]
 
 
 def test_event_update_and_listing_filters() -> None:
@@ -325,8 +327,9 @@ def test_event_update_and_listing_filters() -> None:
     assert names == ["Lanzamiento", "Fiesta fin de año", "Evento ejemplo"]
 
     budgets = _ok(owner.get("/api/v1/budgets", params={"event_id": str(event_id)}))["items"]
-    assert [b["id"] for b in budgets] == [str(world.ids["budget_id"])]
-    assert budgets[0]["sale_net"] == "1400.00"
+    by_id = {b["id"]: b for b in budgets}
+    assert len(by_id) == 2  # el borrador y el enviado del harness
+    assert by_id[str(world.ids["budget_id"])]["sale_net"] == "1400.00"
 
 
 def _record_cost(client: TestClient, world: OrgWorld, amount: str) -> None:

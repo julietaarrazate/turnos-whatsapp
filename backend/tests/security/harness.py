@@ -42,6 +42,8 @@ from app.modules.catalog.models import (
 from app.modules.clients import Client
 from app.modules.events import EventIn
 from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
+from app.modules.proposals import service as proposals
+from app.modules.proposals.schemas import ProposalIn
 from tests.factories import DEFAULT_PASSWORD, Member, add_member, create_org, create_user
 
 
@@ -144,7 +146,13 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
     section_id = budget.version.sections[0].id
     line = LineIn(section_id=section_id, product_id=ids["product_id"])
     budget = budgets.add_line(s, ctx, budget.id, budget.version.lock_version, line)
+    # Otro presupuesto del mismo evento, ya enviado al cliente (para las rutas de propuestas).
+    sent = budgets.create_budget(s, ctx, BudgetCreate(event_id=budget.event.id, title="Enviado"))
+    sent_line = LineIn(section_id=sent.version.sections[0].id, product_id=ids["product_id"])
+    sent = budgets.add_line(s, ctx, sent.id, sent.version.lock_version, sent_line)
+    created = proposals.create_proposal(s, ctx, sent.id, sent.version.lock_version, ProposalIn())
     return {
+        "proposal_id": created.proposal.id,
         "event_id": budget.event.id,
         "budget_id": budget.id,
         "section_id": section_id,
@@ -178,6 +186,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "section_id": lambda w: w.ids["section_id"],
     "line_id": lambda w: w.ids["line_id"],
     "version_no": lambda _: 1,
+    "proposal_id": lambda w: w.ids["proposal_id"],
 }
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
@@ -232,6 +241,8 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/budgets/{budget_id}/draft/lines/{line_id}"): {"quantity": "2"},
     ("POST", "/api/v1/budgets/{budget_id}/draft/refresh-costs"): {},
     ("POST", "/api/v1/budgets/{budget_id}/draft/reapply-rules"): {},
+    ("POST", "/api/v1/budgets/{budget_id}/proposals"): {},
+    ("POST", "/api/v1/proposals/{proposal_id}/revoke"): {},
     ("POST", "/api/v1/budgets/{budget_id}/duplicate"): lambda w: {
         "event": {"client_id": str(w.ids["client_id"]), "name": "Copia"}
     },

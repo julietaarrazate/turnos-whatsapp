@@ -201,6 +201,11 @@ def _budget(db: AppSession, ctx: TenantContext, budget_id: UUID) -> Budget:
     return budget
 
 
+def ensure_budget(db: AppSession, ctx: TenantContext, budget_id: UUID) -> None:
+    """404 si el presupuesto no existe en la organización (para módulos que cuelgan de él)."""
+    _budget(db, ctx, budget_id)
+
+
 def parse_if_match(raw: str) -> int:
     """`If-Match: 7` o `If-Match: "7"` (ETag débil o fuerte) → 7."""
     value = raw.strip().removeprefix("W/").strip('"')
@@ -1617,3 +1622,18 @@ def compare_versions(
         margin_net_after=after.margin_net if margins else None,
         margin_delta_points=delta,
     )
+
+
+def freeze_for_proposal(
+    db: AppSession, ctx: TenantContext, budget_id: UUID, if_match: int | None
+) -> int:
+    """La versión a enviar: congela el borrador (si hay, con su lock) o toma la última guardada."""
+    budget = _budget(db, ctx, budget_id)
+    has_draft = any(v.status == VersionStatus.DRAFT for v in _versions(db, budget.id))
+    if has_draft:
+        if if_match is None:
+            raise AppError(428, "if_match_required", "Falta If-Match para congelar el borrador")
+        return freeze(
+            db, ctx, budget.id, if_match, FreezeIn(change_note="Enviada al cliente")
+        ).version.version_no
+    return _versions(db, budget.id)[-1].version_no

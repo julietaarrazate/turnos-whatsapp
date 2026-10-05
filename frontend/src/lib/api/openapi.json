@@ -1384,6 +1384,15 @@
         "title": "DiffKind",
         "type": "string"
       },
+      "DisplayMode": {
+        "enum": [
+          "DETAILED",
+          "BY_SECTION",
+          "TOTAL_ONLY"
+        ],
+        "title": "DisplayMode",
+        "type": "string"
+      },
       "DuplicateIn": {
         "description": "Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.",
         "properties": {
@@ -2345,6 +2354,14 @@
         ],
         "title": "InvitationPreview",
         "type": "object"
+      },
+      "IvaDisplay": {
+        "enum": [
+          "PLUS_IVA",
+          "IVA_INCLUDED"
+        ],
+        "title": "IvaDisplay",
+        "type": "string"
       },
       "LineCost": {
         "description": "Solo con `cost.view`.",
@@ -4731,6 +4748,619 @@
           }
         },
         "title": "ProductUpdate",
+        "type": "object"
+      },
+      "ProposalCreated": {
+        "properties": {
+          "proposal": {
+            "$ref": "#/components/schemas/ProposalOut"
+          },
+          "public_path": {
+            "title": "Public Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal",
+          "public_path"
+        ],
+        "title": "ProposalCreated",
+        "type": "object"
+      },
+      "ProposalIn": {
+        "description": "Generar propuesta (P-01). Sin `version_no`, congela el borrador (con If-Match) o toma\nla última versión guardada.",
+        "properties": {
+          "display_mode": {
+            "$ref": "#/components/schemas/DisplayMode",
+            "default": "BY_SECTION"
+          },
+          "iva_display": {
+            "$ref": "#/components/schemas/IvaDisplay",
+            "default": "PLUS_IVA"
+          },
+          "payment_terms": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Terms"
+          },
+          "terms": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms"
+          },
+          "valid_days": {
+            "default": 7,
+            "maximum": 120.0,
+            "minimum": 1.0,
+            "title": "Valid Days",
+            "type": "integer"
+          },
+          "version_no": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version No"
+          }
+        },
+        "title": "ProposalIn",
+        "type": "object"
+      },
+      "ProposalOut": {
+        "properties": {
+          "budget_id": {
+            "format": "uuid",
+            "title": "Budget Id",
+            "type": "string"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "display_mode": {
+            "$ref": "#/components/schemas/DisplayMode"
+          },
+          "first_viewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Viewed At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "iva_display": {
+            "$ref": "#/components/schemas/IvaDisplay"
+          },
+          "last_viewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Viewed At"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "sent_at": {
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          },
+          "valid_until": {
+            "format": "date",
+            "title": "Valid Until",
+            "type": "string"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          },
+          "view_count": {
+            "title": "View Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "budget_id",
+          "version_no",
+          "status",
+          "display_mode",
+          "iva_display",
+          "valid_until",
+          "total",
+          "currency",
+          "sent_at",
+          "first_viewed_at",
+          "last_viewed_at",
+          "view_count",
+          "content_hash"
+        ],
+        "title": "ProposalOut",
+        "type": "object"
+      },
+      "ProposalStatus": {
+        "description": "DOMAIN_MODEL §3.3.",
+        "enum": [
+          "SENT",
+          "VIEWED",
+          "ACCEPTED",
+          "REJECTED",
+          "EXPIRED",
+          "SUPERSEDED",
+          "REVOKED"
+        ],
+        "title": "ProposalStatus",
+        "type": "string"
+      },
+      "PublicEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "venue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue"
+          }
+        },
+        "required": [
+          "name",
+          "start_date",
+          "end_date",
+          "venue",
+          "city"
+        ],
+        "title": "PublicEvent",
+        "type": "object"
+      },
+      "PublicItem": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price"
+          }
+        },
+        "required": [
+          "description",
+          "quantity",
+          "unit",
+          "days",
+          "unit_price",
+          "amount"
+        ],
+        "title": "PublicItem",
+        "type": "object"
+      },
+      "PublicOrganization": {
+        "additionalProperties": false,
+        "properties": {
+          "legal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Name"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "tax_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Id"
+          }
+        },
+        "required": [
+          "name",
+          "legal_name",
+          "tax_id"
+        ],
+        "title": "PublicOrganization",
+        "type": "object"
+      },
+      "PublicParty": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "PublicParty",
+        "type": "object"
+      },
+      "PublicProposal": {
+        "additionalProperties": false,
+        "properties": {
+          "can_decide": {
+            "title": "Can Decide",
+            "type": "boolean"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/PublicSnapshot"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "valid_until": {
+            "format": "date",
+            "title": "Valid Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "can_decide",
+          "content_hash",
+          "proposal",
+          "valid_until"
+        ],
+        "title": "PublicProposal",
+        "type": "object"
+      },
+      "PublicSection": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "required": [
+          "title",
+          "items",
+          "total"
+        ],
+        "title": "PublicSection",
+        "type": "object"
+      },
+      "PublicSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_number": {
+            "title": "Budget Number",
+            "type": "integer"
+          },
+          "client": {
+            "$ref": "#/components/schemas/PublicParty"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "display_mode": {
+            "$ref": "#/components/schemas/DisplayMode"
+          },
+          "event": {
+            "$ref": "#/components/schemas/PublicEvent"
+          },
+          "iva_display": {
+            "$ref": "#/components/schemas/IvaDisplay"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/PublicOrganization"
+          },
+          "payment_terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Terms"
+          },
+          "proposal_number": {
+            "title": "Proposal Number",
+            "type": "integer"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/PublicSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/PublicTotals"
+          },
+          "valid_until": {
+            "title": "Valid Until",
+            "type": "string"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "budget_number",
+          "version_no",
+          "proposal_number",
+          "title",
+          "currency",
+          "display_mode",
+          "iva_display",
+          "organization",
+          "client",
+          "event",
+          "sections",
+          "totals",
+          "valid_until",
+          "terms",
+          "payment_terms"
+        ],
+        "title": "PublicSnapshot",
+        "type": "object"
+      },
+      "PublicTotals": {
+        "additionalProperties": false,
+        "properties": {
+          "global_discount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Discount"
+          },
+          "iva": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iva"
+          },
+          "iva_included": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iva Included"
+          },
+          "net": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net"
+          },
+          "subtotal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtotal"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "total"
+        ],
+        "title": "PublicTotals",
         "type": "object"
       },
       "RefreshCostsIn": {
@@ -7930,6 +8560,122 @@
         ]
       }
     },
+    "/api/v1/budgets/{budget_id}/proposals": {
+      "get": {
+        "operationId": "list_proposals_api_v1_budgets__budget_id__proposals_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalOut"
+                  },
+                  "title": "Response List Proposals Api V1 Budgets  Budget Id  Proposals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Proposals",
+        "tags": [
+          "proposals"
+        ]
+      },
+      "post": {
+        "description": "Generar propuesta: congela el borrador (If-Match) o usa la versión indicada, reemplaza la\npropuesta activa anterior y devuelve el link público (una sola vez).",
+        "operationId": "create_proposal_api_v1_budgets__budget_id__proposals_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Proposal",
+        "tags": [
+          "proposals"
+        ]
+      }
+    },
     "/api/v1/budgets/{budget_id}/versions": {
       "post": {
         "description": "Nueva versión: un borrador que clona la última (sin actualizar costos ni reglas).",
@@ -9943,6 +10689,94 @@
         "summary": "Create Offer",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}/revoke": {
+      "post": {
+        "operationId": "revoke_api_v1_proposals__proposal_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke",
+        "tags": [
+          "proposals"
+        ]
+      }
+    },
+    "/api/v1/public/proposals/{token}": {
+      "get": {
+        "description": "Lo que ve el cliente: solo la lista blanca del snapshot (§8.4). Registra la vista.",
+        "operationId": "public_view_api_v1_public_proposals__token__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 20,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProposal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public View",
+        "tags": [
+          "public"
         ]
       }
     },

@@ -338,3 +338,13 @@ def on_budget_created(db: AppSession, ctx: TenantContext, event_id: UUID) -> Non
 def can_quote(event: Event) -> bool:
     """Se pueden armar presupuestos mientras el evento no está cerrado, perdido ni cancelado."""
     return EventStatus(event.status) not in {S.LOST, S.CANCELLED, S.CLOSED, S.COMPLETED}
+
+
+def on_proposal_sent(db: AppSession, ctx: TenantContext, event_id: UUID) -> None:
+    """§6 `ProposalSent`: la primera propuesta lleva a SENT; las siguientes, a NEGOTIATION."""
+    event = get_event(db, ctx, event_id, for_update=True)
+    current = EventStatus(event.status)
+    if current in {S.LEAD, S.QUOTING}:
+        _set_status(db, ctx, event, S.SENT)
+    elif current is S.SENT:
+        _set_status(db, ctx, event, S.NEGOTIATION)

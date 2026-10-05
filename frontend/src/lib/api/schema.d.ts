@@ -414,6 +414,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budgets/{budget_id}/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Proposals */
+        get: operations["list_proposals_api_v1_budgets__budget_id__proposals_get"];
+        put?: never;
+        /**
+         * Create Proposal
+         * @description Generar propuesta: congela el borrador (If-Match) o usa la versión indicada, reemplaza la
+         *     propuesta activa anterior y devuelve el link público (una sola vez).
+         */
+        post: operations["create_proposal_api_v1_budgets__budget_id__proposals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets/{budget_id}/versions": {
         parameters: {
             query?: never;
@@ -909,6 +931,43 @@ export interface paths {
          * @description Agrega un proveedor que ofrece el producto. Cargar el costo inicial pide `costs.edit`.
          */
         post: operations["create_offer_api_v1_products__product_id__offers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{proposal_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke */
+        post: operations["revoke_api_v1_proposals__proposal_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/proposals/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public View
+         * @description Lo que ve el cliente: solo la lista blanca del snapshot (§8.4). Registra la vista.
+         */
+        get: operations["public_view_api_v1_public_proposals__token__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1433,6 +1492,11 @@ export interface components {
          */
         DiffKind: "ADDED" | "REMOVED" | "MODIFIED";
         /**
+         * DisplayMode
+         * @enum {string}
+         */
+        DisplayMode: "DETAILED" | "BY_SECTION" | "TOTAL_ONLY";
+        /**
          * DuplicateIn
          * @description Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.
          */
@@ -1725,6 +1789,11 @@ export interface components {
             /** User Exists */
             user_exists: boolean;
         };
+        /**
+         * IvaDisplay
+         * @enum {string}
+         */
+        IvaDisplay: "PLUS_IVA" | "IVA_INCLUDED";
         /**
          * LineCost
          * @description Solo con `cost.view`.
@@ -2385,6 +2454,191 @@ export interface components {
             name?: string | null;
             /** Unit Id */
             unit_id?: string | null;
+        };
+        /** ProposalCreated */
+        ProposalCreated: {
+            proposal: components["schemas"]["ProposalOut"];
+            /** Public Path */
+            public_path: string;
+        };
+        /**
+         * ProposalIn
+         * @description Generar propuesta (P-01). Sin `version_no`, congela el borrador (con If-Match) o toma
+         *     la última versión guardada.
+         */
+        ProposalIn: {
+            /** @default BY_SECTION */
+            display_mode?: components["schemas"]["DisplayMode"];
+            /** @default PLUS_IVA */
+            iva_display?: components["schemas"]["IvaDisplay"];
+            /** Payment Terms */
+            payment_terms?: string | null;
+            /** Terms */
+            terms?: string | null;
+            /**
+             * Valid Days
+             * @default 7
+             */
+            valid_days?: number;
+            /** Version No */
+            version_no?: number | null;
+        };
+        /** ProposalOut */
+        ProposalOut: {
+            /**
+             * Budget Id
+             * Format: uuid
+             */
+            budget_id: string;
+            /** Content Hash */
+            content_hash: string;
+            /** Currency */
+            currency: string;
+            display_mode: components["schemas"]["DisplayMode"];
+            /** First Viewed At */
+            first_viewed_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            iva_display: components["schemas"]["IvaDisplay"];
+            /** Last Viewed At */
+            last_viewed_at: string | null;
+            /** Number */
+            number: number;
+            /**
+             * Sent At
+             * Format: date-time
+             */
+            sent_at: string;
+            status: components["schemas"]["ProposalStatus"];
+            /** Total */
+            total: string;
+            /**
+             * Valid Until
+             * Format: date
+             */
+            valid_until: string;
+            /** Version No */
+            version_no: number;
+            /** View Count */
+            view_count: number;
+        };
+        /**
+         * ProposalStatus
+         * @description DOMAIN_MODEL §3.3.
+         * @enum {string}
+         */
+        ProposalStatus: "SENT" | "VIEWED" | "ACCEPTED" | "REJECTED" | "EXPIRED" | "SUPERSEDED" | "REVOKED";
+        /** PublicEvent */
+        PublicEvent: {
+            /** City */
+            city: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Name */
+            name: string | null;
+            /** Start Date */
+            start_date: string | null;
+            /** Venue */
+            venue: string | null;
+        };
+        /** PublicItem */
+        PublicItem: {
+            /** Amount */
+            amount: string | null;
+            /** Days */
+            days: number | null;
+            /** Description */
+            description: string;
+            /** Quantity */
+            quantity: string;
+            /** Unit */
+            unit: string;
+            /** Unit Price */
+            unit_price: string | null;
+        };
+        /** PublicOrganization */
+        PublicOrganization: {
+            /** Legal Name */
+            legal_name: string | null;
+            /** Name */
+            name: string;
+            /** Tax Id */
+            tax_id: string | null;
+        };
+        /** PublicParty */
+        PublicParty: {
+            /** Name */
+            name: string | null;
+        };
+        /** PublicProposal */
+        PublicProposal: {
+            /** Can Decide */
+            can_decide: boolean;
+            /** Content Hash */
+            content_hash: string;
+            proposal: components["schemas"]["PublicSnapshot"];
+            status: components["schemas"]["ProposalStatus"];
+            /**
+             * Valid Until
+             * Format: date
+             */
+            valid_until: string;
+        };
+        /** PublicSection */
+        PublicSection: {
+            /** Items */
+            items: components["schemas"]["PublicItem"][];
+            /** Title */
+            title: string;
+            /** Total */
+            total: string | null;
+        };
+        /** PublicSnapshot */
+        PublicSnapshot: {
+            /** Budget Number */
+            budget_number: number;
+            client: components["schemas"]["PublicParty"];
+            /** Currency */
+            currency: string;
+            display_mode: components["schemas"]["DisplayMode"];
+            event: components["schemas"]["PublicEvent"];
+            iva_display: components["schemas"]["IvaDisplay"];
+            organization: components["schemas"]["PublicOrganization"];
+            /** Payment Terms */
+            payment_terms: string | null;
+            /** Proposal Number */
+            proposal_number: number;
+            /** Schema Version */
+            schema_version: number;
+            /** Sections */
+            sections: components["schemas"]["PublicSection"][];
+            /** Terms */
+            terms: string | null;
+            /** Title */
+            title: string;
+            totals: components["schemas"]["PublicTotals"];
+            /** Valid Until */
+            valid_until: string;
+            /** Version No */
+            version_no: number;
+        };
+        /** PublicTotals */
+        PublicTotals: {
+            /** Global Discount */
+            global_discount?: string | null;
+            /** Iva */
+            iva?: string | null;
+            /** Iva Included */
+            iva_included?: string | null;
+            /** Net */
+            net?: string | null;
+            /** Subtotal */
+            subtotal?: string | null;
+            /** Total */
+            total: string;
         };
         /** RefreshCostsIn */
         RefreshCostsIn: {
@@ -3803,6 +4057,74 @@ export interface operations {
             };
         };
     };
+    list_proposals_api_v1_budgets__budget_id__proposals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_proposal_api_v1_budgets__budget_id__proposals_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "If-Match"?: string | null;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     new_version_api_v1_budgets__budget_id__versions_post: {
         parameters: {
             query?: never;
@@ -5170,6 +5492,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_api_v1_proposals__proposal_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_view_api_v1_public_proposals__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProposal"];
                 };
             };
             /** @description Validation Error */

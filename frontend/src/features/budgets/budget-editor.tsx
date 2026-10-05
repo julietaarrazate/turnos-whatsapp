@@ -17,6 +17,8 @@ import { CommitField } from "./commit-field";
 import { daysField, quantityField } from "./format";
 import { LineDetail } from "./line-detail";
 import { ProductSearch } from "./product-search";
+import { ProposalsPanel } from "@/features/proposals/proposals-panel";
+
 import { CostsBanner, ReapplyRules } from "./refresh-dialogs";
 import { TotalsFooter } from "./totals";
 import { type BudgetEditor as Editor, useBudgetEditor } from "./use-budget-editor";
@@ -334,6 +336,8 @@ export function BudgetEditor({ budgetId, copied }: { budgetId: string; copied?: 
           <Notice tone="error">{editor.error}</Notice>
         </div>
       ) : null}
+
+      <ProposalsPanel budget={budget} editor={editor} />
 
       <VersionSettings budget={budget} version={version} editable={editable} onUpdate={(body) => void editor.updateVersion(body)} />
 
