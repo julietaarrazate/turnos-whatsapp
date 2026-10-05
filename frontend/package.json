@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "gen:api": "cd ../backend && uv run python scripts/export_openapi.py ../frontend/src/lib/api/openapi.json && cd ../frontend && openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts",
+    "gen:api": "cd ../backend && uv run python scripts/export_openapi.py ../frontend/src/lib/api/openapi.json && cd ../frontend && openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts --default-non-nullable false",
     "e2e": "playwright test"
   },
   "dependencies": {

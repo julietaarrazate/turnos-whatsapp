@@ -11,7 +11,12 @@ import { cn } from "@/lib/cn";
 import { CommandPalette } from "./command-palette";
 import { MOBILE_TABS, NAV_ITEMS, isActive } from "./nav";
 
-const QUICK_ACTIONS = ["Nuevo presupuesto", "Nuevo gasto", "Nuevo cliente", "Nuevo evento"];
+const QUICK_ACTIONS: { label: string; href?: string; phase?: number }[] = [
+  { label: "Nuevo presupuesto", href: "/budgets/new" },
+  { label: "Nuevo cliente", href: "/clients/new" },
+  { label: "Nuevo producto", href: "/catalog/new" },
+  { label: "Nuevo gasto", phase: 4 },
+];
 
 function OrganizationSwitcher() {
   const { me, switchOrganization } = useSession();
@@ -187,15 +192,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto my-3 h-1 w-10 rounded-full bg-line" aria-hidden />
         <ul className="px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {QUICK_ACTIONS.map((action) => (
-            <li key={action}>
-              <button
-                type="button"
-                disabled
-                className="flex h-12 w-full items-center justify-between border-b border-line text-left text-base text-ink-muted"
-              >
-                {action}
-                <span className="text-xs">Fase 2</span>
-              </button>
+            <li key={action.label}>
+              {action.href ? (
+                <Link
+                  href={action.href}
+                  onClick={() => quickActions.current?.close()}
+                  className="flex h-12 w-full items-center border-b border-line text-base text-ink"
+                >
+                  {action.label}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-12 w-full items-center justify-between border-b border-line text-left text-base text-ink-muted"
+                >
+                  {action.label}
+                  <span className="text-xs">Fase {action.phase}</span>
+                </button>
+              )}
             </li>
           ))}
         </ul>

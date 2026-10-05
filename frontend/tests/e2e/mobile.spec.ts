@@ -10,7 +10,8 @@ test("en el celular hay barra inferior y acciones rápidas", async ({ page, isMo
   await expect(bottomNav.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
   await page.getByRole("button", { name: "Crear" }).click();
   await expect(page.getByRole("dialog", { name: "Crear" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Nuevo presupuesto/ })).toBeDisabled();
+  await page.getByRole("link", { name: "Nuevo presupuesto" }).click();
+  await expect(page).toHaveURL(/\/budgets\/new$/);
 });
 
 test("en desktop hay sidebar y ⌘K navega", async ({ page, isMobile }) => {

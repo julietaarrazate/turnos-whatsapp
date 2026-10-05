@@ -973,7 +973,7 @@ export interface components {
          */
         BudgetCreate: {
             /** @default ARS */
-            currency: components["schemas"]["BudgetCurrency"];
+            currency?: components["schemas"]["BudgetCurrency"];
             event?: components["schemas"]["EventIn"] | null;
             /** Event Id */
             event_id?: string | null;
@@ -1072,7 +1072,7 @@ export interface components {
              * Default Iva Rate
              * @default 0.21
              */
-            default_iva_rate: number | string;
+            default_iva_rate?: number | string;
             /** Name */
             name: string;
             /** Parent Id */
@@ -1081,7 +1081,7 @@ export interface components {
              * Sort
              * @default 0
              */
-            sort: number;
+            sort?: number;
         };
         /** CategoryOut */
         CategoryOut: {
@@ -1219,7 +1219,7 @@ export interface components {
              * Is Primary
              * @default false
              */
-            is_primary: boolean;
+            is_primary?: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -1282,7 +1282,7 @@ export interface components {
              * Event Days
              * @default 1
              */
-            event_days: number;
+            event_days?: number;
             /** Name */
             name: string;
             /** Notes */
@@ -1293,14 +1293,14 @@ export interface components {
              * Setup Days
              * @default 0
              */
-            setup_days: number;
+            setup_days?: number;
             /** Start Date */
             start_date?: string | null;
             /**
              * Teardown Days
              * @default 0
              */
-            teardown_days: number;
+            teardown_days?: number;
             /** Venue */
             venue?: string | null;
         };
@@ -1443,7 +1443,7 @@ export interface components {
         /** FxRateIn */
         FxRateIn: {
             /** @default USD */
-            currency: components["schemas"]["FxCurrency"];
+            currency?: components["schemas"]["FxCurrency"];
             /** Rate */
             rate: number | string;
             /** Rate Date */
@@ -1578,7 +1578,7 @@ export interface components {
              * Quantity
              * @default 1
              */
-            quantity: number | string;
+            quantity?: number | string;
             /**
              * Section Id
              * Format: uuid
@@ -1755,7 +1755,7 @@ export interface components {
          */
         MarkupRuleIn: {
             /** @default MARKUP */
-            mode: components["schemas"]["RuleMode"];
+            mode?: components["schemas"]["RuleMode"];
             scope: components["schemas"]["MarkupScope"];
             /** Scope Id */
             scope_id?: string | null;
@@ -1853,7 +1853,7 @@ export interface components {
              * Is Preferred
              * @default false
              */
-            is_preferred: boolean;
+            is_preferred?: boolean;
             /** Notes */
             notes?: string | null;
             /**
@@ -1990,12 +1990,12 @@ export interface components {
              * Includes Iva
              * @default false
              */
-            includes_iva: boolean;
+            includes_iva?: boolean;
             /**
              * Iva Rate
              * @default 0.21
              */
-            iva_rate: number | string;
+            iva_rate?: number | string;
             /** Source Ref */
             source_ref?: string | null;
             /** Valid From */
@@ -2034,16 +2034,16 @@ export interface components {
              * Margin Includes Sale Charges
              * @default true
              */
-            margin_includes_sale_charges: boolean;
+            margin_includes_sale_charges?: boolean;
             /** Min Margin */
             min_margin?: string | null;
             /**
              * Price Staleness Days
              * @default 30
              */
-            price_staleness_days: number;
+            price_staleness_days?: number;
             /** @default 0.01 */
-            rounding_increment: components["schemas"]["RoundingIncrement"];
+            rounding_increment?: components["schemas"]["RoundingIncrement"];
         };
         /** PricingSettingsUpdate */
         PricingSettingsUpdate: {
@@ -2063,7 +2063,7 @@ export interface components {
              */
             category_id: string;
             /** @default FIXED */
-            charge_mode: components["schemas"]["ChargeMode"];
+            charge_mode?: components["schemas"]["ChargeMode"];
             /** Description Client */
             description_client?: string | null;
             /** Description Internal */
@@ -2072,7 +2072,7 @@ export interface components {
              * Is Active
              * @default true
              */
-            is_active: boolean;
+            is_active?: boolean;
             /** Iva Rate */
             iva_rate?: number | string | null;
             /** Min Quantity */
@@ -2192,12 +2192,12 @@ export interface components {
              * Applies By Default
              * @default true
              */
-            applies_by_default: boolean;
+            applies_by_default?: boolean;
             /**
              * Is Active
              * @default true
              */
-            is_active: boolean;
+            is_active?: boolean;
             /** Name */
             name: string;
             /** Rate */
@@ -2206,7 +2206,7 @@ export interface components {
              * Sort
              * @default 0
              */
-            sort: number;
+            sort?: number;
         };
         /** SaleChargeOut */
         SaleChargeOut: {
@@ -2300,7 +2300,7 @@ export interface components {
              * Is Primary
              * @default false
              */
-            is_primary: boolean;
+            is_primary?: boolean;
             /** Name */
             name: string;
             /** Phone */
@@ -2609,7 +2609,7 @@ export interface components {
              * Refresh Fx
              * @default false
              */
-            refresh_fx: boolean;
+            refresh_fx?: boolean;
             /** Target Includes Iva */
             target_includes_iva?: boolean | null;
             /** Target Margin */

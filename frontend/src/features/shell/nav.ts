@@ -20,8 +20,8 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Inicio", icon: Home },
-  { href: "/events", label: "Eventos", icon: CalendarDays, phase: 2 },
-  { href: "/budgets", label: "Presupuestos", icon: FileText, phase: 2 },
+  { href: "/events", label: "Eventos", icon: CalendarDays },
+  { href: "/budgets", label: "Presupuestos", icon: FileText },
   { href: "/catalog", label: "Catálogo", icon: Package },
   { href: "/clients", label: "Clientes", icon: Building2 },
   { href: "/suppliers", label: "Proveedores", icon: Truck },
