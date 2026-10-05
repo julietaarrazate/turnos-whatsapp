@@ -187,7 +187,7 @@ Nunca se afirma que algo funciona sin haberlo ejecutado.
 | 1.2 | Base de datos: SQLAlchemy, Alembic, convenciones, UUIDv7, roles `app_runtime` / `app_migrator`, `organizations` / `users` / `memberships`, contexto de tenant, helper de RLS | M | Mala configuración de RLS | Test "toda tabla tenant tiene RLS". Test de RLS directo en la DB. `upgrade/downgrade` en CI. |
 | 1.3 | Auth: login, refresh rotativo, logout, invitaciones, reset, outbox de email (Mailpit local), rate limit | L | Seguridad de sesión | Tests de rotación, reutilización, expiración y rate limit |
 | 1.4 | RBAC + audit log + **harness de aislamiento** (parametrizado sobre rutas) + test "toda ruta declara permiso" | M | Que haya huecos de permisos | Los harness mismos |
-| 1.5 | Shell del frontend: auth, layout mobile y desktop, tokens, shadcn base, cliente generado + chequeo de contrato, PWA (Serwist), formatters y parser es-AR | L | Deuda de UX temprana | Vitest (parser con decenas de casos), Playwright de humo |
+| 1.5 | Shell del frontend: auth, layout mobile y desktop, tokens, shadcn base, cliente generado + chequeo de contrato, PWA (manifest + SW mínimo), formatters y parser es-AR | L | Deuda de UX temprana | Vitest (parser con decenas de casos), Playwright de humo |
 | 1.6 | Observabilidad y deploy: Sentry, structlog, `/healthz`, Dockerfile, `render.yaml`, Vercel, staging · **medir latencia desde AR** | M | Costos y regiones | Error de prueba en Sentry. Medición documentada. |
 
 **Salida de la Fase 1:** login en staging desde el celular. CI con todas las compuertas. Harness de tenants y permisos corriendo. Latencia medida y D-18 confirmada o revisada.

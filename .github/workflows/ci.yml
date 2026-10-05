@@ -48,6 +48,29 @@ jobs:
       - name: Tests
         run: uv run pytest --cov --cov-report=term-missing:skip-covered
 
+  contract:
+    # El frontend usa tipos generados desde el OpenAPI del backend: si el contrato cambió y no
+    # se regeneraron, falla acá y no en producción.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: cd backend && uv sync --frozen
+      - run: cd frontend && pnpm install --frozen-lockfile
+      - run: cd frontend && pnpm gen:api
+      - name: El contrato commiteado está al día
+        run: git diff --exit-code -- frontend/src/lib/api
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

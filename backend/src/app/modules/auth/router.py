@@ -10,6 +10,7 @@ from app.modules.auth import service
 from app.modules.auth.dependencies import (
     ACCESS_COOKIE,
     REFRESH_COOKIE,
+    SESSION_HINT_COOKIE,
     Client,
     CurrentAuth,
     Public,
@@ -54,11 +55,23 @@ def _set_cookies(response: Response, tokens: service.IssuedTokens) -> None:
         samesite="lax",
         path=REFRESH_PATH,
     )
+    # Indicador sin valor secreto, visible en todas las rutas: el frontend lo usa solo para
+    # decidir si mandar a /login (el refresh token no viaja fuera de /api/v1/auth).
+    response.set_cookie(
+        SESSION_HINT_COOKIE,
+        "1",
+        max_age=settings.refresh_token_ttl_days * 86400,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
+        path="/",
+    )
 
 
 def _clear_cookies(response: Response) -> None:
     response.delete_cookie(ACCESS_COOKIE, path="/")
     response.delete_cookie(REFRESH_COOKIE, path=REFRESH_PATH)
+    response.delete_cookie(SESSION_HINT_COOKIE, path="/")
 
 
 def _me(db: AppSession, auth: service.AuthContext) -> MeResponse:

@@ -24,7 +24,7 @@ def main() -> None:
     with session_scope() as s:
         for role in Role:
             user = User(
-                email=f"{role.value.lower()}@demo.local",
+                email=f"{role.value.lower()}@demo.example.com",
                 name=f"{role.value.title()} Demo",
                 password_hash=password_hash,
             )

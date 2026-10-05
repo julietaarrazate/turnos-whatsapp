@@ -19,6 +19,7 @@ from app.modules.auth.service import AuthContext, ClientInfo, TenantContext, res
 
 ACCESS_COOKIE = "access_token"
 REFRESH_COOKIE = "refresh_token"
+SESSION_HINT_COOKIE = "has_session"
 ACCESS_MARKER = "__access__"
 
 

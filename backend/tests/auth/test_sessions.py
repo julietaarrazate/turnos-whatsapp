@@ -70,3 +70,11 @@ def test_logout_revokes_access_and_refresh(client: TestClient) -> None:
 
 def test_logout_without_session_is_idempotent(client: TestClient) -> None:
     assert client.post("/api/v1/auth/logout").status_code == 204
+
+
+def test_session_hint_cookie_follows_the_session(client: TestClient) -> None:
+    create_member("owner@example.com")
+    login(client, "owner@example.com")
+    assert client.cookies.get("has_session") == "1"
+    client.post("/api/v1/auth/logout")
+    assert client.cookies.get("has_session") is None

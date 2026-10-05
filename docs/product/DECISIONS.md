@@ -141,7 +141,9 @@ SQLAlchemy 2 **sincrónico** con psycopg 3 en el threadpool de FastAPI. El async
 
 ## D-20 · Stack de frontend — 🟡
 
-Next.js App Router · TypeScript strict · Tailwind · **shadcn/ui** (Radix, con el código en el repo) · **TanStack Query** · cliente **generado desde OpenAPI** (con chequeo de drift en CI) · **Serwist** para la PWA (`next-pwa` está sin mantenimiento) · parser numérico es-AR propio con tests.
+Next.js App Router · TypeScript strict · Tailwind · componentes propios estilo shadcn/ui · **TanStack Query** · cliente **generado desde OpenAPI** (con chequeo de drift en CI) · parser numérico es-AR propio con tests.
+
+*Actualización (Fase 1):* se usa **Next.js 16**. Para la PWA alcanza con el manifest nativo de Next más un service worker mínimo (página offline, sin cachear datos de la API). Serwist queda para cuando haga falta offline real (V2). Así no se depende de un plugin de build en el MVP. Los componentes base (botón, campos, switch) se escribieron a mano con Tailwind. Radix se suma cuando haga falta un primitivo complejo (menús, popovers).
 
 ## D-21 · Granularidad de presupuestado vs real — 🟡
 

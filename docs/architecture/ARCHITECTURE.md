@@ -202,12 +202,12 @@ sequenceDiagram
 
 | Pieza | Elección | Nota |
 |---|---|---|
-| Framework | Next.js (App Router) + React + TypeScript `strict` | |
+| Framework | Next.js 16 (App Router) + React 19 + TypeScript `strict` | En Next 16, Middleware se llama Proxy |
 | Estilos | Tailwind CSS + design tokens | |
 | Componentes | **shadcn/ui** (Radix + Tailwind, código copiado al repo = "componentes propios") | Accesibilidad de Radix sin depender de una librería cerrada |
 | Datos | **TanStack Query** + cliente tipado generado desde OpenAPI (`openapi-typescript` + `openapi-fetch`) | Los tipos del backend llegan al frontend sin duplicarse |
 | Formularios | react-hook-form | Validación liviana en el cliente. La autoridad es el server. |
-| PWA | **Serwist** (`@serwist/next`) | `next-pwa` está sin mantenimiento |
+| PWA | Manifest nativo de Next + service worker mínimo (offline: página de aviso) | Serwist cuando haga falta offline real (V2) |
 | Números | `Intl.NumberFormat('es-AR')` + parser propio es-AR con tests | Sin `<input type="number">` (bugs de locale en mobile): se usa `inputmode="decimal"` |
 | Tests | Vitest (unit), Playwright (E2E, viewports mobile + desktop), axe (a11y) | |
 
