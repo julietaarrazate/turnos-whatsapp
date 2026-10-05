@@ -12,6 +12,7 @@ from app.modules.auth.dependencies import (
     REFRESH_COOKIE,
     Client,
     CurrentAuth,
+    Public,
     access_token_from,
 )
 from app.modules.auth.schemas import (
@@ -25,8 +26,8 @@ from app.modules.auth.schemas import (
     SwitchOrganizationRequest,
     UserOut,
 )
+from app.modules.identity import User
 from app.modules.notifications import send_email
-from app.modules.users import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -79,7 +80,7 @@ def _me_for_tokens(db: AppSession, tokens: service.IssuedTokens) -> MeResponse:
     return _me(db, service.resolve_access_token(db, tokens.access_token))
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Public])
 def login(body: LoginRequest, response: Response, db: DbSession, client: Client) -> MeResponse:
     enforce(f"login:ip:{client.ip}", limit=20, window_seconds=60)
     enforce(f"login:email:{body.email.lower()}", limit=10, window_seconds=900)
@@ -88,7 +89,7 @@ def login(body: LoginRequest, response: Response, db: DbSession, client: Client)
     return _me_for_tokens(db, tokens)
 
 
-@router.post("/refresh")
+@router.post("/refresh", dependencies=[Public])
 def refresh(request: Request, response: Response, db: DbSession, client: Client) -> MeResponse:
     enforce(f"refresh:ip:{client.ip}", limit=60, window_seconds=60)
     tokens = service.refresh(db, request.cookies.get(REFRESH_COOKIE), client)
@@ -96,7 +97,7 @@ def refresh(request: Request, response: Response, db: DbSession, client: Client)
     return _me_for_tokens(db, tokens)
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Public])
 def logout(request: Request, response: Response, db: DbSession) -> None:
     claims_session = None
     # Logout es idempotente: sin una sesión válida, solo limpia las cookies.
@@ -124,7 +125,7 @@ def switch_organization(
     return _me_for_tokens(db, tokens)
 
 
-@router.post("/password-reset", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/password-reset", status_code=status.HTTP_202_ACCEPTED, dependencies=[Public])
 def password_reset_request(
     body: PasswordResetRequest, db: DbSession, client: Client, background: BackgroundTasks
 ) -> None:
@@ -135,7 +136,9 @@ def password_reset_request(
         background.add_task(send_email, message)
 
 
-@router.post("/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Public]
+)
 def password_reset_confirm(
     body: PasswordResetConfirm, response: Response, db: DbSession, client: Client
 ) -> None:
@@ -144,7 +147,7 @@ def password_reset_confirm(
     _clear_cookies(response)
 
 
-@router.get("/invitations/{token}")
+@router.get("/invitations/{token}", dependencies=[Public])
 def invitation_preview(token: str, db: DbSession, client: Client) -> InvitationPreview:
     enforce(f"invite:ip:{client.ip}", limit=30, window_seconds=900)
     invitation, org_name, user_exists = service.preview_invitation(db, token)
@@ -156,7 +159,7 @@ def invitation_preview(token: str, db: DbSession, client: Client) -> InvitationP
     )
 
 
-@router.post("/invitations/accept")
+@router.post("/invitations/accept", dependencies=[Public])
 def invitation_accept(
     body: InvitationAccept, response: Response, db: DbSession, client: Client
 ) -> MeResponse:

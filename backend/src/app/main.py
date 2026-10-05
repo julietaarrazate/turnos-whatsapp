@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from app.core.config import get_settings
 from app.core.csrf import CSRFMiddleware
 from app.core.errors import install_error_handlers
-from app.modules import auth
+from app.modules import auth, organizations
 
 
 def create_app() -> FastAPI:
@@ -17,6 +17,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(auth.router)
+    app.include_router(organizations.router)
     return app
 
 

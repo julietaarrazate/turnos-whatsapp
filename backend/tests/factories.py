@@ -7,10 +7,10 @@ from app.core.db import DbContext, session_scope
 from app.core.enums import Role
 from app.core.ids import uuid7
 from app.core.security import hash_password
-from app.modules.organizations import Membership, Organization
-from app.modules.users import User
+from app.modules.identity import Membership, Organization, User
 
 DEFAULT_PASSWORD = "contraseña-segura-123"
+_DEFAULT_HASH = hash_password(DEFAULT_PASSWORD)  # argon2 es lento a propósito: se calcula una vez
 
 
 @dataclass(frozen=True)
@@ -33,7 +33,8 @@ def create_org(name: str = "Productora", **fields: object) -> UUID:
 def create_user(email: str, name: str = "Persona", password: str = DEFAULT_PASSWORD) -> UUID:
     user_id = uuid7()
     with session_scope() as s:
-        s.add(User(id=user_id, email=email, name=name, password_hash=hash_password(password)))
+        password_hash = _DEFAULT_HASH if password == DEFAULT_PASSWORD else hash_password(password)
+        s.add(User(id=user_id, email=email, name=name, password_hash=password_hash))
     return user_id
 
 

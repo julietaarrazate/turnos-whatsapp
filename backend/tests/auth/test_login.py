@@ -5,8 +5,7 @@ from app.core.config import Settings
 from app.core.db import DbContext, session_scope
 from app.core.enums import Role
 from app.main import create_app
-from app.modules.organizations import Membership
-from app.modules.users import User
+from app.modules.identity import Membership, User
 from tests.factories import DEFAULT_PASSWORD, add_member, create_member, create_org
 
 

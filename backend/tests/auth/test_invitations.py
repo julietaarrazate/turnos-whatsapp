@@ -10,7 +10,7 @@ from app.core.enums import Role
 from app.core.security import token_hash, utcnow
 from app.modules.auth import create_invitation
 from app.modules.auth.models import Invitation
-from app.modules.organizations import Membership
+from app.modules.identity import Membership
 from tests.factories import DEFAULT_PASSWORD, create_member, create_org
 
 

@@ -38,7 +38,7 @@ jobs:
       - name: Typecheck
         run: uv run mypy
       - name: Límites entre módulos
-        run: uv run lint-imports
+        run: uv run lint-imports && uv run python scripts/check_module_boundaries.py
       - name: Migraciones (upgrade, check, downgrade, upgrade)
         run: |
           uv run alembic upgrade head

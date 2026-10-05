@@ -9,8 +9,7 @@ from sqlalchemy.exc import DBAPIError
 from app.core.db import DbContext, get_sessionmaker, session_scope, set_context
 from app.core.enums import Role
 from app.core.ids import uuid7
-from app.modules.organizations import Membership, Organization
-from app.modules.users import User
+from app.modules.identity import Membership, Organization, User
 
 
 def _create_org_with_member(name: str, email: str) -> tuple[UUID, UUID]:

@@ -22,10 +22,10 @@ from app.core.security import (
     utcnow,
     verify_password,
 )
+from app.modules.audit import ActorType, record
 from app.modules.auth.models import AuthSession, Invitation, PasswordResetToken, RefreshToken
+from app.modules.identity import Membership, MembershipStatus, Organization, User
 from app.modules.notifications import Email
-from app.modules.organizations import Membership, MembershipStatus, Organization
-from app.modules.users import User
 
 
 @dataclass(frozen=True)
@@ -51,6 +51,22 @@ class AuthContext:
     membership_id: UUID | None
     role: Role | None
     permissions: frozenset[Permission]
+
+
+@dataclass(frozen=True)
+class TenantContext:
+    """Usuario con organización activa y permisos ya verificados para el endpoint."""
+
+    user_id: UUID
+    session_id: UUID
+    organization_id: UUID
+    membership_id: UUID
+    role: Role
+    permissions: frozenset[Permission]
+    client: ClientInfo
+
+    def can(self, permission: Permission) -> bool:
+        return permission in self.permissions
 
 
 def _unauthorized(code: str = "unauthenticated", detail: str = "Sesión inválida") -> AppError:
@@ -396,11 +412,24 @@ def accept_invitation(
         )
     ).scalar_one_or_none()
     if membership is None:
-        db.add(Membership(organization_id=org_id, user_id=user.id, role=invitation.role))
+        membership = Membership(organization_id=org_id, user_id=user.id, role=invitation.role)
+        db.add(membership)
     elif membership.status != MembershipStatus.ACTIVE:
         membership.status = MembershipStatus.ACTIVE.value
         membership.role = invitation.role
     invitation.accepted_at = utcnow()
     user.last_login_at = utcnow()
     db.flush()
+    record(
+        db,
+        organization_id=org_id,
+        action="membership.joined",
+        entity_type="membership",
+        entity_id=membership.id,
+        actor_user_id=user.id,
+        actor_type=ActorType.PUBLIC_TOKEN,
+        after={"role": membership.role, "invitation_id": str(invitation.id)},
+        ip=client.ip,
+        user_agent=client.user_agent,
+    )
     return _issue_tokens(db, user, org_id, client)

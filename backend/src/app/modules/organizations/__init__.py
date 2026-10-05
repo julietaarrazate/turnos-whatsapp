@@ -1,5 +1,5 @@
-"""Organizaciones (tenants) y membresías."""
+"""Administración de la organización: datos, miembros, invitaciones, auditoría."""
 
-from app.modules.organizations.models import Membership, MembershipStatus, Organization
+from app.modules.organizations.router import router
 
-__all__ = ["Membership", "MembershipStatus", "Organization"]
+__all__ = ["router"]
