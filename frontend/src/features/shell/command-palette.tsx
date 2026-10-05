@@ -9,6 +9,7 @@ import { NAV_ITEMS } from "./nav";
 
 const SETTINGS_ITEMS = [
   { href: "/settings/organization", label: "Configuración · Organización" },
+  { href: "/settings/pricing", label: "Configuración · Pricing" },
   { href: "/settings/members", label: "Configuración · Usuarios y roles" },
   { href: "/settings/audit", label: "Configuración · Auditoría" },
 ];

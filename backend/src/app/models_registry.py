@@ -8,5 +8,6 @@ from app.modules.clients import models as _clients  # noqa: F401
 from app.modules.identity import organization as _organization  # noqa: F401
 from app.modules.identity import user as _user  # noqa: F401
 from app.modules.notifications import models as _notifications  # noqa: F401
+from app.modules.pricing import models as _pricing  # noqa: F401
 
 metadata = Base.metadata

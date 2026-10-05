@@ -392,6 +392,139 @@ export interface paths {
         patch: operations["update_fiscal_api_v1_organization_fiscal_patch"];
         trace?: never;
     };
+    "/api/v1/pricing/fx-rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Fx Rates
+         * @description Historial, del más reciente al más viejo. El primero es el vigente.
+         */
+        get: operations["list_fx_rates_api_v1_pricing_fx_rates_get"];
+        put?: never;
+        /** Record Fx Rate */
+        post: operations["record_fx_rate_api_v1_pricing_fx_rates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/markup-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rules */
+        get: operations["list_rules_api_v1_pricing_markup_rules_get"];
+        /**
+         * Upsert Rule
+         * @description Crea o reemplaza la regla del alcance. No cambia presupuestos existentes.
+         */
+        put: operations["upsert_rule_api_v1_pricing_markup_rules_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/markup-rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Rule */
+        delete: operations["delete_rule_api_v1_pricing_markup_rules__rule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve
+         * @description Qué markup tomaría una línea nueva de ese producto para ese cliente, y de dónde sale.
+         */
+        get: operations["resolve_api_v1_pricing_resolve_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/sale-charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sale Charges */
+        get: operations["list_sale_charges_api_v1_pricing_sale_charges_get"];
+        put?: never;
+        /** Create Sale Charge */
+        post: operations["create_sale_charge_api_v1_pricing_sale_charges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/sale-charges/{charge_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Sale Charge */
+        delete: operations["delete_sale_charge_api_v1_pricing_sale_charges__charge_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Sale Charge */
+        patch: operations["update_sale_charge_api_v1_pricing_sale_charges__charge_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/pricing/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Settings */
+        get: operations["get_settings_api_v1_pricing_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Settings */
+        patch: operations["update_settings_api_v1_pricing_settings_patch"];
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -775,6 +908,47 @@ export interface components {
              */
             valid_from: string;
         };
+        /**
+         * FxCurrency
+         * @enum {string}
+         */
+        FxCurrency: "USD";
+        /** FxRateIn */
+        FxRateIn: {
+            /** @default USD */
+            currency: components["schemas"]["FxCurrency"];
+            /** Rate */
+            rate: number | string;
+            /** Rate Date */
+            rate_date?: string | null;
+        };
+        /** FxRateOut */
+        FxRateOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            currency: components["schemas"]["FxCurrency"];
+            /** Days Old */
+            days_old: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rate */
+            rate: string;
+            /**
+             * Rate Date
+             * Format: date
+             */
+            rate_date: string;
+            /** Source */
+            source: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -839,6 +1013,67 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * MarkupResolution
+         * @description Qué markup tomaría una línea nueva de ese producto para ese cliente, y por qué.
+         */
+        MarkupResolution: {
+            /** Margin */
+            margin: string;
+            /** Markup */
+            markup: string;
+            source: components["schemas"]["MarkupSource"];
+            /** Source Id */
+            source_id: string | null;
+            /** Source Name */
+            source_name: string | null;
+        };
+        /**
+         * MarkupRuleIn
+         * @description Crea o reemplaza la regla de ese alcance (hay una sola por alcance).
+         */
+        MarkupRuleIn: {
+            /** @default MARKUP */
+            mode: components["schemas"]["RuleMode"];
+            scope: components["schemas"]["MarkupScope"];
+            /** Scope Id */
+            scope_id?: string | null;
+            /** Value */
+            value: number | string;
+        };
+        /** MarkupRuleOut */
+        MarkupRuleOut: {
+            /** Effective Markup */
+            effective_markup: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            mode: components["schemas"]["RuleMode"];
+            scope: components["schemas"]["MarkupScope"];
+            /** Scope Id */
+            scope_id: string | null;
+            /** Scope Name */
+            scope_name: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * MarkupScope
+         * @enum {string}
+         */
+        MarkupScope: "ORG" | "CATEGORY" | "PRODUCT" | "CLIENT";
+        /**
+         * MarkupSource
+         * @enum {string}
+         */
+        MarkupSource: "LINE" | "VERSION" | "CLIENT" | "PRODUCT" | "CATEGORY" | "ORG" | "TARGET_MARGIN" | "TARGET_PRICE";
         /** MeResponse */
         MeResponse: {
             /** Active Organization Id */
@@ -1051,6 +1286,33 @@ export interface components {
              */
             valid_from: string;
         };
+        /** PricingSettings */
+        PricingSettings: {
+            /**
+             * Margin Includes Sale Charges
+             * @default true
+             */
+            margin_includes_sale_charges: boolean;
+            /** Min Margin */
+            min_margin?: string | null;
+            /**
+             * Price Staleness Days
+             * @default 30
+             */
+            price_staleness_days: number;
+            /** @default 0.01 */
+            rounding_increment: components["schemas"]["RoundingIncrement"];
+        };
+        /** PricingSettingsUpdate */
+        PricingSettingsUpdate: {
+            /** Margin Includes Sale Charges */
+            margin_includes_sale_charges?: boolean | null;
+            /** Min Margin */
+            min_margin?: number | string | null;
+            /** Price Staleness Days */
+            price_staleness_days?: number | null;
+            rounding_increment?: components["schemas"]["RoundingIncrement"] | null;
+        };
         /** ProductIn */
         ProductIn: {
             /**
@@ -1171,6 +1433,70 @@ export interface components {
          * @enum {string}
          */
         Role: "OWNER" | "ADMIN" | "MANAGER" | "QUOTER" | "PRODUCTION" | "VIEWER";
+        /**
+         * RoundingIncrement
+         * @description Incremento comercial al que se redondea cada línea (DOMAIN_MODEL §5.1).
+         * @enum {string}
+         */
+        RoundingIncrement: "0.01" | "1" | "10" | "100" | "1000";
+        /**
+         * RuleMode
+         * @enum {string}
+         */
+        RuleMode: "MARKUP" | "MARGIN";
+        /** SaleChargeIn */
+        SaleChargeIn: {
+            /**
+             * Applies By Default
+             * @default true
+             */
+            applies_by_default: boolean;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Name */
+            name: string;
+            /** Rate */
+            rate: number | string;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+        };
+        /** SaleChargeOut */
+        SaleChargeOut: {
+            /** Applies By Default */
+            applies_by_default: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
+            /** Rate */
+            rate: string;
+            /** Sort */
+            sort: number;
+        };
+        /** SaleChargeUpdate */
+        SaleChargeUpdate: {
+            /** Applies By Default */
+            applies_by_default?: boolean | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Rate */
+            rate?: number | string | null;
+            /** Sort */
+            sort?: number | null;
+        };
         /** SupplierContactIn */
         SupplierContactIn: {
             /** Email */
@@ -2246,6 +2572,354 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganizationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_fx_rates_api_v1_pricing_fx_rates_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FxRateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_fx_rate_api_v1_pricing_fx_rates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FxRateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FxRateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_rules_api_v1_pricing_markup_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkupRuleOut"][];
+                };
+            };
+        };
+    };
+    upsert_rule_api_v1_pricing_markup_rules_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkupRuleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkupRuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_rule_api_v1_pricing_markup_rules__rule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_api_v1_pricing_resolve_get: {
+        parameters: {
+            query: {
+                product_id: string;
+                client_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkupResolution"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sale_charges_api_v1_pricing_sale_charges_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleChargeOut"][];
+                };
+            };
+        };
+    };
+    create_sale_charge_api_v1_pricing_sale_charges_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleChargeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleChargeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_sale_charge_api_v1_pricing_sale_charges__charge_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_sale_charge_api_v1_pricing_sale_charges__charge_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleChargeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleChargeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_v1_pricing_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingSettings"];
+                };
+            };
+        };
+    };
+    update_settings_api_v1_pricing_settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingSettings"];
                 };
             };
             /** @description Validation Error */

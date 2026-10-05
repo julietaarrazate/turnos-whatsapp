@@ -35,6 +35,7 @@ from app.modules.catalog.models import (
     Unit,
 )
 from app.modules.clients import Client
+from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
 from tests.factories import DEFAULT_PASSWORD, Member, add_member, create_org, create_user
 
 
@@ -96,7 +97,19 @@ def _business_entities(s: Any, org_id: UUID) -> dict[str, UUID]:
             valid_from=date(2026, 1, 1),
         )
     )
+    rule = MarkupRuleRow(
+        organization_id=org_id,
+        scope="CATEGORY",
+        scope_id=product_category.id,
+        mode="MARKUP",
+        value=Decimal("0.4"),
+    )
+    charge = SaleChargeRow(organization_id=org_id, name="IIBB", rate=Decimal("0.035"))
+    s.add_all([rule, charge])
+    s.flush()
     return {
+        "rule_id": rule.id,
+        "charge_id": charge.id,
         "client_id": client.id,
         "category_id": category.id,
         "unit_id": unit_id,
@@ -116,6 +129,8 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID]] = {
     "supplier_id": lambda w: w.ids["supplier_id"],
     "product_id": lambda w: w.ids["product_id"],
     "offer_id": lambda w: w.ids["offer_id"],
+    "rule_id": lambda w: w.ids["rule_id"],
+    "charge_id": lambda w: w.ids["charge_id"],
 }
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
@@ -142,6 +157,23 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     },
     ("PATCH", "/api/v1/offers/{offer_id}"): {"notes": "Pedir con 48 h"},
     ("POST", "/api/v1/offers/{offer_id}/prices"): {"amount": "1500.50"},
+    ("PATCH", "/api/v1/pricing/settings"): {"min_margin": "0.15"},
+    ("PUT", "/api/v1/pricing/markup-rules"): lambda w: {
+        "scope": "PRODUCT",
+        "scope_id": str(w.ids["product_id"]),
+        "value": "0.5",
+    },
+    ("POST", "/api/v1/pricing/sale-charges"): {"name": "Imp. débitos y créditos", "rate": "0.012"},
+    ("PATCH", "/api/v1/pricing/sale-charges/{charge_id}"): {"rate": "0.03"},
+    ("POST", "/api/v1/pricing/fx-rates"): {"rate": "1450.50"},
+}
+
+# Query params obligatorios (con IDs del mundo que se usa).
+SAMPLE_QUERIES: dict[tuple[str, str], Callable[[OrgWorld], dict[str, str]]] = {
+    ("GET", "/api/v1/pricing/resolve"): lambda w: {
+        "product_id": str(w.ids["product_id"]),
+        "client_id": str(w.ids["client_id"]),
+    },
 }
 
 
@@ -216,7 +248,8 @@ def call(client: TestClient, route: RouteInfo, world: OrgWorld) -> Any:
     body = sample(world) if callable(sample) else sample
     if route.method in {"POST", "PUT", "PATCH"}:
         assert body is not None, f"Registrá un body de ejemplo en SAMPLE_BODIES ({route.id})"
-    return client.request(route.method, path, json=body)
+    query = SAMPLE_QUERIES.get((route.method, route.path))
+    return client.request(route.method, path, json=body, params=query(world) if query else None)
 
 
 def logged_in(member: Member) -> TestClient:

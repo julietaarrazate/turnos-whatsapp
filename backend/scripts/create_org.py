@@ -11,9 +11,9 @@ from app.core.db import DbContext, session_scope
 from app.core.enums import Role
 from app.core.ids import uuid7
 from app.modules.auth import create_invitation
-from app.modules.catalog import seed_catalog_defaults
 from app.modules.identity import Organization
 from app.modules.notifications import send_email
+from app.modules.organizations import provision_organization
 
 
 def main() -> None:
@@ -26,7 +26,7 @@ def main() -> None:
     with session_scope(DbContext(organization_id=org_id)) as s:
         s.add(Organization(id=org_id, name=args.name))
         s.flush()
-        seed_catalog_defaults(s, org_id)
+        provision_organization(s, org_id)
         _, message = create_invitation(s, org_id, args.owner_email, Role.OWNER, None)
     send_email(message)
     link = re.search(r"https?://\S+", message.text)

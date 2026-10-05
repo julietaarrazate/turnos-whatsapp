@@ -831,6 +831,109 @@
         "title": "CostOut",
         "type": "object"
       },
+      "FxCurrency": {
+        "enum": [
+          "USD"
+        ],
+        "title": "FxCurrency",
+        "type": "string"
+      },
+      "FxRateIn": {
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/FxCurrency",
+            "default": "USD"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,19}0*$)\\d{0,12}\\.\\d{0,6}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Rate"
+          },
+          "rate_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate Date"
+          }
+        },
+        "required": [
+          "rate"
+        ],
+        "title": "FxRateIn",
+        "type": "object"
+      },
+      "FxRateOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/FxCurrency"
+          },
+          "days_old": {
+            "title": "Days Old",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rate",
+            "type": "string"
+          },
+          "rate_date": {
+            "format": "date",
+            "title": "Rate Date",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "currency",
+          "rate",
+          "rate_date",
+          "source",
+          "days_old",
+          "created_by_name",
+          "created_at"
+        ],
+        "title": "FxRateOut",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -977,6 +1080,189 @@
         ],
         "title": "LoginRequest",
         "type": "object"
+      },
+      "MarkupResolution": {
+        "description": "Qué markup tomaría una línea nueva de ese producto para ese cliente, y por qué.",
+        "properties": {
+          "margin": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Margin",
+            "type": "string"
+          },
+          "markup": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Markup",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/MarkupSource"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Name"
+          }
+        },
+        "required": [
+          "markup",
+          "margin",
+          "source",
+          "source_id",
+          "source_name"
+        ],
+        "title": "MarkupResolution",
+        "type": "object"
+      },
+      "MarkupRuleIn": {
+        "description": "Crea o reemplaza la regla de ese alcance (hay una sola por alcance).",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/RuleMode",
+            "default": "MARKUP"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/MarkupScope"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,10}0*$)\\d{0,3}\\.\\d{0,6}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "scope",
+          "value"
+        ],
+        "title": "MarkupRuleIn",
+        "type": "object"
+      },
+      "MarkupRuleOut": {
+        "properties": {
+          "effective_markup": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Effective Markup",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/RuleMode"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/MarkupScope"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Name"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "scope",
+          "scope_id",
+          "scope_name",
+          "mode",
+          "value",
+          "effective_markup",
+          "updated_at"
+        ],
+        "title": "MarkupRuleOut",
+        "type": "object"
+      },
+      "MarkupScope": {
+        "enum": [
+          "ORG",
+          "CATEGORY",
+          "PRODUCT",
+          "CLIENT"
+        ],
+        "title": "MarkupScope",
+        "type": "string"
+      },
+      "MarkupSource": {
+        "enum": [
+          "LINE",
+          "VERSION",
+          "CLIENT",
+          "PRODUCT",
+          "CATEGORY",
+          "ORG",
+          "TARGET_MARGIN",
+          "TARGET_PRICE"
+        ],
+        "title": "MarkupSource",
+        "type": "string"
       },
       "MeResponse": {
         "properties": {
@@ -1664,6 +1950,97 @@
         "title": "PriceOut",
         "type": "object"
       },
+      "PricingSettings": {
+        "properties": {
+          "margin_includes_sale_charges": {
+            "default": true,
+            "title": "Margin Includes Sale Charges",
+            "type": "boolean"
+          },
+          "min_margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,1}|(?=[\\d.]{1,8}0*$)\\d{0,1}\\.\\d{0,6}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Margin"
+          },
+          "price_staleness_days": {
+            "default": 30,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Price Staleness Days",
+            "type": "integer"
+          },
+          "rounding_increment": {
+            "$ref": "#/components/schemas/RoundingIncrement",
+            "default": "0.01"
+          }
+        },
+        "title": "PricingSettings",
+        "type": "object"
+      },
+      "PricingSettingsUpdate": {
+        "properties": {
+          "margin_includes_sale_charges": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Includes Sale Charges"
+          },
+          "min_margin": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,1}|(?=[\\d.]{1,8}0*$)\\d{0,1}\\.\\d{0,6}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Margin"
+          },
+          "price_staleness_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Staleness Days"
+          },
+          "rounding_increment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RoundingIncrement"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PricingSettingsUpdate",
+        "type": "object"
+      },
       "ProductIn": {
         "properties": {
           "category_id": {
@@ -2075,6 +2452,184 @@
         ],
         "title": "Role",
         "type": "string"
+      },
+      "RoundingIncrement": {
+        "description": "Incremento comercial al que se redondea cada línea (DOMAIN_MODEL §5.1).",
+        "enum": [
+          "0.01",
+          "1",
+          "10",
+          "100",
+          "1000"
+        ],
+        "title": "RoundingIncrement",
+        "type": "string"
+      },
+      "RuleMode": {
+        "enum": [
+          "MARKUP",
+          "MARGIN"
+        ],
+        "title": "RuleMode",
+        "type": "string"
+      },
+      "SaleChargeIn": {
+        "properties": {
+          "applies_by_default": {
+            "default": true,
+            "title": "Applies By Default",
+            "type": "boolean"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,1}|(?=[\\d.]{1,8}0*$)\\d{0,1}\\.\\d{0,6}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Rate"
+          },
+          "sort": {
+            "default": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Sort",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "rate"
+        ],
+        "title": "SaleChargeIn",
+        "type": "object"
+      },
+      "SaleChargeOut": {
+        "properties": {
+          "applies_by_default": {
+            "title": "Applies By Default",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rate",
+            "type": "string"
+          },
+          "sort": {
+            "title": "Sort",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "rate",
+          "is_active",
+          "applies_by_default",
+          "sort"
+        ],
+        "title": "SaleChargeOut",
+        "type": "object"
+      },
+      "SaleChargeUpdate": {
+        "properties": {
+          "applies_by_default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applies By Default"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,1}|(?=[\\d.]{1,8}0*$)\\d{0,1}\\.\\d{0,6}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          },
+          "sort": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort"
+          }
+        },
+        "title": "SaleChargeUpdate",
+        "type": "object"
       },
       "SupplierContactIn": {
         "properties": {
@@ -3944,6 +4499,468 @@
         "summary": "Update Fiscal",
         "tags": [
           "organization"
+        ]
+      }
+    },
+    "/api/v1/pricing/fx-rates": {
+      "get": {
+        "description": "Historial, del más reciente al más viejo. El primero es el vigente.",
+        "operationId": "list_fx_rates_api_v1_pricing_fx_rates_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FxRateOut"
+                  },
+                  "title": "Response List Fx Rates Api V1 Pricing Fx Rates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Fx Rates",
+        "tags": [
+          "pricing"
+        ]
+      },
+      "post": {
+        "operationId": "record_fx_rate_api_v1_pricing_fx_rates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FxRateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FxRateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Fx Rate",
+        "tags": [
+          "pricing"
+        ]
+      }
+    },
+    "/api/v1/pricing/markup-rules": {
+      "get": {
+        "operationId": "list_rules_api_v1_pricing_markup_rules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MarkupRuleOut"
+                  },
+                  "title": "Response List Rules Api V1 Pricing Markup Rules Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Rules",
+        "tags": [
+          "pricing"
+        ]
+      },
+      "put": {
+        "description": "Crea o reemplaza la regla del alcance. No cambia presupuestos existentes.",
+        "operationId": "upsert_rule_api_v1_pricing_markup_rules_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkupRuleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkupRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upsert Rule",
+        "tags": [
+          "pricing"
+        ]
+      }
+    },
+    "/api/v1/pricing/markup-rules/{rule_id}": {
+      "delete": {
+        "operationId": "delete_rule_api_v1_pricing_markup_rules__rule_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Rule",
+        "tags": [
+          "pricing"
+        ]
+      }
+    },
+    "/api/v1/pricing/resolve": {
+      "get": {
+        "description": "Qué markup tomaría una línea nueva de ese producto para ese cliente, y de dónde sale.",
+        "operationId": "resolve_api_v1_pricing_resolve_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkupResolution"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve",
+        "tags": [
+          "pricing"
+        ]
+      }
+    },
+    "/api/v1/pricing/sale-charges": {
+      "get": {
+        "operationId": "list_sale_charges_api_v1_pricing_sale_charges_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SaleChargeOut"
+                  },
+                  "title": "Response List Sale Charges Api V1 Pricing Sale Charges Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Sale Charges",
+        "tags": [
+          "pricing"
+        ]
+      },
+      "post": {
+        "operationId": "create_sale_charge_api_v1_pricing_sale_charges_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleChargeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleChargeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Sale Charge",
+        "tags": [
+          "pricing"
+        ]
+      }
+    },
+    "/api/v1/pricing/sale-charges/{charge_id}": {
+      "delete": {
+        "operationId": "delete_sale_charge_api_v1_pricing_sale_charges__charge_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "charge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Charge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Sale Charge",
+        "tags": [
+          "pricing"
+        ]
+      },
+      "patch": {
+        "operationId": "update_sale_charge_api_v1_pricing_sale_charges__charge_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "charge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Charge Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleChargeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleChargeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Sale Charge",
+        "tags": [
+          "pricing"
+        ]
+      }
+    },
+    "/api/v1/pricing/settings": {
+      "get": {
+        "operationId": "get_settings_api_v1_pricing_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Settings",
+        "tags": [
+          "pricing"
+        ]
+      },
+      "patch": {
+        "operationId": "update_settings_api_v1_pricing_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Settings",
+        "tags": [
+          "pricing"
         ]
       }
     },

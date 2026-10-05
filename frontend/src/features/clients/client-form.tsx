@@ -13,6 +13,7 @@ import { SelectField, TextAreaField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { PageHeader } from "@/components/ui/page-header";
 import { useSession } from "@/features/auth/session";
+import { ScopedMarkup } from "@/features/pricing/scoped-markup";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Client, TaxCondition } from "@/lib/api/types";
 import { textValue } from "@/lib/form";
@@ -157,6 +158,7 @@ export function ClientDetail({ id }: { id: string }) {
       {client.data ? (
         <>
           <PageHeader title={client.data.name} description={client.data.legal_name ?? undefined} />
+          <ScopedMarkup scope="CLIENT" scopeId={client.data.id} />
           <ClientEditor key={client.data.id} client={client.data} />
         </>
       ) : null}
