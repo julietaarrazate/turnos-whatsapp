@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -394,3 +395,50 @@ class DuplicateOut(BaseModel):
     budget: BudgetOut
     costs_changed: int
     rules_changed: int
+
+
+# --- Comparar versiones (DOMAIN_MODEL §8) ---------------------------------------------------
+
+
+class DiffKind(StrEnum):
+    ADDED = "ADDED"
+    REMOVED = "REMOVED"
+    MODIFIED = "MODIFIED"
+
+
+class FieldChange(BaseModel):
+    field: str
+    before: str | None
+    after: str | None
+
+
+class LineDiff(BaseModel):
+    line_key: UUID
+    name: str
+    kind: DiffKind
+    section_before: str | None
+    section_after: str | None
+    sale_before: Decimal | None
+    sale_after: Decimal | None
+    changes: list[FieldChange]
+
+
+class CompareOut(BaseModel):
+    version_before: int
+    version_after: int
+    added: int
+    removed: int
+    modified: int
+    reordered: int  # solo cambió el orden (se muestra aparte, sutil)
+    lines: list[LineDiff]
+    sale_net_before: Decimal
+    sale_net_after: Decimal
+    total_before: Decimal
+    total_after: Decimal
+    cost_before: Decimal | None  # con cost.view
+    cost_after: Decimal | None
+    profit_before: Decimal | None  # con margin.view
+    profit_after: Decimal | None
+    margin_net_before: Decimal | None
+    margin_net_after: Decimal | None
+    margin_delta_points: Decimal | None  # en puntos porcentuales

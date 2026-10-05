@@ -424,3 +424,65 @@ def test_duplicate_to_new_event_with_current_costs_and_days() -> None:
     assert line["sale_total"] == "8400.00"  # 2.000 × 3 días × 1,40
     # El original no cambia.
     assert _line(_budget(owner, world))["sale_total"] == "1400.00"
+
+
+def test_compare_versions_by_line_key() -> None:
+    world = build_org("a")
+    owner = logged_in(world.members[Role.OWNER])
+    budget = _budget(owner, world)
+    section_id = budget["version"]["sections"][0]["id"]
+    budget = _ok(
+        _draft(
+            owner,
+            budget,
+            "POST",
+            "/lines",
+            json={"section_id": section_id, "name": "Flete", "unit_cost_amount": "1000"},
+        ),
+        201,
+    )
+    v1 = _ok(_draft(owner, budget, "POST", "/freeze", json={}))
+    v2 = _ok(owner.post(f"/api/v1/budgets/{budget['id']}/versions", json={}), 201)
+    lines = v2["version"]["sections"][0]["lines"]
+    truss = next(ln for ln in lines if ln["name_internal"] == "Producto ejemplo")
+    flete = next(ln for ln in lines if ln["name_internal"] == "Flete")
+    v2 = _ok(_draft(owner, v2, "PATCH", f"/lines/{truss['id']}", json={"quantity": "2"}))
+    v2 = _ok(_draft(owner, v2, "DELETE", f"/lines/{flete['id']}"))
+    v2 = _ok(
+        _draft(
+            owner,
+            v2,
+            "POST",
+            "/lines",
+            json={
+                "section_id": v2["version"]["sections"][0]["id"],
+                "name": "Seguridad",
+                "unit_cost_amount": "500",
+            },
+        ),
+        201,
+    )
+
+    diff = _ok(owner.get(f"/api/v1/budgets/{budget['id']}/compare", params={"from": 1, "to": 2}))
+    assert (diff["added"], diff["removed"], diff["modified"]) == (1, 1, 1)
+    by_name = {d["name"]: d for d in diff["lines"]}
+    assert by_name["Seguridad"]["kind"] == "ADDED"
+    assert by_name["Flete"]["kind"] == "REMOVED"
+    modified = by_name["Producto ejemplo"]
+    fields = {c["field"]: (c["before"], c["after"]) for c in modified["changes"]}
+    assert fields["quantity"] == ("1", "2")
+    assert fields["sale_total"] == ("1400", "2800")
+    assert diff["sale_net_before"] == v1["version"]["sale_net"]
+    assert diff["margin_delta_points"] is not None
+
+    viewer = logged_in(world.members[Role.VIEWER])
+    hidden = _ok(viewer.get(f"/api/v1/budgets/{budget['id']}/compare", params={"from": 1, "to": 2}))
+    assert hidden["cost_before"] is None
+    assert hidden["profit_before"] is None
+    assert all(
+        c["field"] not in {"unit_cost_amount", "markup_applied"}
+        for d in hidden["lines"]
+        for c in d["changes"]
+    )
+    missing = owner.get(f"/api/v1/budgets/{budget['id']}/compare", params={"from": 1, "to": 9})
+    assert missing.status_code == 404

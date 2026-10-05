@@ -98,6 +98,15 @@ test("J2: nuevo presupuesto, ítems del catálogo y libres, precio objetivo y gu
   await page.getByRole("button", { name: "Nueva versión" }).click();
   await expect(page.getByText("v2 · borrador")).toBeVisible();
   await expect(footer).toContainText("$ 150.000,00");
+
+  // B-10: comparar v1 con v2 después de cambiar una cantidad.
+  await page.getByLabel(`Cantidad de ${productName}`).fill("4");
+  await page.getByLabel(`Cantidad de ${productName}`).press("Enter");
+  await expect(page.getByLabel(`Cantidad de ${productName}`)).toHaveValue("4");
+  await page.getByRole("link", { name: "Comparar" }).click();
+  await expect(page.getByRole("heading", { name: "Comparar versiones" })).toBeVisible();
+  await expect(page.getByText("Cantidad: 3 → 4")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Resumen" })).toContainText("0 agregados · 0 quitados");
 });
 
 test("costos más nuevos, re-aplicar reglas y duplicar para otro evento", async ({ page }, testInfo) => {

@@ -12,6 +12,7 @@ from app.modules.budgets.schemas import (
     BudgetCreate,
     BudgetOut,
     BudgetPage,
+    CompareOut,
     CostsPreview,
     DuplicateIn,
     DuplicateOut,
@@ -76,6 +77,19 @@ def get_budget(budget_id: UUID, ctx: View, db: DbSession) -> BudgetOut:
 @router.get("/{budget_id}/versions/{version_no}")
 def get_version(budget_id: UUID, version_no: int, ctx: View, db: DbSession) -> BudgetOut:
     return service.get_version(db, ctx, budget_id, version_no)
+
+
+@router.get("/{budget_id}/compare")
+def compare_versions(
+    budget_id: UUID,
+    ctx: View,
+    db: DbSession,
+    *,
+    before: Annotated[int, Query(alias="from", ge=1)],
+    after: Annotated[int, Query(alias="to", ge=1)],
+) -> CompareOut:
+    """Qué cambió entre dos versiones: ítems agregados, quitados y modificados (por line_key)."""
+    return service.compare_versions(db, ctx, budget_id, before, after)
 
 
 @router.post("/{budget_id}/versions", status_code=status.HTTP_201_CREATED)
