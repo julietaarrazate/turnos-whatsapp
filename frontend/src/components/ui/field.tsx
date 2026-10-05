@@ -1,4 +1,10 @@
-import { forwardRef, useId, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
+import {
+  forwardRef,
+  useId,
+  type InputHTMLAttributes,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -80,5 +86,34 @@ export function SelectField({ label, hint, error, options, id, className, ...pro
         ))}
       </select>
     </FieldShell>
+  );
+}
+
+export interface TextAreaFieldProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label: string;
+  hint?: string;
+  error?: string;
+}
+
+export function TextAreaField({ label, hint, error, id, className, rows = 3, ...props }: TextAreaFieldProps) {
+  const autoId = useId();
+  const fieldId = id ?? autoId;
+  return (
+    <FieldShell label={label} hint={hint} error={error} id={fieldId}>
+      <textarea id={fieldId} rows={rows} className={cn(control, "py-2", className)} {...props} />
+    </FieldShell>
+  );
+}
+
+export function CheckboxField({
+  label,
+  className,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <label className={cn("flex min-h-11 items-center gap-2 text-sm text-ink sm:min-h-10", className)}>
+      <input type="checkbox" className="size-4 accent-accent" {...props} />
+      {label}
+    </label>
   );
 }

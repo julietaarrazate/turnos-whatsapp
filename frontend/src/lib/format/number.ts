@@ -64,3 +64,9 @@ export function formatPercent(fraction: DecimalString, decimals = 1): string {
   const sign = negative ? "-" : "";
   return `${formatDecimal(`${sign}${shifted.int}${shifted.frac ? `.${shifted.frac}` : ""}`, decimals)} %`;
 }
+
+/** Una cantidad con los decimales que tenga, sin ceros de más ("1.5000" → "1,5", "2.0000" → "2"). */
+export function formatQuantity(value: DecimalString): string {
+  const frac = splitDecimal(value).frac.replace(/0+$/, "");
+  return formatDecimal(value, frac.length);
+}

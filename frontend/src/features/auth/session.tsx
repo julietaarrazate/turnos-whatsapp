@@ -17,7 +17,18 @@ export type Permission =
   | "audit.view"
   | "dashboard.view"
   | "cost.view"
-  | "margin.view";
+  | "margin.view"
+  | "clients.edit"
+  | "catalog.edit"
+  | "costs.edit"
+  | "pricing.settings"
+  | "budget.edit"
+  | "budget.markup_override"
+  | "proposal.send"
+  | "proposal.decide"
+  | "production.manage"
+  | "expenses.edit"
+  | "event.close";
 
 export const ME_QUERY_KEY = ["auth", "me"] as const;
 

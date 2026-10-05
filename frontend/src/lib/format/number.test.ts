@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDecimal, formatMoney, formatPercent } from "./number";
+import { formatDecimal, formatMoney, formatPercent, formatQuantity } from "./number";
 
 describe("formatMoney", () => {
   it.each([
@@ -46,5 +46,14 @@ describe("formatDecimal", () => {
 
   it("no muestra -0", () => {
     expect(formatDecimal("-0.001")).toBe("0,00");
+  });
+});
+
+describe("formatQuantity", () => {
+  it("muestra solo los decimales significativos", () => {
+    expect(formatQuantity("1.5000")).toBe("1,5");
+    expect(formatQuantity("2.0000")).toBe("2");
+    expect(formatQuantity("1500")).toBe("1.500");
+    expect(formatQuantity("0.25")).toBe("0,25");
   });
 });
