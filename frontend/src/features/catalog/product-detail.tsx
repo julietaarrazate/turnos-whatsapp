@@ -11,6 +11,8 @@ import { CheckboxField, SelectField, TextAreaField, TextField } from "@/componen
 import { Notice } from "@/components/ui/notice";
 import { PageHeader } from "@/components/ui/page-header";
 import { useSession } from "@/features/auth/session";
+import { ScopedMarkup } from "@/features/pricing/scoped-markup";
+import { PRICING_KEY } from "@/features/pricing/shared";
 import { Rating } from "@/features/suppliers/suppliers-list";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { ChargeMode, Offer, Product, Schemas } from "@/lib/api/types";
@@ -65,6 +67,7 @@ function ProductEditor({ product }: { product: Product | null }) {
         : unwrap(await api.POST("/api/v1/products", { body })),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: PRODUCTS_KEY });
+      void queryClient.invalidateQueries({ queryKey: PRICING_KEY }); // el rubro define el markup
       queryClient.setQueryData(productKey(data.id), data);
       if (product) setSaved(true);
       else router.replace(`/catalog/${data.id}`);
@@ -477,6 +480,7 @@ export function ProductDetail({ id }: { id: string }) {
         <>
           <PageHeader title={product.data.name} description={product.data.is_active ? undefined : "Inactivo: no aparece al presupuestar."} />
           <Offers product={product.data} />
+          <ScopedMarkup scope="PRODUCT" scopeId={product.data.id} />
           <h2 className="mb-3 font-semibold">Datos del producto</h2>
           <ProductEditor key={product.data.id} product={product.data} />
         </>

@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 
 const TABS: { href: string; label: string; permission: Permission }[] = [
   { href: "/settings/organization", label: "Organización", permission: "org.view" },
+  { href: "/settings/pricing", label: "Pricing", permission: "margin.view" },
   { href: "/settings/members", label: "Usuarios y roles", permission: "members.view" },
   { href: "/settings/audit", label: "Auditoría", permission: "audit.view" },
 ];

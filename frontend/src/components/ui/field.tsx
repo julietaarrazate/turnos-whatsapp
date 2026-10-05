@@ -14,16 +14,17 @@ const control =
 
 interface FieldShellProps {
   label: string;
+  hideLabel?: boolean;
   hint?: string;
   error?: string;
   id: string;
   children: React.ReactNode;
 }
 
-function FieldShell({ label, hint, error, id, children }: FieldShellProps) {
+function FieldShell({ label, hideLabel, hint, error, id, children }: FieldShellProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-ink">
+      <label htmlFor={id} className={hideLabel ? "sr-only" : "text-sm font-medium text-ink"}>
         {label}
       </label>
       {children}
@@ -42,18 +43,20 @@ function FieldShell({ label, hint, error, id, children }: FieldShellProps) {
 
 export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  /** La etiqueta solo la leen los lectores de pantalla (filas donde el contexto ya es visible). */
+  hideLabel?: boolean;
   hint?: string;
   error?: string;
 }
 
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { label, hint, error, className, id, ...props },
+  { label, hideLabel, hint, error, className, id, ...props },
   ref,
 ) {
   const autoId = useId();
   const fieldId = id ?? autoId;
   return (
-    <FieldShell label={label} hint={hint} error={error} id={fieldId}>
+    <FieldShell label={label} hideLabel={hideLabel} hint={hint} error={error} id={fieldId}>
       <input
         ref={ref}
         id={fieldId}
