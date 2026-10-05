@@ -16,7 +16,7 @@ Son cosas que solo vos (o la productora del piloto) pueden responder. Ninguna bl
 | # | Pregunta | Por qué importa | Decisión afectada |
 |---|---|---|---|
 | Q1 | ¿Cómo se va a llamar el producto? | Repo, dominio, emails, PWA | D-02 |
-| Q2 | ¿Mantenemos la licencia MIT o pasamos a "todos los derechos reservados"? | Ver D-03 | D-03 |
+| ~~Q2~~ | ~~¿MIT o "todos los derechos reservados"?~~ → **Respondida:** todos los derechos reservados | | D-03 |
 | Q3 ⚑ | ¿La productora del piloto es **Responsable Inscripto** o **Monotributo**? ¿Carga hoy los costos con o sin IVA? ¿Qué cargos sobre la venta considera (IIBB y alícuota, impuesto al cheque, comisiones)? | Cambia el cálculo del costo efectivo, el IVA de la propuesta y el margen real | D-08 |
 | Q4 ⚑ | ¿Reciben cotizaciones en **USD**? ¿Presupuestan alguna vez en USD a sus clientes? | Multi-moneda en el MVP o no | D-09 |
 | Q5 ⚑ | ¿Pueden pasarnos su **Excel de precios** y **3–5 presupuestos reales** (con costos y precio final), más una propuesta que hayan mandado? | Fixtures de importación y vectores dorados ("al centavo") | D-06, MVP §4 |
@@ -31,18 +31,17 @@ Son cosas que solo vos (o la productora del piloto) pueden responder. Ninguna bl
 
 ## D-01 · Repositorio — ✅ decidida
 
-Se usa este repositorio (`turnos-whatsapp`, hoy vacío) como base del proyecto. Cuando se defina el nombre (D-02) se renombra el repo y se reemplazan el README y la descripción de GitHub, que hoy describen otros productos.
+Se usa este repositorio (`turnos-whatsapp`) como base del proyecto. El README ya describe el proyecto nuevo. Cuando se defina el nombre (D-02) se renombran el repo y la descripción de GitHub.
 
 ## D-02 · Nombre del producto — ❓
 
 Pendiente (Q1). Mientras tanto, los documentos usan "la plataforma". El código va a usar un nombre de paquete neutro (`app`), así que renombrar después no cuesta nada.
 
-## D-03 · Autoría, propiedad intelectual y licencia — ✅ autoría · ❓ texto de la licencia
+## D-03 · Autoría, propiedad intelectual y licencia — ✅ decidida
 
-- ✅ **La autoría y la propiedad intelectual del proyecto son de Julieta Arrazate.**
-- El archivo `LICENSE` actual es **MIT**. MIT es una licencia *permisiva*: quien obtenga una copia del código puede usarlo, modificarlo y venderlo, con la única condición de mantener el aviso de copyright. Hoy el repo es **privado**, así que en la práctica nadie tiene copias.
-- Si la intención es conservar derechos exclusivos sobre un SaaS comercial, lo habitual es reemplazarla por un aviso propietario ("Copyright © 2026 Julieta Arrazate. Todos los derechos reservados."). En ambos casos la autoría es tuya. Lo que cambia es qué permiso tienen los demás.
-- **No se modificó el archivo.** Es tu decisión (Q2). Si querés que lo cambie, es un PR de un archivo. Esto no es asesoramiento legal: para el registro de la obra o los contratos con colaboradores conviene consultar a un abogado.
+- **La autoría y la propiedad intelectual del proyecto son de Julieta Arrazate.**
+- **Licencia: todos los derechos reservados** (propietaria). Reemplaza a la MIT original, que era permisiva: le permitía a cualquiera con una copia usar, modificar y vender el código. Con el aviso propietario, nadie tiene permiso de uso sin autorización escrita de la titular.
+- Complementos recomendados (fuera del código): registrar la obra en la Dirección Nacional del Derecho de Autor (DNDA) y firmar acuerdos de cesión de derechos y confidencialidad con cualquier persona que colabore en el código. Esto no es asesoramiento legal: conviene confirmarlo con un abogado.
 
 ## D-04 · Monolito modular — 🟡
 
