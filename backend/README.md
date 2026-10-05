@@ -12,7 +12,7 @@ uv run alembic upgrade head     # como app_migrator
 uv run uvicorn app.main:app --reload
 ```
 
-Sin Docker: cualquier Postgres 16 local sirve. Ejecutá `infra/postgres/init.sql` como superusuario.
+Sin Docker: cualquier Postgres 16 local sirve. Ejecutá `infra/postgres/init.sql` como superusuario y habilitá `trust` para `127.0.0.1` en `pg_hba.conf` (en desarrollo no se usan contraseñas).
 
 ## Roles de base de datos
 

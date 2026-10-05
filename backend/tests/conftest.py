@@ -9,11 +9,11 @@ from collections.abc import Iterator
 os.environ.setdefault("ENV", "test")
 os.environ.setdefault("COOKIE_SECURE", "false")
 os.environ.setdefault(
-    "DATABASE_URL", "postgresql+psycopg://app_runtime:app_runtime@localhost:5432/app_test"
+    "DATABASE_URL", "postgresql+psycopg://app_runtime@localhost:5432/app_test"
 )
 os.environ.setdefault(
     "MIGRATOR_DATABASE_URL",
-    "postgresql+psycopg://app_migrator:app_migrator@localhost:5432/app_test",
+    "postgresql+psycopg://app_migrator@localhost:5432/app_test",
 )
 
 import pytest

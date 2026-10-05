@@ -3,8 +3,9 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_PASSWORD: postgres
-    ports: ["5432:5432"]
+      # Sin contraseñas en el repo: trust, y el puerto solo escucha en localhost.
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports: ["127.0.0.1:5432:5432"]
     volumes:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
       - pgdata:/var/lib/postgresql/data
@@ -15,7 +16,7 @@ services:
 
   mailpit:
     image: axllent/mailpit:latest
-    ports: ["8025:8025", "1025:1025"]
+    ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
 
 volumes:
   pgdata:

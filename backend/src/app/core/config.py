@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
     # Rol de runtime: no es dueño de las tablas y está sujeto a RLS.
-    database_url: str = "postgresql+psycopg://app_runtime:app_runtime@localhost:5432/app"
+    database_url: str = "postgresql+psycopg://app_runtime@localhost:5432/app"
     # Rol dueño del esquema: solo para migraciones y tareas administrativas.
-    migrator_database_url: str = "postgresql+psycopg://app_migrator:app_migrator@localhost:5432/app"
+    migrator_database_url: str = "postgresql+psycopg://app_migrator@localhost:5432/app"
 
     # Auth
     jwt_secret: SecretStr = SecretStr(_DEV_JWT_SECRET)
