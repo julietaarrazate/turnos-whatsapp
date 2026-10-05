@@ -13,7 +13,6 @@ from tests.security.harness import (
     call,
     logged_in,
     permission_routes,
-    resolve_path,
 )
 
 ROUTES_WITH_IDS = [r for r in permission_routes() if r.params]
@@ -28,7 +27,7 @@ def test_ids_of_another_org_return_404(route: RouteInfo) -> None:
     org_a = build_org("a")
     org_b = build_org("b")
     client = logged_in(org_a.members[Role.OWNER])
-    response = call(client, route, resolve_path(route, org_b))
+    response = call(client, route, org_b)
     assert response.status_code == 404, response.text
 
 

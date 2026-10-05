@@ -8,6 +8,8 @@ que se registre acá cómo obtener un ID válido (``PARAM_FACTORIES``) y un body
 import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
+from datetime import date
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -15,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from starlette.routing import BaseRoute
 
 from app.core.db import DbContext, session_scope
@@ -23,6 +26,15 @@ from app.core.permissions import Permission
 from app.main import create_app
 from app.modules.auth import create_invitation
 from app.modules.auth.dependencies import ACCESS_MARKER
+from app.modules.catalog.models import (
+    Category,
+    PriceHistory,
+    Product,
+    Supplier,
+    SupplierProduct,
+    Unit,
+)
+from app.modules.clients import Client
 from tests.factories import DEFAULT_PASSWORD, Member, add_member, create_org, create_user
 
 
@@ -32,6 +44,7 @@ class OrgWorld:
     members: dict[Role, Member]
     target: Member  # un miembro extra sobre el que se actúa (cambiar rol, desactivar)
     invitation_id: UUID
+    ids: dict[str, UUID] = field(default_factory=dict)  # entidades de negocio de ejemplo
 
 
 def build_org(prefix: str) -> OrgWorld:
@@ -48,19 +61,87 @@ def build_org(prefix: str) -> OrgWorld:
             s, org_id, f"pending@{prefix}.example.com", Role.QUOTER, None
         )
         invitation_id = invitation.id
-    return OrgWorld(org_id, members, target, invitation_id)
+        ids = _business_entities(s, org_id)
+    return OrgWorld(org_id, members, target, invitation_id, ids)
+
+
+def _business_entities(s: Any, org_id: UUID) -> dict[str, UUID]:
+    """Una entidad de cada tipo, borrables sin conflictos (la categoría no tiene productos)."""
+    unit_id = s.execute(select(Unit.id).where(Unit.code == "u")).scalar_one()
+    client = Client(organization_id=org_id, name="Cliente ejemplo")
+    category = Category(organization_id=org_id, name="Categoría vacía")
+    product_category = Category(organization_id=org_id, name="Categoría con productos")
+    supplier = Supplier(organization_id=org_id, name="Proveedor ejemplo")
+    other_supplier = Supplier(organization_id=org_id, name="Otro proveedor")
+    s.add_all([client, category, product_category, supplier, other_supplier])
+    s.flush()
+    product = Product(
+        organization_id=org_id,
+        name="Producto ejemplo",
+        category_id=product_category.id,
+        unit_id=unit_id,
+    )
+    s.add(product)
+    s.flush()
+    offer = SupplierProduct(
+        organization_id=org_id, product_id=product.id, supplier_id=supplier.id, is_preferred=True
+    )
+    s.add(offer)
+    s.flush()
+    s.add(
+        PriceHistory(
+            organization_id=org_id,
+            supplier_product_id=offer.id,
+            amount=Decimal("1000"),
+            valid_from=date(2026, 1, 1),
+        )
+    )
+    return {
+        "client_id": client.id,
+        "category_id": category.id,
+        "unit_id": unit_id,
+        "supplier_id": supplier.id,
+        "other_supplier_id": other_supplier.id,
+        "product_category_id": product_category.id,
+        "product_id": product.id,
+        "offer_id": offer.id,
+    }
 
 
 PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID]] = {
     "membership_id": lambda w: w.target.membership_id,
     "invitation_id": lambda w: w.invitation_id,
+    "client_id": lambda w: w.ids["client_id"],
+    "category_id": lambda w: w.ids["category_id"],
+    "supplier_id": lambda w: w.ids["supplier_id"],
+    "product_id": lambda w: w.ids["product_id"],
+    "offer_id": lambda w: w.ids["offer_id"],
 }
 
-SAMPLE_BODIES: dict[tuple[str, str], dict[str, Any]] = {
+Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
+
+SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/organization"): {"name": "Nuevo nombre"},
     ("PATCH", "/api/v1/organization/fiscal"): {"legal_name": "Productora SA"},
     ("PATCH", "/api/v1/members/{membership_id}"): {"role": "QUOTER"},
     ("POST", "/api/v1/invitations"): {"email": "nuevo@example.com", "role": "QUOTER"},
+    ("POST", "/api/v1/clients"): {"name": "Cliente nuevo"},
+    ("PATCH", "/api/v1/clients/{client_id}"): {"notes": "Paga a 30 días"},
+    ("POST", "/api/v1/categories"): {"name": "Categoría nueva"},
+    ("PATCH", "/api/v1/categories/{category_id}"): {"sort": 5},
+    ("POST", "/api/v1/suppliers"): {"name": "Proveedor nuevo"},
+    ("PATCH", "/api/v1/suppliers/{supplier_id}"): {"rating": 4},
+    ("POST", "/api/v1/products"): lambda w: {
+        "name": "Producto nuevo",
+        "category_id": str(w.ids["product_category_id"]),
+        "unit_id": str(w.ids["unit_id"]),
+    },
+    ("PATCH", "/api/v1/products/{product_id}"): {"description_client": "Para el cliente"},
+    ("POST", "/api/v1/products/{product_id}/offers"): lambda w: {
+        "supplier_id": str(w.ids["other_supplier_id"])
+    },
+    ("PATCH", "/api/v1/offers/{offer_id}"): {"notes": "Pedir con 48 h"},
+    ("POST", "/api/v1/offers/{offer_id}/prices"): {"amount": "1500.50"},
 }
 
 
@@ -128,8 +209,11 @@ def resolve_path(route: RouteInfo, world: OrgWorld) -> str:
     return path
 
 
-def call(client: TestClient, route: RouteInfo, path: str) -> Any:
-    body = SAMPLE_BODIES.get((route.method, route.path))
+def call(client: TestClient, route: RouteInfo, world: OrgWorld) -> Any:
+    """Llama la ruta con los IDs y el body de ``world`` (de otra organización, para aislamiento)."""
+    path = resolve_path(route, world)
+    sample = SAMPLE_BODIES.get((route.method, route.path))
+    body = sample(world) if callable(sample) else sample
     if route.method in {"POST", "PUT", "PATCH"}:
         assert body is not None, f"Registrá un body de ejemplo en SAMPLE_BODIES ({route.id})"
     return client.request(route.method, path, json=body)
