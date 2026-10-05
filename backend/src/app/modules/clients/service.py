@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.db import AppSession
 from app.core.errors import AppError, not_found
+from app.core.permissions import Permission
 from app.core.security import utcnow
 from app.modules.audit import diff, record
 from app.modules.auth import TenantContext
@@ -201,3 +202,29 @@ def delete_client(db: AppSession, ctx: TenantContext, client_id: UUID) -> None:
     client = _get(db, ctx, client_id)
     client.deleted_at = utcnow()
     _audit(db, ctx, "client.deleted", client.id)
+
+
+def get_or_create_by_name(db: AppSession, ctx: TenantContext, name: str) -> Client:
+    """Alta inline desde "Nuevo presupuesto" (C-01): si ya existe con ese nombre, lo usa."""
+    clean = name.strip()
+    existing = db.execute(
+        select(Client).where(
+            Client.organization_id == ctx.organization_id,
+            func.lower(Client.name) == clean.lower(),
+            Client.deleted_at.is_(None),
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+    if not ctx.can(Permission.CLIENTS_EDIT):
+        raise AppError(403, "permission_denied", "No tenés permiso para crear clientes")
+    client = Client(organization_id=ctx.organization_id, name=clean)
+    db.add(client)
+    _flush_unique(db)
+    _audit(db, ctx, "client.created", client.id, after=_snapshot(client))
+    return client
+
+
+def get_active(db: AppSession, ctx: TenantContext, client_id: UUID) -> Client:
+    """El cliente (no borrado) de la organización, o 404."""
+    return _get(db, ctx, client_id)

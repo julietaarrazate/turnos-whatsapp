@@ -74,6 +74,8 @@ def resolve_markup(
         return line.markup_manual, MarkupSource.LINE, None
     if version_markup is not None:
         return version_markup, MarkupSource.VERSION, None
+    if line.resolved is not None:
+        return line.resolved.value, line.resolved.source, line.resolved.source_id
     candidates: list[tuple[MarkupRule | None, MarkupSource]] = [
         (ctx.client_rule, MarkupSource.CLIENT),
         (line.product_rule, MarkupSource.PRODUCT),

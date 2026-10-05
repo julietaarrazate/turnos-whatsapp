@@ -8,6 +8,7 @@ from app.domain.pricing.types import (
     ZERO,
     ChargeMode,
     LinePricingMode,
+    MarkupSource,
     RuleMode,
     TaxCondition,
     VersionPricingMode,
@@ -22,6 +23,16 @@ class MarkupRule:
 
     value: Decimal
     mode: RuleMode = RuleMode.MARKUP
+    source_id: str | None = None
+
+
+@dataclass(frozen=True)
+class ResolvedMarkup:
+    """Markup ya resuelto con las reglas al insertar la línea (§5.3). Queda en la línea: si
+    después cambia una regla, el borrador no cambia solo."""
+
+    value: Decimal  # siempre markup (un margen ya viene convertido)
+    source: MarkupSource
     source_id: str | None = None
 
 
@@ -64,6 +75,8 @@ class LineInput:
     product_rule: MarkupRule | None = None
     # De la categoría más específica a la más general (categoría, categoría padre).
     category_rules: tuple[MarkupRule, ...] = ()
+    # Si está, reemplaza los pasos 3 a 6 de la cadena (cliente, producto, categoría, org).
+    resolved: ResolvedMarkup | None = None
 
 
 @dataclass(frozen=True)

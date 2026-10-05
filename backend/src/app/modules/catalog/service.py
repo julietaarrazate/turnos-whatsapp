@@ -1,5 +1,7 @@
 """Casos de uso del catálogo: categorías, proveedores, productos, ofertas y costos."""
 
+from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -791,3 +793,66 @@ def record_price(db: AppSession, ctx: TenantContext, offer_id: UUID, body: Price
     offer = _offer(db, ctx, offer_id)
     _record_price(db, ctx, offer, body, "MANUAL")
     return next(o for o in _offers_out(db, ctx, offer.product_id) if o.id == offer.id)
+
+
+# --- Para presupuestos -----------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class LineSource:
+    """Lo que una línea de presupuesto copia del catálogo al insertarse (DOMAIN_MODEL §2.6.1)."""
+
+    product: Product
+    category_name: str
+    unit_code: str
+    iva_rate: Decimal  # la del producto o, si no tiene, la de su categoría
+    offer_id: UUID | None
+    supplier_id: UUID | None
+    supplier_name: str | None
+    price: PriceHistory | None  # costo vigente de la oferta (None si no tiene)
+
+
+def line_source(
+    db: AppSession, ctx: TenantContext, product_id: UUID, offer_id: UUID | None = None
+) -> LineSource:
+    """El producto con la oferta indicada, o la preferida (o la única activa) si no se indica."""
+    product = _product(db, ctx, product_id)
+    category = ensure(db.get(Category, product.category_id), "categoría")
+    unit = ensure(db.get(Unit, product.unit_id), "unidad")
+    if offer_id is not None:
+        offer: SupplierProduct | None = _offer(db, ctx, offer_id)
+        if offer is None or offer.product_id != product.id:
+            raise not_found()
+    else:
+        active = (
+            db.execute(
+                select(SupplierProduct)
+                .where(
+                    SupplierProduct.product_id == product.id, SupplierProduct.is_active.is_(True)
+                )
+                .order_by(SupplierProduct.is_preferred.desc(), SupplierProduct.created_at)
+            )
+            .scalars()
+            .all()
+        )
+        offer = active[0] if active else None
+    supplier = db.get(Supplier, offer.supplier_id) if offer else None
+    price = current_and_upcoming(db, [offer.id], today_ar())[0].get(offer.id) if offer else None
+    return LineSource(
+        product=product,
+        category_name=category.name,
+        unit_code=unit.code,
+        iva_rate=product.iva_rate if product.iva_rate is not None else category.default_iva_rate,
+        offer_id=offer.id if offer else None,
+        supplier_id=supplier.id if supplier else None,
+        supplier_name=supplier.name if supplier else None,
+        price=price,
+    )
+
+
+def category_info(
+    db: AppSession, ctx: TenantContext, category_id: UUID
+) -> tuple[Category, Decimal]:
+    """Categoría (no borrada) y su IVA por defecto, para líneas libres."""
+    category = _category(db, ctx, category_id)
+    return category, category.default_iva_rate

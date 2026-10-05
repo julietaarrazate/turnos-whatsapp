@@ -14,6 +14,7 @@ from app.domain.pricing import (
     MarkupRule,
     MarkupSource,
     PricingContext,
+    ResolvedMarkup,
     RuleMode,
     SaleCharge,
     TaxCondition,
@@ -547,3 +548,39 @@ def record_fx_rate(db: AppSession, ctx: TenantContext, body: FxRateIn) -> FxRate
     )
     user = db.get(User, ctx.user_id)
     return _fx_out(rate, user.name if user else None)
+
+
+def resolve_line_markup(
+    db: AppSession,
+    ctx: TenantContext,
+    *,
+    product: Product | None,
+    category_id: UUID | None,
+    client_id: UUID | None,
+) -> ResolvedMarkup:
+    """El markup que toma una línea nueva (§5.3, pasos 3 a 6), para guardarlo en la línea."""
+    if product is not None:
+        product_rule, category_rules = line_rules(db, ctx, product)
+    else:
+        product_rule = None
+        category_rules = ()
+        if category_id is not None:
+            category = db.get(Category, category_id)
+            ids = [category_id] + ([category.parent_id] if category and category.parent_id else [])
+            category_rules = tuple(
+                r
+                for r in (
+                    _domain_rule(_rule_for(db, ctx, MarkupScope.CATEGORY, cid)) for cid in ids
+                )
+                if r is not None
+            )
+    pricing = pricing_context(db, ctx, client_id)
+    line = LineInput(
+        key="new",
+        quantity=ONE,
+        unit_cost=ONE,
+        product_rule=product_rule,
+        category_rules=category_rules,
+    )
+    markup, source, source_id = resolve_markup(line, None, pricing)
+    return ResolvedMarkup(value=markup, source=source, source_id=source_id)

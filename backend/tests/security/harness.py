@@ -22,10 +22,15 @@ from starlette.routing import BaseRoute
 
 from app.core.db import DbContext, session_scope
 from app.core.enums import Role
-from app.core.permissions import Permission
+from app.core.ids import uuid7
+from app.core.permissions import ROLE_PERMISSIONS, Permission
 from app.main import create_app
 from app.modules.auth import create_invitation
 from app.modules.auth.dependencies import ACCESS_MARKER
+from app.modules.auth.service import ClientInfo, TenantContext
+from app.modules.budgets import service as budgets
+from app.modules.budgets.models import BudgetVersion
+from app.modules.budgets.schemas import BudgetCreate, LineIn
 from app.modules.catalog.models import (
     Category,
     PriceHistory,
@@ -35,6 +40,7 @@ from app.modules.catalog.models import (
     Unit,
 )
 from app.modules.clients import Client
+from app.modules.events import EventIn
 from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
 from tests.factories import DEFAULT_PASSWORD, Member, add_member, create_org, create_user
 
@@ -63,6 +69,7 @@ def build_org(prefix: str) -> OrgWorld:
         )
         invitation_id = invitation.id
         ids = _business_entities(s, org_id)
+        ids.update(_budget_entities(s, members[Role.OWNER], ids))
     return OrgWorld(org_id, members, target, invitation_id, ids)
 
 
@@ -121,7 +128,42 @@ def _business_entities(s: Any, org_id: UUID) -> dict[str, UUID]:
     }
 
 
-PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID]] = {
+def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, UUID]:
+    """Un evento con un presupuesto en borrador: una sección y una línea del catálogo."""
+    ctx = TenantContext(
+        user_id=owner.user_id,
+        session_id=uuid7(),
+        organization_id=owner.organization_id,
+        membership_id=owner.membership_id,
+        role=Role.OWNER,
+        permissions=ROLE_PERMISSIONS[Role.OWNER],
+        client=ClientInfo(ip=None, user_agent=None),
+    )
+    event = EventIn(client_id=ids["client_id"], name="Evento ejemplo")
+    budget = budgets.create_budget(s, ctx, BudgetCreate(event=event))
+    section_id = budget.version.sections[0].id
+    line = LineIn(section_id=section_id, product_id=ids["product_id"])
+    budget = budgets.add_line(s, ctx, budget.id, budget.version.lock_version, line)
+    return {
+        "event_id": budget.event.id,
+        "budget_id": budget.id,
+        "section_id": section_id,
+        "line_id": budget.version.sections[0].lines[0].id,
+    }
+
+
+def draft_lock(world: OrgWorld) -> str:
+    """El lock_version actual del borrador del mundo (para If-Match)."""
+    with session_scope(DbContext(organization_id=world.organization_id)) as s:
+        lock = s.execute(
+            select(BudgetVersion.lock_version).where(
+                BudgetVersion.budget_id == world.ids["budget_id"], BudgetVersion.status == "DRAFT"
+            )
+        ).scalar_one_or_none()
+    return str(lock if lock is not None else 0)
+
+
+PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "membership_id": lambda w: w.target.membership_id,
     "invitation_id": lambda w: w.invitation_id,
     "client_id": lambda w: w.ids["client_id"],
@@ -131,6 +173,11 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID]] = {
     "offer_id": lambda w: w.ids["offer_id"],
     "rule_id": lambda w: w.ids["rule_id"],
     "charge_id": lambda w: w.ids["charge_id"],
+    "event_id": lambda w: w.ids["event_id"],
+    "budget_id": lambda w: w.ids["budget_id"],
+    "section_id": lambda w: w.ids["section_id"],
+    "line_id": lambda w: w.ids["line_id"],
+    "version_no": lambda _: 1,
 }
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
@@ -166,6 +213,23 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("POST", "/api/v1/pricing/sale-charges"): {"name": "Imp. débitos y créditos", "rate": "0.012"},
     ("PATCH", "/api/v1/pricing/sale-charges/{charge_id}"): {"rate": "0.03"},
     ("POST", "/api/v1/pricing/fx-rates"): {"rate": "1450.50"},
+    ("POST", "/api/v1/events"): {"client_name": "Cliente nuevo", "name": "Lanzamiento"},
+    ("PATCH", "/api/v1/events/{event_id}"): {"venue": "Costa Salguero"},
+    ("POST", "/api/v1/events/{event_id}/status"): {"to_status": "LOST", "reason": "Otra opción"},
+    ("POST", "/api/v1/budgets"): lambda w: {"event_id": str(w.ids["event_id"])},
+    ("POST", "/api/v1/budgets/{budget_id}/versions"): {},
+    ("PATCH", "/api/v1/budgets/{budget_id}/draft"): {"global_discount_rate": "0.05"},
+    ("POST", "/api/v1/budgets/{budget_id}/draft/freeze"): {"change_note": "v1"},
+    ("POST", "/api/v1/budgets/{budget_id}/draft/sections"): {"title_client": "Técnica"},
+    ("PATCH", "/api/v1/budgets/{budget_id}/draft/sections/{section_id}"): {
+        "title_client": "Escenario"
+    },
+    ("POST", "/api/v1/budgets/{budget_id}/draft/lines"): lambda w: {
+        "section_id": str(w.ids["section_id"]),
+        "name": "Flete",
+        "unit_cost_amount": "50000",
+    },
+    ("PATCH", "/api/v1/budgets/{budget_id}/draft/lines/{line_id}"): {"quantity": "2"},
 }
 
 # Query params obligatorios (con IDs del mundo que se usa).
@@ -249,7 +313,11 @@ def call(client: TestClient, route: RouteInfo, world: OrgWorld) -> Any:
     if route.method in {"POST", "PUT", "PATCH"}:
         assert body is not None, f"Registrá un body de ejemplo en SAMPLE_BODIES ({route.id})"
     query = SAMPLE_QUERIES.get((route.method, route.path))
-    return client.request(route.method, path, json=body, params=query(world) if query else None)
+    # Las mutaciones del borrador llevan el lock_version (lock optimista).
+    headers = {"If-Match": draft_lock(world)} if "/draft" in route.path else None
+    return client.request(
+        route.method, path, json=body, params=query(world) if query else None, headers=headers
+    )
 
 
 def logged_in(member: Member) -> TestClient:

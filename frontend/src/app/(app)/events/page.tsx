@@ -1,7 +1,7 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { EventsList } from "@/features/events/events-list";
 
 export const metadata = { title: "Eventos" };
 
 export default function Page() {
-  return <ComingSoon title="Eventos" phase={2} description="Cada evento con su presupuesto, producción, costos reales y rentabilidad." />;
+  return <EventsList />;
 }
