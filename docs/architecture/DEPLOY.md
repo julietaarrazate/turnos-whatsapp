@@ -7,10 +7,10 @@
 | Pieza | Dónde | Estado |
 |---|---|---|
 | Base de datos | Neon, proyecto `productoras-staging` (aws-us-east-1, Postgres 16), base `app` | ✅ Roles `app_migrator`/`app_runtime` creados por SQL (sin privilegios de Neon). Migraciones en 0003. RLS forzada verificada. |
-| API | Render, `productoras-api-staging` (Virginia, free, Docker), https://productoras-api-staging.onrender.com | ✅ En línea. Migra al arrancar. Por ahora despliega desde la rama del PR. |
-| Frontend | Vercel, `productoras-web` | ⏳ Hay que crearlo desde el panel de Vercel (la integración no tiene permiso para crear proyectos). |
+| API | Render, `productoras-api-staging` (Virginia, free, Docker), https://productoras-api-staging.onrender.com | ✅ En línea. Migra al arrancar. Despliega la rama de trabajo (staging de lo último); `main` es la versión estable. |
+| Frontend | Vercel, `productoras-web` (Hobby, Root Directory `frontend`, Next.js), https://productoras-web.vercel.app | ✅ En línea. Despliega `main` a producción. |
 | Email | — | Consola (sin Resend): los links de invitación y reset quedan en los logs de Render. |
-| Primera organización | "Productora piloto" (RI) | ✅ Invitación de OWNER para la titular, vigente 7 días. |
+| Primera organización | "Productora piloto" (RI) | ✅ La titular aceptó la invitación de OWNER (verificado en logs: invitación → aceptación → /me, todo 200). |
 
 Las credenciales viven solo en las variables de entorno de Render. No están en el repo.
 

@@ -1,0 +1,195 @@
+{
+  "_doc": "Vectores dorados del motor de pricing (DOMAIN_MODEL §5.8). Independientes del lenguaje: inputs + outputs esperados, todo como strings decimales. Los valores se calcularon aparte del motor. Si un vector cambia, es un cambio de ENGINE_VERSION.",
+  "vectors": [
+    {
+      "id": "V01", "description": "Markup simple: C 100, m 30%",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "100"}]},
+      "expected": {
+        "lines": {"a": {"cost_total": "100.00", "sale_total": "130.00", "profit": "30.00", "markup_applied": "0.300000", "margin": "0.230769", "markup_source": "ORG"}},
+        "totals": {"sale_subtotal": "130.00", "iva": "27.30", "total": "157.30"}
+      }
+    },
+    {
+      "id": "V02", "description": "Lona 2 × 100.000 con markup 35%",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [{"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35"}]},
+      "expected": {
+        "lines": {"lona": {"cost_total": "200000.00", "sale_total": "270000.00", "profit": "70000.00", "margin": "0.259259", "markup_source": "LINE"}}
+      }
+    },
+    {
+      "id": "V03", "description": "Margen objetivo 25% sobre C 100.000 (sin cargos)",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "100000", "pricing_mode": "MARGIN", "target_margin": "0.25"}]},
+      "expected": {
+        "lines": {"a": {"sale_total": "133333.33", "markup_applied": "0.333333", "margin": "0.250000", "markup_source": "TARGET_MARGIN"}}
+      }
+    },
+    {
+      "id": "V04", "description": "Precio objetivo de línea: C 3.900.000, P 5.000.000",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "3900000", "pricing_mode": "PRICE", "target_price": "5000000"}]},
+      "expected": {
+        "lines": {"a": {"profit": "1100000.00", "markup_applied": "0.282051", "margin": "0.220000"}}
+      }
+    },
+    {
+      "id": "V05", "description": "Presupuesto visual del brief con markup 30%: el costo es 700.000 (no 600.000)",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [
+        {"key": "lona", "quantity": "2", "unit_cost": "100000"},
+        {"key": "estructura", "quantity": "1", "unit_cost": "300000"},
+        {"key": "armado", "quantity": "1", "unit_cost": "80000"},
+        {"key": "transporte", "quantity": "2", "unit_cost": "60000"}
+      ]},
+      "expected": {
+        "totals": {"cost_direct": "700000.00", "sale_subtotal": "910000.00", "profit": "210000.00", "markup": "0.300000", "margin_gross": "0.230769"}
+      }
+    },
+    {
+      "id": "V06", "description": "Markups por categoría y uno manual",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [
+        {"key": "lona", "quantity": "2", "unit_cost": "100000", "category_rules": [{"value": "0.35", "source_id": "grafica"}]},
+        {"key": "estructura", "quantity": "1", "unit_cost": "300000", "category_rules": [{"value": "0.40", "source_id": "estructura"}]},
+        {"key": "armado", "quantity": "1", "unit_cost": "80000", "category_rules": [{"value": "0.25", "source_id": "personal"}]},
+        {"key": "transporte", "quantity": "2", "unit_cost": "60000", "markup_manual": "0.25", "category_rules": [{"value": "0.20", "source_id": "transporte"}]}
+      ]},
+      "expected": {
+        "lines": {
+          "lona": {"sale_total": "270000.00", "markup_source": "CATEGORY", "markup_source_id": "grafica"},
+          "estructura": {"sale_total": "420000.00"},
+          "armado": {"sale_total": "100000.00"},
+          "transporte": {"sale_total": "150000.00", "markup_source": "LINE"}
+        },
+        "totals": {"cost_direct": "700000.00", "sale_subtotal": "940000.00", "profit": "240000.00", "markup": "0.342857", "margin_gross": "0.255319", "iva": "197400.00", "total": "1137400.00"}
+      }
+    },
+    {
+      "id": "V07", "description": "V06 con IIBB 3,5%: margen real",
+      "context": {"org_markup": "0.30", "sale_charges": [["IIBB", "0.035"]]},
+      "version": {"lines": [
+        {"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35"},
+        {"key": "estructura", "quantity": "1", "unit_cost": "300000", "markup_manual": "0.40"},
+        {"key": "armado", "quantity": "1", "unit_cost": "80000", "markup_manual": "0.25"},
+        {"key": "transporte", "quantity": "2", "unit_cost": "60000", "markup_manual": "0.25"}
+      ]},
+      "expected": {
+        "totals": {"sale_charges_total": "32900.00", "profit": "207100.00", "margin_gross": "0.255319", "margin_net": "0.220319", "cost_total": "732900.00"}
+      }
+    },
+    {
+      "id": "V08", "description": "Margen objetivo 25% con IIBB 3,5%: el 25% es real",
+      "context": {"org_markup": "0.30", "sale_charges": [["IIBB", "0.035"]]},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "100000", "pricing_mode": "MARGIN", "target_margin": "0.25"}]},
+      "expected": {
+        "lines": {"a": {"sale_total": "139860.14"}},
+        "totals": {"sale_charges_total": "4895.10", "profit": "34965.04", "margin_net": "0.250000", "markup": "0.398601"}
+      }
+    },
+    {
+      "id": "V09", "description": "Precio objetivo $5.000.000 repartido con incremento $1.000",
+      "context": {"org_markup": "0.30", "rounding_increment": "1000"},
+      "version": {"mode": "PRICE", "target_price": "5000000", "lines": [
+        {"key": "a", "quantity": "1", "unit_cost": "1000000"},
+        {"key": "b", "quantity": "1", "unit_cost": "1500000"},
+        {"key": "c", "quantity": "1", "unit_cost": "1400000"}
+      ]},
+      "expected": {
+        "lines": {"a": {"sale_total": "1282000.00"}, "b": {"sale_total": "1923000.00"}, "c": {"sale_total": "1795000.00", "markup_source": "TARGET_PRICE"}},
+        "totals": {"sale_subtotal": "5000000.00", "markup": "0.282051"}
+      }
+    },
+    {
+      "id": "V10", "description": "V06 con descuento global 10% e IIBB 3,5%",
+      "context": {"org_markup": "0.30", "sale_charges": [["IIBB", "0.035"]]},
+      "version": {"global_discount_rate": "0.10", "lines": [
+        {"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35"},
+        {"key": "estructura", "quantity": "1", "unit_cost": "300000", "markup_manual": "0.40"},
+        {"key": "armado", "quantity": "1", "unit_cost": "80000", "markup_manual": "0.25"},
+        {"key": "transporte", "quantity": "2", "unit_cost": "60000", "markup_manual": "0.25"}
+      ]},
+      "expected": {
+        "lines": {
+          "lona": {"allocated_global_discount": "27000.00"},
+          "estructura": {"allocated_global_discount": "42000.00"},
+          "armado": {"allocated_global_discount": "10000.00"},
+          "transporte": {"allocated_global_discount": "15000.00"}
+        },
+        "totals": {"global_discount": "94000.00", "sale_net": "846000.00", "sale_charges_total": "29610.00", "markup": "0.208571", "margin_gross": "0.172577", "margin_net": "0.137577", "iva": "177660.00", "total": "1023660.00"}
+      }
+    },
+    {
+      "id": "V11", "description": "Costo con IVA incluido para un Responsable Inscripto: se neutraliza",
+      "context": {"org_markup": "0"},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "121000", "cost_includes_iva": true}]},
+      "expected": {"lines": {"a": {"unit_cost_effective": "100000", "cost_total": "100000.00"}}}
+    },
+    {
+      "id": "V11b", "description": "Monotributista: el IVA de la compra es costo y la venta no discrimina IVA",
+      "context": {"org_markup": "0", "tax_condition": "MONOTRIBUTO"},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "100000"}]},
+      "expected": {"lines": {"a": {"cost_total": "121000.00"}}, "totals": {"iva": "0", "total": "121000.00"}}
+    },
+    {
+      "id": "V12", "description": "Cobro por día: 2 personas × 3 días × $50.000; lo fijo ignora los días",
+      "context": {"org_markup": "0"},
+      "version": {"lines": [
+        {"key": "personal", "quantity": "2", "unit_cost": "50000", "days": 3, "charge_mode": "PER_DAY"},
+        {"key": "lona", "quantity": "1", "unit_cost": "50000", "days": 3}
+      ]},
+      "expected": {"lines": {"personal": {"cost_total": "300000.00"}, "lona": {"cost_total": "50000.00"}}}
+    },
+    {
+      "id": "V13", "description": "IVA por alícuota: 21% y 10,5%",
+      "context": {"org_markup": "0"},
+      "version": {"lines": [
+        {"key": "a", "quantity": "1", "unit_cost": "100000"},
+        {"key": "b", "quantity": "1", "unit_cost": "50000", "iva_rate": "0.105"}
+      ]},
+      "expected": {"totals": {"iva": "26250.00", "total": "176250.00"}}
+    },
+    {
+      "id": "V14", "description": "Redondeo comercial a $1.000: 123.456 × 1,30 = 160.492,80 → 160.000",
+      "context": {"org_markup": "0.30", "rounding_increment": "1000"},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "123456"}]},
+      "expected": {"lines": {"a": {"sale_total": "160000.00"}}}
+    },
+    {
+      "id": "V15a", "description": "Borde: costo 0 → markup indefinido",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "0", "pricing_mode": "PRICE", "target_price": "1000"}]},
+      "expected": {"lines": {"a": {"markup_applied": null, "margin": "1.000000"}}}
+    },
+    {"id": "V15b", "description": "Borde: cantidad 0", "context": {"org_markup": "0.30"},
+     "version": {"lines": [{"key": "a", "quantity": "0", "unit_cost": "100"}]}, "error": "quantity_positive"},
+    {"id": "V15c", "description": "Borde: margen 100%", "context": {"org_markup": "0.30"},
+     "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "100", "pricing_mode": "MARGIN", "target_margin": "1"}]}, "error": "margin_out_of_range"},
+    {"id": "V15d", "description": "Borde: margen + cargos ≥ 100%", "context": {"org_markup": "0.30", "sale_charges": [["IIBB", "0.05"]]},
+     "version": {"lines": [{"key": "a", "quantity": "1", "unit_cost": "100", "pricing_mode": "MARGIN", "target_margin": "0.95"}]}, "error": "margin_out_of_range"},
+    {"id": "V15e", "description": "Borde: precio objetivo menor que las líneas bloqueadas", "context": {"org_markup": "0.30"},
+     "version": {"mode": "PRICE", "target_price": "100", "lines": [
+       {"key": "fija", "quantity": "1", "unit_cost": "1000", "locked": true},
+       {"key": "libre", "quantity": "1", "unit_cost": "10"}
+     ]}, "error": "target_below_locked"},
+    {
+      "id": "V16", "description": "V06 presentado en USD a 1.450,50: las líneas suman exacto",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [
+        {"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35"},
+        {"key": "estructura", "quantity": "1", "unit_cost": "300000", "markup_manual": "0.40"},
+        {"key": "armado", "quantity": "1", "unit_cost": "80000", "markup_manual": "0.25"},
+        {"key": "transporte", "quantity": "2", "unit_cost": "60000", "markup_manual": "0.25"}
+      ]},
+      "present": {"currency": "USD", "fx_rate": "1450.50"},
+      "expected": {"presentation": {"lines": {"lona": "186.14", "estructura": "289.56", "armado": "68.94", "transporte": "103.41"}, "subtotal": "648.05", "iva": "136.09", "total": "784.14"}}
+    },
+    {
+      "id": "V17", "description": "Descuento de línea 10% sobre 270.000",
+      "context": {"org_markup": "0.30"},
+      "version": {"lines": [{"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35", "discount_rate": "0.10"}]},
+      "expected": {"lines": {"lona": {"sale_list_total": "270000.00", "sale_total": "243000.00", "margin": "0.176955", "markup_applied": "0.215000"}}}
+    }
+  ]
+}
