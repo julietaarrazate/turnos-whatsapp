@@ -3,7 +3,13 @@
 from app.modules.events.models import Event, EventStatus
 from app.modules.events.router import router
 from app.modules.events.schemas import EventIn
-from app.modules.events.service import can_quote, create_event, get_event, on_budget_created
+from app.modules.events.service import (
+    can_quote,
+    create_event,
+    get_event,
+    on_budget_created,
+    on_proposal_sent,
+)
 
 __all__ = [
     "Event",
@@ -13,5 +19,6 @@ __all__ = [
     "create_event",
     "get_event",
     "on_budget_created",
+    "on_proposal_sent",
     "router",
 ]

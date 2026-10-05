@@ -17,6 +17,7 @@ from app.domain.pricing.inputs import (
     VersionInput,
 )
 from app.domain.pricing.outputs import ChargeAmount, LinePriced, Presentation, VersionPriced
+from app.domain.pricing.rounding import allocate
 from app.domain.pricing.types import (
     ChargeMode,
     LinePricingMode,
@@ -48,6 +49,7 @@ __all__ = [
     "VersionPriced",
     "VersionPricingMode",
     "Warning_",
+    "allocate",
     "effective_unit_cost",
     "present_in_currency",
     "price_line",

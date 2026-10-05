@@ -12,6 +12,8 @@ PUBLIC_ROUTES = {
     "POST /api/v1/auth/password-reset/confirm",
     "GET /api/v1/auth/invitations/{token}",
     "POST /api/v1/auth/invitations/accept",
+    # Propuesta pública: solo con el token, lista blanca del snapshot (ARCHITECTURE §8.4).
+    "GET /api/v1/public/proposals/{token}",
 }
 
 

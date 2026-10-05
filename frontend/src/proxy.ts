@@ -13,8 +13,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Todo excepto: API, estáticos, PWA, páginas públicas de auth y la página offline.
+  // Todo excepto: API, estáticos, PWA, páginas públicas de auth, la offline y las propuestas (/p/).
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|icons|sw.js|manifest.webmanifest|apple-icon.png|login|invite|reset-password|offline).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|icons|sw.js|manifest.webmanifest|apple-icon.png|login|invite|reset-password|offline|p/).*)",
   ],
 };
