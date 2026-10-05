@@ -5,7 +5,17 @@ from app.modules.pricing.service import (
     latest_fx_rate,
     line_rules,
     pricing_context,
+    resolve_line_markup,
     seed_pricing_defaults,
+    settings_from,
 )
 
-__all__ = ["latest_fx_rate", "line_rules", "pricing_context", "router", "seed_pricing_defaults"]
+__all__ = [
+    "latest_fx_rate",
+    "line_rules",
+    "pricing_context",
+    "resolve_line_markup",
+    "router",
+    "seed_pricing_defaults",
+    "settings_from",
+]

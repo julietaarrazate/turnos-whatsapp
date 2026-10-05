@@ -174,6 +174,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Budgets */
+        get: operations["list_budgets_api_v1_budgets_get"];
+        put?: never;
+        /**
+         * Create Budget
+         * @description Nuevo presupuesto (y, si hace falta, el evento y el cliente) con un borrador vacío.
+         */
+        post: operations["create_budget_api_v1_budgets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Budget
+         * @description El presupuesto con su borrador (o la última versión congelada).
+         */
+        get: operations["get_budget_api_v1_budgets__budget_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Discard Draft */
+        delete: operations["discard_draft_api_v1_budgets__budget_id__draft_delete"];
+        options?: never;
+        head?: never;
+        /** Update Version */
+        patch: operations["update_version_api_v1_budgets__budget_id__draft_patch"];
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/draft/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Freeze
+         * @description "Guardar versión": el borrador queda congelado y ya no cambia.
+         */
+        post: operations["freeze_api_v1_budgets__budget_id__draft_freeze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/draft/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Line
+         * @description Agrega una línea del catálogo (con su costo vigente y el markup de las reglas) o libre.
+         */
+        post: operations["add_line_api_v1_budgets__budget_id__draft_lines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/draft/lines/{line_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Line */
+        delete: operations["delete_line_api_v1_budgets__budget_id__draft_lines__line_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Line
+         * @description Cambia inputs de la línea (cantidad, días, costo, modo, markup, descuento, orden).
+         */
+        patch: operations["update_line_api_v1_budgets__budget_id__draft_lines__line_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/draft/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Section */
+        post: operations["add_section_api_v1_budgets__budget_id__draft_sections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/draft/sections/{section_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Section */
+        delete: operations["delete_section_api_v1_budgets__budget_id__draft_sections__section_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Section */
+        patch: operations["update_section_api_v1_budgets__budget_id__draft_sections__section_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * New Version
+         * @description Nueva versión: un borrador que clona la última (sin actualizar costos ni reglas).
+         */
+        post: operations["new_version_api_v1_budgets__budget_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}/versions/{version_no}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Version */
+        get: operations["get_version_api_v1_budgets__budget_id__versions__version_no__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categories": {
         parameters: {
             query?: never;
@@ -245,6 +437,62 @@ export interface paths {
         head?: never;
         /** Update Client */
         patch: operations["update_client_api_v1_clients__client_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Events */
+        get: operations["list_events_api_v1_events_get"];
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_api_v1_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event */
+        get: operations["get_event_api_v1_events__event_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Event */
+        patch: operations["update_event_api_v1_events__event_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Status
+         * @description Marcar perdido, cancelar o reabrir. Los demás cambios de estado son automáticos.
+         */
+        post: operations["change_status_api_v1_events__event_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/invitations": {
@@ -718,6 +966,106 @@ export interface components {
             /** Next Cursor */
             next_cursor: string | null;
         };
+        /**
+         * BudgetCreate
+         * @description B-01: presupuesto para un evento existente o creando el evento (y el cliente) en el
+         *     mismo paso.
+         */
+        BudgetCreate: {
+            /** @default ARS */
+            currency: components["schemas"]["BudgetCurrency"];
+            event?: components["schemas"]["EventIn"] | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /**
+         * BudgetCurrency
+         * @enum {string}
+         */
+        BudgetCurrency: "ARS" | "USD";
+        /** BudgetEvent */
+        BudgetEvent: {
+            /**
+             * Client Id
+             * Format: uuid
+             */
+            client_id: string;
+            /** Client Name */
+            client_name: string;
+            /** Event Days */
+            event_days: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+            /** Start Date */
+            start_date: string | null;
+            status: components["schemas"]["EventStatus"];
+        };
+        /** BudgetOut */
+        BudgetOut: {
+            currency: components["schemas"]["BudgetCurrency"];
+            event: components["schemas"]["BudgetEvent"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            /** Title */
+            title: string;
+            version: components["schemas"]["VersionOut"];
+            /** Versions */
+            versions: components["schemas"]["VersionSummary"][];
+        };
+        /** BudgetPage */
+        BudgetPage: {
+            /** Items */
+            items: components["schemas"]["BudgetSummary"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** BudgetSummary */
+        BudgetSummary: {
+            /** Client Name */
+            client_name: string;
+            currency: components["schemas"]["BudgetCurrency"];
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Event Name */
+            event_name: string;
+            event_status: components["schemas"]["EventStatus"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            /** Sale Net */
+            sale_net: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version No */
+            version_no: number;
+            version_status: components["schemas"]["VersionStatus"];
+        };
         /** CategoryIn */
         CategoryIn: {
             /**
@@ -767,6 +1115,15 @@ export interface components {
          * @enum {string}
          */
         ChargeMode: "FIXED" | "PER_DAY";
+        /** ChargeOut */
+        ChargeOut: {
+            /** Amount */
+            amount: string;
+            /** Name */
+            name: string;
+            /** Rate */
+            rate: string;
+        };
         /** ClientIn */
         ClientIn: {
             /** Address */
@@ -909,10 +1266,180 @@ export interface components {
             valid_from: string;
         };
         /**
+         * EventIn
+         * @description Cliente existente (`client_id`) o uno nuevo solo con el nombre (`client_name`).
+         */
+        EventIn: {
+            /** City */
+            city?: string | null;
+            /** Client Id */
+            client_id?: string | null;
+            /** Client Name */
+            client_name?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Event Days
+             * @default 1
+             */
+            event_days: number;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+            /** Responsible User Id */
+            responsible_user_id?: string | null;
+            /**
+             * Setup Days
+             * @default 0
+             */
+            setup_days: number;
+            /** Start Date */
+            start_date?: string | null;
+            /**
+             * Teardown Days
+             * @default 0
+             */
+            teardown_days: number;
+            /** Venue */
+            venue?: string | null;
+        };
+        /** EventOut */
+        EventOut: {
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** City */
+            city: string | null;
+            /**
+             * Client Id
+             * Format: uuid
+             */
+            client_id: string;
+            /** Client Name */
+            client_name: string;
+            /** End Date */
+            end_date: string | null;
+            /** Event Days */
+            event_days: number;
+            /** History */
+            history: components["schemas"]["StatusChangeOut"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lost Reason */
+            lost_reason: string | null;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes: string | null;
+            /** Number */
+            number: number;
+            /** Responsible Name */
+            responsible_name: string | null;
+            /** Responsible User Id */
+            responsible_user_id: string | null;
+            /** Setup Days */
+            setup_days: number;
+            /** Start Date */
+            start_date: string | null;
+            status: components["schemas"]["EventStatus"];
+            /** Teardown Days */
+            teardown_days: number;
+            /** Venue */
+            venue: string | null;
+        };
+        /** EventPage */
+        EventPage: {
+            /** Items */
+            items: components["schemas"]["EventSummary"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /**
+         * EventStatus
+         * @description DOMAIN_MODEL §3.1.
+         * @enum {string}
+         */
+        EventStatus: "LEAD" | "QUOTING" | "SENT" | "NEGOTIATION" | "APPROVED" | "IN_PRODUCTION" | "COMPLETED" | "CLOSED" | "LOST" | "CANCELLED";
+        /** EventSummary */
+        EventSummary: {
+            /** City */
+            city: string | null;
+            /**
+             * Client Id
+             * Format: uuid
+             */
+            client_id: string;
+            /** Client Name */
+            client_name: string;
+            /** End Date */
+            end_date: string | null;
+            /** Event Days */
+            event_days: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+            /** Responsible Name */
+            responsible_name: string | null;
+            /** Start Date */
+            start_date: string | null;
+            status: components["schemas"]["EventStatus"];
+        };
+        /** EventUpdate */
+        EventUpdate: {
+            /** City */
+            city?: string | null;
+            /** Client Id */
+            client_id?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Event Days */
+            event_days?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Responsible User Id */
+            responsible_user_id?: string | null;
+            /** Setup Days */
+            setup_days?: number | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** Teardown Days */
+            teardown_days?: number | null;
+            /** Venue */
+            venue?: string | null;
+        };
+        /** FreezeIn */
+        FreezeIn: {
+            /** Change Note */
+            change_note?: string | null;
+        };
+        /**
          * FxCurrency
          * @enum {string}
          */
         FxCurrency: "USD";
+        /** FxOut */
+        FxOut: {
+            /** Currency */
+            currency: string;
+            /** Rate */
+            rate: string;
+            /**
+             * Rate Date
+             * Format: date
+             */
+            rate_date: string;
+        };
         /** FxRateIn */
         FxRateIn: {
             /** @default USD */
@@ -1002,6 +1529,200 @@ export interface components {
             role: components["schemas"]["Role"];
             /** User Exists */
             user_exists: boolean;
+        };
+        /**
+         * LineCost
+         * @description Solo con `cost.view`.
+         */
+        LineCost: {
+            /** Cost As Of */
+            cost_as_of: string | null;
+            /** Cost Days Old */
+            cost_days_old: number | null;
+            /** Cost Stale */
+            cost_stale: boolean;
+            /** Cost Total */
+            cost_total: string;
+            /** Supplier Product Id */
+            supplier_product_id: string | null;
+            /** Unit Cost Amount */
+            unit_cost_amount: string;
+            /** Unit Cost Effective */
+            unit_cost_effective: string;
+            /** Unit Cost Includes Iva */
+            unit_cost_includes_iva: boolean;
+            /** Unit Cost Iva Rate */
+            unit_cost_iva_rate: string;
+        };
+        /**
+         * LineIn
+         * @description Del catálogo (`product_id`, opcionalmente `offer_id`) o libre (`name` y costo).
+         */
+        LineIn: {
+            /** Category Id */
+            category_id?: string | null;
+            charge_mode?: components["schemas"]["ChargeMode"] | null;
+            /** Days */
+            days?: number | null;
+            /** Iva Rate */
+            iva_rate?: number | string | null;
+            /** Name */
+            name?: string | null;
+            /** Offer Id */
+            offer_id?: string | null;
+            /** Position */
+            position?: number | null;
+            /** Product Id */
+            product_id?: string | null;
+            /**
+             * Quantity
+             * @default 1
+             */
+            quantity: number | string;
+            /**
+             * Section Id
+             * Format: uuid
+             */
+            section_id: string;
+            /** Unit Code */
+            unit_code?: string | null;
+            /** Unit Cost Amount */
+            unit_cost_amount?: number | string | null;
+            /** Unit Cost Includes Iva */
+            unit_cost_includes_iva?: boolean | null;
+            /** Unit Cost Iva Rate */
+            unit_cost_iva_rate?: number | string | null;
+        };
+        /**
+         * LineMargin
+         * @description Solo con `margin.view`.
+         */
+        LineMargin: {
+            /** Margin */
+            margin: string | null;
+            /** Markup Applied */
+            markup_applied: string | null;
+            /** Markup Manual */
+            markup_manual: string | null;
+            markup_source: components["schemas"]["MarkupSource"] | null;
+            /** Profit */
+            profit: string;
+            /** Rule Markup */
+            rule_markup: string;
+            rule_source: components["schemas"]["MarkupSource"];
+            /** Target Margin */
+            target_margin: string | null;
+        };
+        /** LineOut */
+        LineOut: {
+            /** Allocated Global Discount */
+            allocated_global_discount: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Category Name */
+            category_name: string | null;
+            charge_mode: components["schemas"]["ChargeMode"];
+            cost: components["schemas"]["LineCost"] | null;
+            /** Days */
+            days: number;
+            /** Description Client */
+            description_client: string | null;
+            /** Discount Rate */
+            discount_rate: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Locked */
+            is_locked: boolean;
+            /** Iva Rate */
+            iva_rate: string;
+            /**
+             * Line Key
+             * Format: uuid
+             */
+            line_key: string;
+            margin: components["schemas"]["LineMargin"] | null;
+            /** Name Internal */
+            name_internal: string;
+            /** Notes Internal */
+            notes_internal: string | null;
+            pricing_mode: components["schemas"]["LinePricingMode"];
+            /** Product Id */
+            product_id: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Sale List Total */
+            sale_list_total: string;
+            /** Sale Total */
+            sale_total: string;
+            /**
+             * Section Id
+             * Format: uuid
+             */
+            section_id: string;
+            /** Show On Proposal */
+            show_on_proposal: boolean;
+            /** Sort */
+            sort: number;
+            /** Supplier Id */
+            supplier_id: string | null;
+            /** Supplier Name */
+            supplier_name: string | null;
+            /** Target Price */
+            target_price: string | null;
+            /** Unit Code */
+            unit_code: string;
+        };
+        /**
+         * LinePricingMode
+         * @enum {string}
+         */
+        LinePricingMode: "MARKUP" | "MARGIN" | "PRICE";
+        /**
+         * LineUpdate
+         * @description Solo inputs: los importes los calcula el motor (I8).
+         */
+        LineUpdate: {
+            charge_mode?: components["schemas"]["ChargeMode"] | null;
+            /** Days */
+            days?: number | null;
+            /** Description Client */
+            description_client?: string | null;
+            /** Discount Rate */
+            discount_rate?: number | string | null;
+            /** Is Locked */
+            is_locked?: boolean | null;
+            /** Iva Rate */
+            iva_rate?: number | string | null;
+            /** Markup Manual */
+            markup_manual?: number | string | null;
+            /** Name Internal */
+            name_internal?: string | null;
+            /** Notes Internal */
+            notes_internal?: string | null;
+            /** Offer Id */
+            offer_id?: string | null;
+            /** Position */
+            position?: number | null;
+            pricing_mode?: components["schemas"]["LinePricingMode"] | null;
+            /** Quantity */
+            quantity?: number | string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Show On Proposal */
+            show_on_proposal?: boolean | null;
+            /** Target Margin */
+            target_margin?: number | string | null;
+            /** Target Price */
+            target_price?: number | string | null;
+            /** Unit Cost Amount */
+            unit_cost_amount?: number | string | null;
+            /** Unit Cost Includes Iva */
+            unit_cost_includes_iva?: boolean | null;
+            /** Unit Cost Iva Rate */
+            unit_cost_iva_rate?: number | string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1239,6 +1960,27 @@ export interface components {
             current_cost: components["schemas"]["CostOut"] | null;
             /** Supplier Name */
             supplier_name: string;
+        };
+        /** PresentationOut */
+        PresentationOut: {
+            /** Currency */
+            currency: string;
+            /** Fx Rate */
+            fx_rate: string;
+            /** Global Discount */
+            global_discount: string;
+            /** Iva */
+            iva: string;
+            /** Lines */
+            lines: {
+                [key: string]: string;
+            };
+            /** Net */
+            net: string;
+            /** Subtotal */
+            subtotal: string;
+            /** Total */
+            total: string;
         };
         /** PriceIn */
         PriceIn: {
@@ -1497,6 +2239,59 @@ export interface components {
             /** Sort */
             sort?: number | null;
         };
+        /** SectionIn */
+        SectionIn: {
+            /** Title Client */
+            title_client: string;
+        };
+        /** SectionOut */
+        SectionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lines */
+            lines: components["schemas"]["LineOut"][];
+            /** Sale Total */
+            sale_total: string;
+            /**
+             * Section Key
+             * Format: uuid
+             */
+            section_key: string;
+            /** Sort */
+            sort: number;
+            /** Title Client */
+            title_client: string;
+        };
+        /** SectionUpdate */
+        SectionUpdate: {
+            /** Position */
+            position?: number | null;
+            /** Title Client */
+            title_client?: string | null;
+        };
+        /** StatusChangeIn */
+        StatusChangeIn: {
+            /** Reason */
+            reason?: string | null;
+            to_status: components["schemas"]["EventStatus"];
+        };
+        /** StatusChangeOut */
+        StatusChangeOut: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Changed By Name */
+            changed_by_name: string | null;
+            from_status: components["schemas"]["EventStatus"] | null;
+            /** Reason */
+            reason: string | null;
+            to_status: components["schemas"]["EventStatus"];
+        };
         /** SupplierContactIn */
         SupplierContactIn: {
             /** Email */
@@ -1689,6 +2484,138 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionCosts */
+        VersionCosts: {
+            /** Cost Direct */
+            cost_direct: string;
+        };
+        /** VersionMargins */
+        VersionMargins: {
+            /** Margin Gross */
+            margin_gross: string | null;
+            /** Margin Net */
+            margin_net: string | null;
+            /** Markup */
+            markup: string | null;
+            /** Markup Override */
+            markup_override: string | null;
+            /** Min Margin */
+            min_margin: string | null;
+            /** Profit */
+            profit: string;
+            /** Sale Charges */
+            sale_charges: string;
+            /** Sale Charges Detail */
+            sale_charges_detail: components["schemas"]["ChargeOut"][];
+            /** Target Margin */
+            target_margin: string | null;
+        };
+        /** VersionOut */
+        VersionOut: {
+            /** Change Note */
+            change_note: string | null;
+            costs: components["schemas"]["VersionCosts"] | null;
+            /** Frozen At */
+            frozen_at: string | null;
+            fx: components["schemas"]["FxOut"] | null;
+            /** Global Discount */
+            global_discount: string;
+            /** Global Discount Rate */
+            global_discount_rate: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Iva */
+            iva: string;
+            /** Lock Version */
+            lock_version: number;
+            margins: components["schemas"]["VersionMargins"] | null;
+            presentation: components["schemas"]["PresentationOut"] | null;
+            pricing_mode: components["schemas"]["VersionPricingMode"];
+            /** Rounding Increment */
+            rounding_increment: string;
+            /** Sale Net */
+            sale_net: string;
+            /** Sale Subtotal */
+            sale_subtotal: string;
+            /** Sections */
+            sections: components["schemas"]["SectionOut"][];
+            status: components["schemas"]["VersionStatus"];
+            /** Target Includes Iva */
+            target_includes_iva: boolean;
+            /** Target Price */
+            target_price: string | null;
+            /** Total */
+            total: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version No */
+            version_no: number;
+            /** Warnings */
+            warnings: string[];
+        };
+        /**
+         * VersionPricingMode
+         * @enum {string}
+         */
+        VersionPricingMode: "LINE" | "MARKUP" | "MARGIN" | "PRICE";
+        /**
+         * VersionStatus
+         * @enum {string}
+         */
+        VersionStatus: "DRAFT" | "FROZEN";
+        /** VersionSummary */
+        VersionSummary: {
+            /** Change Note */
+            change_note: string | null;
+            /** Frozen At */
+            frozen_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Sale Net */
+            sale_net: string;
+            status: components["schemas"]["VersionStatus"];
+            /** Total */
+            total: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version No */
+            version_no: number;
+        };
+        /**
+         * VersionUpdate
+         * @description Modo de pricing de la versión (§5.5), descuento global y moneda.
+         */
+        VersionUpdate: {
+            currency?: components["schemas"]["BudgetCurrency"] | null;
+            /** Global Discount Rate */
+            global_discount_rate?: number | string | null;
+            /** Markup Override */
+            markup_override?: number | string | null;
+            pricing_mode?: components["schemas"]["VersionPricingMode"] | null;
+            /**
+             * Refresh Fx
+             * @default false
+             */
+            refresh_fx: boolean;
+            /** Target Includes Iva */
+            target_includes_iva?: boolean | null;
+            /** Target Margin */
+            target_margin?: number | string | null;
+            /** Target Price */
+            target_price?: number | string | null;
         };
     };
     responses: never;
@@ -1983,6 +2910,495 @@ export interface operations {
             };
         };
     };
+    list_budgets_api_v1_budgets_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                event_id?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_budget_api_v1_budgets_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_budget_api_v1_budgets__budget_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_draft_api_v1_budgets__budget_id__draft_delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_version_api_v1_budgets__budget_id__draft_patch: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    freeze_api_v1_budgets__budget_id__draft_freeze_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreezeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_line_api_v1_budgets__budget_id__draft_lines_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LineIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_line_api_v1_budgets__budget_id__draft_lines__line_id__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_line_api_v1_budgets__budget_id__draft_lines__line_id__patch: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LineUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_section_api_v1_budgets__budget_id__draft_sections_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_section_api_v1_budgets__budget_id__draft_sections__section_id__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_section_api_v1_budgets__budget_id__draft_sections__section_id__patch: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    new_version_api_v1_budgets__budget_id__versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_api_v1_budgets__budget_id__versions__version_no__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+                version_no: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_categories_api_v1_categories_get: {
         parameters: {
             query?: never;
@@ -2248,6 +3664,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClientOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_events_api_v1_events_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                status?: components["schemas"]["EventStatus"][] | null;
+                client_id?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_api_v1_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_api_v1_events__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_event_api_v1_events__event_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_status_api_v1_events__event_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
                 };
             };
             /** @description Validation Error */

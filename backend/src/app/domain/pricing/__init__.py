@@ -12,6 +12,7 @@ from app.domain.pricing.inputs import (
     LineInput,
     MarkupRule,
     PricingContext,
+    ResolvedMarkup,
     SaleCharge,
     VersionInput,
 )
@@ -39,6 +40,7 @@ __all__ = [
     "Presentation",
     "PricingContext",
     "PricingError",
+    "ResolvedMarkup",
     "RuleMode",
     "SaleCharge",
     "TaxCondition",

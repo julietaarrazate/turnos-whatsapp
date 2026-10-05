@@ -12,6 +12,7 @@ from app.domain.pricing import (
     MarkupSource,
     PricingContext,
     PricingError,
+    ResolvedMarkup,
     RuleMode,
     TaxCondition,
     VersionInput,
@@ -55,6 +56,17 @@ def test_markup_chain_precedence() -> None:
         MarkupSource.VERSION,
     )
     assert resolve_markup(one(markup_manual=D("0.05")), D("0.15"), ctx())[1] is MarkupSource.LINE
+
+
+def test_resolved_markup_replaces_rules_but_not_line_or_version() -> None:
+    """§5.3: el markup resuelto al insertar queda en la línea; una regla nueva no lo cambia."""
+    frozen = ResolvedMarkup(D("0.40"), MarkupSource.CATEGORY, "grafica")
+    newer_client = ctx(client_rule=MarkupRule(D("0.10"), source_id="cliente"))
+    line = one(resolved=frozen, product_rule=MarkupRule(D("0.90"), source_id="p"))
+    assert resolve_markup(line, None, newer_client) == (D("0.40"), MarkupSource.CATEGORY, "grafica")
+    assert resolve_markup(line, D("0.15"), newer_client) == (D("0.15"), MarkupSource.VERSION, None)
+    manual = one(resolved=frozen, markup_manual=D("0.05"))
+    assert resolve_markup(manual, D("0.15"), newer_client) == (D("0.05"), MarkupSource.LINE, None)
 
 
 def test_margin_rules_are_converted_to_markup() -> None:
