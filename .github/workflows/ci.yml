@@ -15,8 +15,22 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-retries 20
+    env:
+      PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
+      - name: Roles y bases de datos
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f ../infra/postgres/init.sql
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -27,8 +41,14 @@ jobs:
         run: uv run mypy
       - name: Límites entre módulos
         run: uv run lint-imports
+      - name: Migraciones (upgrade, check, downgrade, upgrade)
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+          uv run alembic downgrade base
+          uv run alembic upgrade head
       - name: Tests
-        run: uv run pytest
+        run: uv run pytest --cov --cov-report=term-missing:skip-covered
 
   frontend:
     runs-on: ubuntu-latest
