@@ -45,6 +45,8 @@ jobs:
           uv run alembic check
           uv run alembic downgrade base
           uv run alembic upgrade head
+      - name: Motor de pricing (100 % de ramas)
+        run: uv run pytest tests/pricing -p no:cacheprovider --cov=app.domain.pricing --cov-branch --cov-fail-under=100
       - name: Tests
         run: uv run pytest --cov --cov-report=term-missing:skip-covered
 

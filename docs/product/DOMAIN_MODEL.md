@@ -308,7 +308,7 @@ Esta sección es **normativa**: el código del motor y sus tests se escriben con
 | **L2** Conversión | `u_base = u_eff × fx` | `fx` sale del `fx_snapshot` de la versión (1 si es la misma moneda) |
 | **L3** Duración | `D = (charge_mode == PER_DAY) ? días : 1` | Los días por defecto vienen del evento o de la regla del paquete. Se pueden editar por línea. |
 | **L4** Costo de línea | `C = R₂(u_base × cantidad × D)` | |
-| **L5** Markup | **MARKUP**: `m` = primer valor no nulo de la cadena (§5.3) · **MARGIN**: `m = g / (1 − g − c)` si `margin_includes_sale_charges`, si no `m = g / (1 − g)` · **PRICE**: no aplica (L6) | `c` = suma de las tasas de cargos sobre la venta activos. Se valida `g + c < 1`. |
+| **L5** Markup | **MARKUP**: `m` = primer valor no nulo de la cadena (§5.3) · **MARGIN**: `P_list = Rᵢ(C / (1 − g − c))`, o sea `m = (g + c) / (1 − g − c)`, si `margin_includes_sale_charges`; si no, `m = g / (1 − g)` *(corregido: la versión anterior decía `g / (1 − g − c)`, que no compensa los cargos)* · **PRICE**: no aplica (L6) | `c` = suma de las tasas de cargos sobre la venta activos. Se valida `g + c < 1`. |
 | **L6** Venta lista | MARKUP / MARGIN: `P_list = Rᵢ(C × (1 + m))` · PRICE: `P_list = R₂(precio_objetivo_línea)` | |
 | **L7** Descuento de línea | `P = Rᵢ(P_list × (1 − δ))` | `δ` = `discount_rate`. Por defecto el cliente ve solo `P`. |
 | **L8** Resultado | `profit = P − C` · `markup_applied = profit / C` · `margin = profit / P` | Antes del descuento global y de los cargos |
@@ -371,7 +371,7 @@ Entrada: `T` (venta neta objetivo; si `target_includes_iva`, `T = T_con_iva / (1
 
 ### 5.8 Vectores de prueba (verificados con `Decimal`)
 
-Estos casos son los **primeros vectores dorados** del motor. Los marcados ⚠ difieren del brief original.
+Estos casos son los **primeros vectores dorados** del motor. Los marcados ⚠ difieren del brief original. **La fuente de verdad ejecutable es `backend/tests/pricing/vectors.json`** (22 vectores, incluidos los de presentación en USD y los bordes). V12 (costo en USD) se reemplazó por cobro por día en ARS (D-09: costos en ARS en el MVP). V13 y V14 son de presupuestado vs real (módulo de finanzas, Fase 4).
 
 | # | Caso | Entrada | Resultado esperado |
 |---|---|---|---|
