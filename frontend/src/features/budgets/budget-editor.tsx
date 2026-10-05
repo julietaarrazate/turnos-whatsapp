@@ -17,6 +17,7 @@ import { CommitField } from "./commit-field";
 import { daysField, quantityField } from "./format";
 import { LineDetail } from "./line-detail";
 import { ProductSearch } from "./product-search";
+import { CostsBanner, ReapplyRules } from "./refresh-dialogs";
 import { TotalsFooter } from "./totals";
 import { type BudgetEditor as Editor, useBudgetEditor } from "./use-budget-editor";
 import { VersionSettings } from "./version-settings";
@@ -205,6 +206,7 @@ function VersionBar({ budget, editor, editable }: { budget: Budget; editor: Edit
       <span className="flex-1" />
       {editable && version.status === "DRAFT" && !freezing ? (
         <>
+          <ReapplyRules budget={budget} editor={editor} />
           {budget.versions.length > 1 ? (
             <Button variant="ghost" size="sm" onClick={() => window.confirm("¿Descartar los cambios del borrador?") && void editor.discardDraft()}>
               Descartar borrador
@@ -214,6 +216,11 @@ function VersionBar({ budget, editor, editable }: { budget: Budget; editor: Edit
             Guardar versión
           </Button>
         </>
+      ) : null}
+      {editable ? (
+        <Link href={`/budgets/new?from=${budget.id}`} className="inline-flex h-8 items-center px-3 text-sm text-ink hover:underline">
+          Duplicar para otro evento
+        </Link>
       ) : null}
       {editable && !hasDraft ? (
         <Button size="sm" onClick={() => void editor.newVersion()}>
@@ -250,7 +257,7 @@ function VersionBar({ budget, editor, editable }: { budget: Budget; editor: Edit
   );
 }
 
-export function BudgetEditor({ budgetId }: { budgetId: string }) {
+export function BudgetEditor({ budgetId, copied }: { budgetId: string; copied?: { costs: number; rules: number } }) {
   const { can } = useSession();
   const editor = useBudgetEditor(budgetId);
   const [openLine, setOpenLine] = useState<string | null>(null);
@@ -289,6 +296,17 @@ export function BudgetEditor({ budgetId }: { budgetId: string }) {
       </header>
 
       <VersionBar budget={budget} editor={editor} editable={can("budget.edit")} />
+      {copied ? (
+        <div className="mb-4">
+          <Notice tone="success">
+            Presupuesto duplicado con los valores de hoy:{" "}
+            {copied.costs === 0 && copied.rules === 0
+              ? "costos y markups iguales al original."
+              : `${copied.costs} ${copied.costs === 1 ? "costo actualizado" : "costos actualizados"} y ${copied.rules} ${copied.rules === 1 ? "markup distinto" : "markups distintos"} respecto del original.`}
+          </Notice>
+        </div>
+      ) : null}
+      <CostsBanner budget={budget} editor={editor} />
       {version.status === "FROZEN" ? (
         <div className="mb-4">
           <Notice>

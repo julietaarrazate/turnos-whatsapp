@@ -320,3 +320,77 @@ class BudgetSummary(BaseModel):
 class BudgetPage(BaseModel):
     items: list[BudgetSummary]
     next_cursor: str | None
+
+
+# --- Actualizar costos, re-aplicar reglas, duplicar (B-07, B-08) ---------------------------
+
+
+class CostChange(BaseModel):
+    line_id: UUID
+    name: str
+    supplier_name: str | None
+    old_unit_cost: Decimal
+    new_unit_cost: Decimal
+    old_as_of: date | None
+    new_as_of: date
+    amount_changed: bool  # False: misma cifra con fecha más nueva
+
+
+class RuleChange(BaseModel):
+    line_id: UUID
+    name: str
+    old_markup: Decimal
+    new_markup: Decimal
+    old_source: MarkupSource
+    new_source: MarkupSource
+    has_manual_markup: bool  # la línea tiene markup manual: el cambio no afecta su precio
+
+
+class ChargeRate(BaseModel):
+    name: str
+    rate: Decimal
+
+
+class TotalsDelta(BaseModel):
+    sale_net_before: Decimal
+    sale_net_after: Decimal
+    profit_before: Decimal | None  # con margin.view
+    profit_after: Decimal | None
+    margin_net_before: Decimal | None
+    margin_net_after: Decimal | None
+
+
+class CostsPreview(BaseModel):
+    changes: list[CostChange]
+    totals: TotalsDelta
+
+
+class RulesPreview(BaseModel):
+    changes: list[RuleChange]
+    charges_before: list[ChargeRate]
+    charges_after: list[ChargeRate]
+    totals: TotalsDelta
+
+
+class RefreshCostsIn(BaseModel):
+    line_ids: list[UUID] | None = Field(default=None, max_length=1000)  # None = todas
+
+
+class DuplicateIn(BaseModel):
+    """Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales."""
+
+    event_id: UUID | None = None
+    event: EventIn | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+
+    @model_validator(mode="after")
+    def _check(self) -> "DuplicateIn":
+        if (self.event_id is None) == (self.event is None):
+            raise ValueError("Indicá un evento existente o los datos de uno nuevo")
+        return self
+
+
+class DuplicateOut(BaseModel):
+    budget: BudgetOut
+    costs_changed: int
+    rules_changed: int

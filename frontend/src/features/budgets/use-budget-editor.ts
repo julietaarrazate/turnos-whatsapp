@@ -64,6 +64,7 @@ export function useBudgetEditor(budgetId: string) {
 
   return {
     budget,
+    run,
     pending: pending > 0,
     error,
     conflict,

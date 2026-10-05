@@ -9,6 +9,7 @@ Reglas (DOMAIN_MODEL §2.6, §3.2, §5; ARCHITECTURE §4.4–4.5):
 """
 
 from base64 import urlsafe_b64decode, urlsafe_b64encode
+from dataclasses import replace
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -34,6 +35,7 @@ from app.domain.pricing import (
     SaleCharge,
     TaxCondition,
     VersionInput,
+    VersionPriced,
     VersionPricingMode,
     present_in_currency,
     price_version,
@@ -55,6 +57,11 @@ from app.modules.budgets.schemas import (
     BudgetPage,
     BudgetSummary,
     ChargeOut,
+    ChargeRate,
+    CostChange,
+    CostsPreview,
+    DuplicateIn,
+    DuplicateOut,
     FreezeIn,
     FxOut,
     LineCost,
@@ -63,16 +70,20 @@ from app.modules.budgets.schemas import (
     LineOut,
     LineUpdate,
     PresentationOut,
+    RefreshCostsIn,
+    RuleChange,
+    RulesPreview,
     SectionIn,
     SectionOut,
     SectionUpdate,
+    TotalsDelta,
     VersionCosts,
     VersionMargins,
     VersionOut,
     VersionSummary,
     VersionUpdate,
 )
-from app.modules.catalog import category_info, line_source, today_ar
+from app.modules.catalog import Product, category_info, current_prices, line_source, today_ar
 from app.modules.clients import Client
 from app.modules.events import (
     Event,
@@ -293,12 +304,24 @@ def _line_input(line: BudgetLine) -> LineInput:
     )
 
 
-def _recalculate(db: AppSession, budget: Budget, version: BudgetVersion) -> None:
-    """Recalcula la versión completa con el motor y sube el `lock_version`."""
-    lines = _lines(db, version.id)
-    pricing = _context_from(version.context_snapshot)
+def _price(
+    version: BudgetVersion,
+    lines: list[BudgetLine],
+    *,
+    context: dict[str, Any] | None = None,
+    overrides: dict[UUID, dict[str, Any]] | None = None,
+) -> tuple[VersionInput, PricingContext, VersionPriced]:
+    """Corre el motor sobre la versión. `context` y `overrides` (por línea) permiten simular
+    cambios sin tocar la base (vista previa de "actualizar costos" o "re-aplicar reglas")."""
+    pricing = _context_from(context or version.context_snapshot)
+    inputs = []
+    for line in lines:
+        item = _line_input(line)
+        if overrides and line.id in overrides:
+            item = replace(item, **overrides[line.id])
+        inputs.append(item)
     version_input = VersionInput(
-        lines=tuple(_line_input(line) for line in lines),
+        lines=tuple(inputs),
         mode=VersionPricingMode(version.pricing_mode),
         markup_override=version.markup_override,
         target_margin=version.target_margin,
@@ -307,9 +330,15 @@ def _recalculate(db: AppSession, budget: Budget, version: BudgetVersion) -> None
         global_discount_rate=version.global_discount_rate,
     )
     try:
-        result = price_version(version_input, pricing)
+        return version_input, pricing, price_version(version_input, pricing)
     except PricingError as exc:
         raise AppError(422, f"pricing_{exc.code}", exc.detail) from exc
+
+
+def _recalculate(db: AppSession, budget: Budget, version: BudgetVersion) -> None:
+    """Recalcula la versión completa con el motor y sube el `lock_version`."""
+    lines = _lines(db, version.id)
+    version_input, pricing, result = _price(version, lines)
 
     for line, priced in zip(lines, result.lines, strict=True):
         line.unit_cost_effective = priced.unit_cost_effective.quantize(UNIT)
@@ -1182,3 +1211,279 @@ def delete_line(
     _recalculate(db, budget, version)
     _audit(db, ctx, "budget.line_removed", budget.id, before=snapshot)
     return budget_out(db, ctx, budget, version)
+
+
+# --- Actualizar costos y re-aplicar reglas (B-08) --------------------------------------------
+# Acciones explícitas con vista previa: nada del borrador cambia "por debajo" (P3).
+
+
+def _draft_readonly(
+    db: AppSession, ctx: TenantContext, budget_id: UUID
+) -> tuple[Budget, BudgetVersion]:
+    budget = _budget(db, ctx, budget_id)
+    version = db.execute(
+        select(BudgetVersion).where(
+            BudgetVersion.budget_id == budget.id, BudgetVersion.status == VersionStatus.DRAFT
+        )
+    ).scalar_one_or_none()
+    if version is None:
+        raise AppError(409, "budget_no_draft", "Este presupuesto no tiene un borrador para editar")
+    return budget, version
+
+
+def _totals_delta(ctx: TenantContext, version: BudgetVersion, after: VersionPriced) -> TotalsDelta:
+    margins = ctx.can(Permission.MARGIN_VIEW)
+    return TotalsDelta(
+        sale_net_before=version.sale_net,
+        sale_net_after=after.sale_net,
+        profit_before=version.profit if margins else None,
+        profit_after=after.profit if margins else None,
+        margin_net_before=version.margin_net if margins else None,
+        margin_net_after=after.margin_net if margins else None,
+    )
+
+
+def _cost_changes(
+    db: AppSession, ctx: TenantContext, lines: list[BudgetLine]
+) -> list[tuple[BudgetLine, Any]]:
+    """Líneas del catálogo cuyo costo vigente hoy no es el que tiene la línea."""
+    offer_ids = [line.supplier_product_id for line in lines if line.supplier_product_id]
+    prices = current_prices(db, ctx, [i for i in offer_ids if i is not None])
+    changes = []
+    for line in lines:
+        price = prices.get(line.supplier_product_id) if line.supplier_product_id else None
+        if price is not None and price.id != line.price_history_id:
+            changes.append((line, price))
+    return changes
+
+
+def _cost_override(price: Any) -> dict[str, Any]:
+    return {
+        "unit_cost": price.amount,
+        "cost_includes_iva": price.amount_includes_iva,
+        "cost_iva_rate": price.iva_rate,
+    }
+
+
+def preview_refresh_costs(db: AppSession, ctx: TenantContext, budget_id: UUID) -> CostsPreview:
+    _, version = _draft_readonly(db, ctx, budget_id)
+    lines = _lines(db, version.id)
+    changes = _cost_changes(db, ctx, lines)
+    _, _, after = _price(
+        version, lines, overrides={line.id: _cost_override(price) for line, price in changes}
+    )
+    return CostsPreview(
+        changes=[
+            CostChange(
+                line_id=line.id,
+                name=line.name_internal,
+                supplier_name=line.supplier_name,
+                old_unit_cost=line.unit_cost_amount,
+                new_unit_cost=price.amount,
+                old_as_of=line.cost_as_of,
+                new_as_of=price.valid_from,
+                amount_changed=(
+                    price.amount != line.unit_cost_amount
+                    or price.amount_includes_iva != line.unit_cost_includes_iva
+                    or price.iva_rate != line.unit_cost_iva_rate
+                ),
+            )
+            for line, price in changes
+        ],
+        totals=_totals_delta(ctx, version, after),
+    )
+
+
+def _apply_costs(changes: list[tuple[BudgetLine, Any]]) -> None:
+    for line, price in changes:
+        line.unit_cost_amount = price.amount
+        line.unit_cost_includes_iva = price.amount_includes_iva
+        line.unit_cost_iva_rate = price.iva_rate
+        line.cost_as_of = price.valid_from
+        line.price_history_id = price.id
+
+
+def refresh_costs(
+    db: AppSession, ctx: TenantContext, budget_id: UUID, if_match: int, body: RefreshCostsIn
+) -> BudgetOut:
+    budget, version = _draft(db, ctx, budget_id, if_match)
+    changes = _cost_changes(db, ctx, _lines(db, version.id))
+    if body.line_ids is not None:
+        chosen = set(body.line_ids)
+        changes = [(line, price) for line, price in changes if line.id in chosen]
+    _apply_costs(changes)
+    db.flush()
+    _recalculate(db, budget, version)
+    _audit(
+        db,
+        ctx,
+        "budget.costs_refreshed",
+        budget.id,
+        after={"lines": [str(line.line_key) for line, _ in changes]},
+    )
+    return budget_out(db, ctx, budget, version)
+
+
+def _rule_changes(
+    db: AppSession, ctx: TenantContext, budget: Budget, lines: list[BudgetLine]
+) -> list[tuple[BudgetLine, ResolvedMarkup]]:
+    client_id = _client_id(db, budget)
+    products = {
+        p.id: p
+        for p in db.execute(
+            select(Product).where(Product.id.in_([ln.product_id for ln in lines if ln.product_id]))
+        ).scalars()
+    }
+    changes = []
+    for line in lines:
+        product = products.get(line.product_id) if line.product_id else None
+        resolved = resolve_line_markup(
+            db, ctx, product=product, category_id=line.category_id, client_id=client_id
+        )
+        if resolved.value != line.rule_markup or resolved.source.value != line.rule_source:
+            changes.append((line, resolved))
+    return changes
+
+
+def _context_now(db: AppSession, ctx: TenantContext, budget: Budget) -> dict[str, Any]:
+    return _context_json(pricing_context(db, ctx, _client_id(db, budget)))
+
+
+def preview_reapply_rules(db: AppSession, ctx: TenantContext, budget_id: UUID) -> RulesPreview:
+    budget, version = _draft_readonly(db, ctx, budget_id)
+    lines = _lines(db, version.id)
+    changes = _rule_changes(db, ctx, budget, lines)
+    context = _context_now(db, ctx, budget)
+    _, _, after = _price(
+        version,
+        lines,
+        context=context,
+        overrides={line.id: {"resolved": resolved} for line, resolved in changes},
+    )
+    return RulesPreview(
+        changes=[
+            RuleChange(
+                line_id=line.id,
+                name=line.name_internal,
+                old_markup=line.rule_markup,
+                new_markup=resolved.value.quantize(UNIT),
+                old_source=MarkupSource(line.rule_source),
+                new_source=resolved.source,
+                has_manual_markup=line.markup_manual is not None,
+            )
+            for line, resolved in changes
+        ],
+        charges_before=[ChargeRate(**c) for c in version.context_snapshot["sale_charges"]],
+        charges_after=[ChargeRate(**c) for c in context["sale_charges"]],
+        totals=_totals_delta(ctx, version, after),
+    )
+
+
+def _apply_rules(changes: list[tuple[BudgetLine, ResolvedMarkup]]) -> None:
+    for line, resolved in changes:
+        line.rule_markup = resolved.value.quantize(UNIT)
+        line.rule_source = resolved.source.value
+        line.rule_source_id = resolved.source_id
+
+
+def reapply_rules(db: AppSession, ctx: TenantContext, budget_id: UUID, if_match: int) -> BudgetOut:
+    """Toma las reglas de markup, los cargos sobre la venta y el redondeo vigentes hoy."""
+    budget, version = _draft(db, ctx, budget_id, if_match)
+    changes = _rule_changes(db, ctx, budget, _lines(db, version.id))
+    _apply_rules(changes)
+    version.context_snapshot = _context_now(db, ctx, budget)
+    db.flush()
+    _recalculate(db, budget, version)
+    _audit(
+        db,
+        ctx,
+        "budget.rules_reapplied",
+        budget.id,
+        after={"lines": [str(line.line_key) for line, _ in changes]},
+    )
+    return budget_out(db, ctx, budget, version)
+
+
+# --- Duplicar (B-07) -------------------------------------------------------------------------
+
+
+def duplicate(
+    db: AppSession, ctx: TenantContext, budget_id: UUID, body: DuplicateIn
+) -> DuplicateOut:
+    """Copia la última versión a otro evento con los costos y reglas de hoy. Los ítems por día
+    que usaban los días del evento original pasan a los del nuevo."""
+    source_budget = _budget(db, ctx, budget_id)
+    source = _versions(db, source_budget.id)[-1]
+    source_days = _event_days(db, source_budget)
+    created = create_budget(
+        db,
+        ctx,
+        BudgetCreate(
+            event_id=body.event_id,
+            event=body.event,
+            title=body.title or source_budget.title,
+            currency=BudgetCurrency(source_budget.currency),
+        ),
+    )
+    budget = _budget(db, ctx, created.id)
+    version = db.execute(
+        select(BudgetVersion).where(BudgetVersion.budget_id == budget.id)
+    ).scalar_one()
+    for field in (
+        "pricing_mode",
+        "markup_override",
+        "target_margin",
+        "target_price",
+        "target_includes_iva",
+        "global_discount_rate",
+    ):
+        setattr(version, field, getattr(source, field))
+    db.execute(delete(BudgetSection).where(BudgetSection.version_id == version.id))
+    new_days = _event_days(db, budget)
+    section_ids: dict[UUID, UUID] = {}
+    for section in _sections(db, source.id):
+        clone = BudgetSection(
+            organization_id=ctx.organization_id,
+            version_id=version.id,
+            section_key=uuid4(),
+            title_client=section.title_client,
+            sort=section.sort,
+        )
+        db.add(clone)
+        db.flush()
+        section_ids[section.id] = clone.id
+    skip = {"id", "version_id", "section_id", "line_key"}
+    for line in _lines(db, source.id):
+        values = {
+            c.key: getattr(line, c.key) for c in BudgetLine.__table__.columns if c.key not in skip
+        }
+        if line.charge_mode == ChargeMode.PER_DAY and line.days == source_days:
+            values["days"] = new_days
+        db.add(
+            BudgetLine(
+                **values,
+                version_id=version.id,
+                section_id=section_ids[line.section_id],
+                line_key=uuid4(),
+            )
+        )
+    db.flush()
+    lines = _lines(db, version.id)
+    cost_changes = _cost_changes(db, ctx, lines)
+    rule_changes = _rule_changes(db, ctx, budget, lines)
+    _apply_costs(cost_changes)
+    _apply_rules(rule_changes)
+    db.flush()
+    _recalculate(db, budget, version)
+    _audit(
+        db,
+        ctx,
+        "budget.duplicated",
+        budget.id,
+        after={"from_budget": source_budget.number, "from_version": source.version_no},
+    )
+    return DuplicateOut(
+        budget=budget_out(db, ctx, budget, version),
+        costs_changed=len(cost_changes),
+        rules_changed=len(rule_changes),
+    )

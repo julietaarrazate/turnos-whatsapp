@@ -27,6 +27,22 @@ async function seedProduct(page: Page, suffix: string) {
   return product.name as string;
 }
 
+async function offerOf(page: Page, productName: string): Promise<string> {
+  const list = await (await page.request.get(`/api/v1/products?q=${encodeURIComponent(productName)}`, { headers: H })).json();
+  const detail = await (await page.request.get(`/api/v1/products/${list.items[0].id}`, { headers: H })).json();
+  return detail.offers[0].id as string;
+}
+
+async function newBudgetWith(page: Page, suffix: string, productName: string) {
+  await page.goto("/budgets/new");
+  await page.getByLabel("Cliente").fill(`Cliente ${suffix}`);
+  await page.getByLabel("Evento", { exact: true }).fill(`Evento ${suffix}`);
+  await page.getByRole("button", { name: "Crear y armar el presupuesto" }).click();
+  await expect(page.getByRole("heading", { name: new RegExp(`Evento ${suffix}`) })).toBeVisible();
+  await page.getByRole("combobox", { name: "Agregar ítem" }).fill(productName);
+  await page.getByRole("option", { name: new RegExp(`^${productName}`) }).click();
+}
+
 test("J2: nuevo presupuesto, ítems del catálogo y libres, precio objetivo y guardar versión", async ({ page }, testInfo) => {
   const suffix = `${testInfo.project.name}-${Date.now()}`;
   await login(page);
@@ -82,4 +98,44 @@ test("J2: nuevo presupuesto, ítems del catálogo y libres, precio objetivo y gu
   await page.getByRole("button", { name: "Nueva versión" }).click();
   await expect(page.getByText("v2 · borrador")).toBeVisible();
   await expect(footer).toContainText("$ 150.000,00");
+});
+
+test("costos más nuevos, re-aplicar reglas y duplicar para otro evento", async ({ page }, testInfo) => {
+  const suffix = `${testInfo.project.name}-${Date.now()}`;
+  await login(page);
+  const productName = await seedProduct(page, suffix);
+  await newBudgetWith(page, suffix, productName);
+  const footer = page.getByRole("region", { name: "Totales" });
+  await expect(footer).toContainText("$ 13.000,00"); // 10.000 × 1 día × 1,30
+  const budgetUrl = page.url();
+
+  // Aumenta el proveedor: el editor avisa y deja actualizar con vista previa.
+  const offerId = await offerOf(page, productName);
+  const raised = await page.request.post(`/api/v1/offers/${offerId}/prices`, { headers: H, data: { amount: "12000" } });
+  expect(raised.status()).toBe(201);
+  await page.reload();
+  await expect(page.getByText("Hay 1 costo más nuevo en el catálogo.")).toBeVisible();
+  await page.getByRole("button", { name: "Revisar y actualizar" }).click();
+  const dialog = page.getByRole("dialog", { name: "Actualizar costos" });
+  await expect(dialog).toContainText("$ 10.000,00 → $ 12.000,00");
+  await dialog.getByRole("button", { name: "Actualizar 1 costo" }).click();
+  await expect(footer).toContainText("$ 15.600,00");
+  await expect(page.getByText("Hay 1 costo más nuevo en el catálogo.")).toBeHidden();
+
+  // Re-aplicar reglas: sin cambios en las reglas, no hay nada que aplicar.
+  await page.getByRole("button", { name: "Re-aplicar reglas" }).click();
+  const rules = page.getByRole("dialog", { name: "Re-aplicar reglas de pricing" });
+  await expect(rules.getByRole("button", { name: "Aplicar" })).toBeVisible();
+  await rules.getByRole("button", { name: "Cerrar" }).click();
+
+  // Duplicar para otro evento: nuevo cliente, mismos ítems, aviso de lo que cambió.
+  await page.getByRole("link", { name: "Duplicar para otro evento" }).click();
+  await expect(page.getByRole("heading", { name: "Duplicar presupuesto" })).toBeVisible();
+  await page.getByLabel("Cliente").fill(`Otro ${suffix}`);
+  await page.getByLabel("Evento", { exact: true }).fill(`Gira ${suffix}`);
+  await page.getByRole("button", { name: "Duplicar" }).click();
+  await expect(page.getByRole("heading", { name: new RegExp(`Evento ${suffix}`) })).toBeVisible();
+  await expect(page.getByText(/Presupuesto duplicado con los valores de hoy/)).toBeVisible();
+  await expect(footer).toContainText("$ 15.600,00");
+  expect(page.url()).not.toBe(budgetUrl);
 });
