@@ -2,6 +2,18 @@
 
 > Estado: staging en **planes gratuitos** (D-18). Ver ARCHITECTURE §3.
 
+## Estado actual (staging)
+
+| Pieza | Dónde | Estado |
+|---|---|---|
+| Base de datos | Neon, proyecto `productoras-staging` (aws-us-east-1, Postgres 16), base `app` | ✅ Roles `app_migrator`/`app_runtime` creados por SQL (sin privilegios de Neon). Migraciones en 0003. RLS forzada verificada. |
+| API | Render, `productoras-api-staging` (Virginia, free, Docker), https://productoras-api-staging.onrender.com | ✅ En línea. Migra al arrancar. Por ahora despliega desde la rama del PR. |
+| Frontend | Vercel, `productoras-web` | ⏳ Hay que crearlo desde el panel de Vercel (la integración no tiene permiso para crear proyectos). |
+| Email | — | Consola (sin Resend): los links de invitación y reset quedan en los logs de Render. |
+| Primera organización | "Productora piloto" (RI) | ✅ Invitación de OWNER para la titular, vigente 7 días. |
+
+Las credenciales viven solo en las variables de entorno de Render. No están en el repo.
+
 ```
 Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI, Docker) ──► Neon (Postgres 16)
                                                        │
