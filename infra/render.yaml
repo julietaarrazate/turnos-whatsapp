@@ -1,0 +1,35 @@
+# Blueprint de Render para la API (https://render.com/docs/blueprint-spec).
+# Las variables marcadas `sync: false` se cargan a mano en el dashboard (son secretas).
+services:
+  - type: web
+    name: productoras-api-staging
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    region: virginia # co-ubicada con Neon AWS us-east-1 (D-18)
+    plan: free # D-18: duerme sin tráfico (~30-60 s para despertar). Starter para clientes reales.
+    healthCheckPath: /readyz
+    autoDeploy: true
+    envVars:
+      - key: ENV
+        value: staging
+      - key: RUN_MIGRATIONS # el plan free no tiene pre-deploy: migra al arrancar
+        value: "true"
+      - key: DATABASE_URL # Neon, rol app_runtime, endpoint con pooler (-pooler)
+        sync: false
+      - key: MIGRATOR_DATABASE_URL # Neon, rol app_migrator, endpoint directo
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_BASE_URL # https://<frontend>
+        sync: false
+      - key: ALLOWED_ORIGINS # JSON: ["https://<frontend>"]
+        sync: false
+      - key: EMAIL_BACKEND
+        value: resend
+      - key: EMAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false

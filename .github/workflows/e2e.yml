@@ -1,0 +1,69 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [labeled, synchronize, opened]
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e')
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-retries 20
+    env:
+      ENV: local
+      COOKIE_SECURE: "false"
+      RATE_LIMIT_ENABLED: "false"  # todos los tests ingresan con el mismo usuario
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f infra/postgres/init.sql
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Backend
+        working-directory: backend
+        run: |
+          uv sync --frozen
+          uv run alembic upgrade head
+          uv run python scripts/seed_dev.py
+          nohup uv run uvicorn app.main:app --port 8000 > ../api.log 2>&1 &
+      - name: Frontend
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+          pnpm build
+          nohup pnpm start -p 3000 > ../web.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3000/login > /dev/null && break; sleep 1; done
+      - name: Playwright (desktop + mobile)
+        working-directory: frontend
+        run: pnpm e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            frontend/test-results
+            api.log
+            web.log

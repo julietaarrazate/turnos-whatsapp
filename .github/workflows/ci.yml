@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Roles y bases de datos
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f ../infra/postgres/init.sql
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Typecheck
+        run: uv run mypy
+      - name: Límites entre módulos
+        run: uv run lint-imports && uv run python scripts/check_module_boundaries.py
+      - name: Migraciones (upgrade, check, downgrade, upgrade)
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+      - name: Tests
+        run: uv run pytest --cov --cov-report=term-missing:skip-covered
+
+  contract:
+    # El frontend usa tipos generados desde el OpenAPI del backend: si el contrato cambió y no
+    # se regeneraron, falla acá y no en producción.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: cd backend && uv sync --frozen
+      - run: cd frontend && pnpm install --frozen-lockfile
+      - run: cd frontend && pnpm gen:api
+      - name: El contrato commiteado está al día
+        run: git diff --exit-code -- frontend/src/lib/api
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  docker:
+    # Construye la imagen de producción de la API y verifica que arranca.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t api:ci backend
+      - name: El contenedor arranca y responde /healthz
+        run: |
+          docker run -d --name api -p 8000:8000 -e ENV=local api:ci
+          for i in $(seq 1 20); do curl -sf localhost:8000/healthz && exit 0; sleep 1; done
+          docker logs api
+          exit 1
+
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
