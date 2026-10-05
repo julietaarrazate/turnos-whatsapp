@@ -7,6 +7,7 @@ from app.core.db import DbContext, session_scope
 from app.core.enums import Role
 from app.core.ids import uuid7
 from app.core.security import hash_password
+from app.modules.catalog import seed_catalog_defaults
 from app.modules.identity import Membership, Organization, User
 
 DEFAULT_PASSWORD = "contraseña-segura-123"
@@ -27,6 +28,8 @@ def create_org(name: str = "Productora", **fields: object) -> UUID:
     org_id = uuid7()
     with session_scope(DbContext(organization_id=org_id)) as s:
         s.add(Organization(id=org_id, name=name, **fields))
+        s.flush()
+        seed_catalog_defaults(s, org_id)
     return org_id
 
 

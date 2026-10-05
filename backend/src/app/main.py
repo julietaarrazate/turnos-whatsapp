@@ -9,7 +9,7 @@ from app.core.errors import install_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.core.observability import init_sentry
-from app.modules import auth, organizations
+from app.modules import auth, catalog, clients, organizations
 
 
 def create_app() -> FastAPI:
@@ -39,6 +39,8 @@ def create_app() -> FastAPI:
 
     app.include_router(auth.router)
     app.include_router(organizations.router)
+    app.include_router(clients.router)
+    app.include_router(catalog.router)
     return app
 
 

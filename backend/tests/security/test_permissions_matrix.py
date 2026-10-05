@@ -10,7 +10,6 @@ from tests.security.harness import (
     call,
     logged_in,
     permission_routes,
-    resolve_path,
 )
 
 CASES = [(route, role) for route in permission_routes() for role in Role]
@@ -22,7 +21,7 @@ CASES = [(route, role) for route in permission_routes() for role in Role]
 def test_role_access_matches_matrix(route: RouteInfo, role: Role) -> None:
     world = build_org("a")
     client = logged_in(world.members[role])
-    response = call(client, route, resolve_path(route, world))
+    response = call(client, route, world)
     assert route.permission is not None
     allowed = route.permission in ROLE_PERMISSIONS[role]
     body = response.json() if response.content else None

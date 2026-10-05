@@ -36,7 +36,10 @@ def test_every_tenant_table_has_forced_rls_and_composite_key(migrator_engine: En
                                 FROM pg_attribute a
                                 WHERE a.attrelid = c.oid AND a.attnum = ANY(k.conkey))
                                = ARRAY['id', 'organization_id']
-                       ) AS has_composite_key
+                       ) AS has_composite_key,
+                       EXISTS (SELECT 1 FROM pg_attribute a
+                               WHERE a.attrelid = c.oid AND a.attname = 'id'
+                                 AND NOT a.attisdropped) AS has_id
                 FROM pg_class c
                 JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
                 WHERE c.relkind = 'r'
@@ -47,10 +50,12 @@ def test_every_tenant_table_has_forced_rls_and_composite_key(migrator_engine: En
             )
         ).all()
     assert rows, "debería haber al menos una tabla tenant"
-    for name, rls, forced, composite in rows:
+    for name, rls, forced, composite, has_id in rows:
         assert rls, f"{name}: falta ENABLE ROW LEVEL SECURITY"
         assert forced, f"{name}: falta FORCE ROW LEVEL SECURITY"
-        assert composite, f"{name}: falta UNIQUE (organization_id, id) para FK compuestas"
+        # Las tablas puente sin `id` (PK compuesta) no son destino de FK.
+        if has_id:
+            assert composite, f"{name}: falta UNIQUE (organization_id, id) para FK compuestas"
 
 
 def test_runtime_role_cannot_bypass_rls(migrator_engine: Engine) -> None:

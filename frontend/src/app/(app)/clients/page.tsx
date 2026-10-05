@@ -1,7 +1,7 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { ClientsList } from "@/features/clients/clients-list";
 
 export const metadata = { title: "Clientes" };
 
 export default function Page() {
-  return <ComingSoon title="Clientes" phase={2} description="Empresas, contactos e historial comercial." />;
+  return <ClientsList />;
 }

@@ -1,7 +1,7 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { ProductsList } from "@/features/catalog/products-list";
 
 export const metadata = { title: "Catálogo" };
 
 export default function Page() {
-  return <ComingSoon title="Catálogo" phase={2} description="Productos, proveedores, historial de costos, importación desde Excel y aumentos masivos." />;
+  return <ProductsList />;
 }

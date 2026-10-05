@@ -13,6 +13,7 @@ from sqlalchemy import (
     Connection,
     DateTime,
     Engine,
+    ForeignKeyConstraint,
     MetaData,
     UniqueConstraint,
     create_engine,
@@ -47,6 +48,23 @@ class IdMixin:
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+
+class SoftDeleteMixin:
+    """Solo para datos maestros (clientes, proveedores, productos). Nunca para registros
+    financieros ni snapshots."""
+
+    deleted_at: Mapped[datetime | None]
+
+
+def tenant_fk(column: str, target_table: str, ondelete: str = "RESTRICT") -> ForeignKeyConstraint:
+    """FK compuesta ``(organization_id, column) -> target(organization_id, id)``: la base de
+    datos impide referenciar filas de otra organización (ARCHITECTURE §7.2)."""
+    return ForeignKeyConstraint(
+        ["organization_id", column],
+        [f"{target_table}.organization_id", f"{target_table}.id"],
+        ondelete=ondelete,
+    )
 
 
 def tenant_unique() -> UniqueConstraint:
