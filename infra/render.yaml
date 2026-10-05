@@ -7,13 +7,14 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile
     region: virginia # co-ubicada con Neon AWS us-east-1 (D-18)
-    plan: starter # nunca free: el plan free "duerme" y tarda 30-50 s en despertar
+    plan: free # D-18: duerme sin tráfico (~30-60 s para despertar). Starter para clientes reales.
     healthCheckPath: /readyz
-    preDeployCommand: alembic upgrade head
     autoDeploy: true
     envVars:
       - key: ENV
         value: staging
+      - key: RUN_MIGRATIONS # el plan free no tiene pre-deploy: migra al arrancar
+        value: "true"
       - key: DATABASE_URL # Neon, rol app_runtime, endpoint con pooler (-pooler)
         sync: false
       - key: MIGRATOR_DATABASE_URL # Neon, rol app_migrator, endpoint directo

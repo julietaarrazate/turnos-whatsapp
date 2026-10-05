@@ -33,4 +33,6 @@ EXPOSE 8000
 
 # --proxy-headers: la IP real del cliente llega en X-Forwarded-For (Vercel → Render).
 # --no-access-log: el log de acceso lo escribe la app (estructurado y sin tokens en la URL).
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips='*' --no-server-header --no-access-log"]
+# RUN_MIGRATIONS=true: migra antes de arrancar (planes sin pre-deploy command, p. ej. Render
+# free). Si la migración falla, el contenedor no arranca y queda la versión anterior.
+CMD ["sh", "-c", "if [ \"$RUN_MIGRATIONS\" = true ]; then alembic upgrade head || exit 1; fi; exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips='*' --no-server-header --no-access-log"]

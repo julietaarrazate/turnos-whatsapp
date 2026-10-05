@@ -17,14 +17,14 @@ Son cosas que solo vos (o la productora del piloto) pueden responder. Ninguna bl
 |---|---|---|---|
 | Q1 | ¿Cómo se va a llamar el producto? | Repo, dominio, emails, PWA | D-02 |
 | ~~Q2~~ | ~~¿MIT o "todos los derechos reservados"?~~ → **Respondida:** todos los derechos reservados | | D-03 |
-| Q3 ⚑ | ¿La productora del piloto es **Responsable Inscripto** o **Monotributo**? ¿Carga hoy los costos con o sin IVA? ¿Qué cargos sobre la venta considera (IIBB y alícuota, impuesto al cheque, comisiones)? | Cambia el cálculo del costo efectivo, el IVA de la propuesta y el margen real | D-08 |
-| Q4 ⚑ | ¿Reciben cotizaciones en **USD**? ¿Presupuestan alguna vez en USD a sus clientes? | Multi-moneda en el MVP o no | D-09 |
+| Q3 | ~~Régimen y costos con/sin IVA~~ → **Respondida:** Responsable Inscripto; costos cargados **sin IVA**; el presupuesto suma el IVA al final. *Pendiente:* qué cargos sobre la venta considera (IIBB, impuesto al cheque, comisiones). | | D-08 |
+| Q4 | ~~¿USD?~~ → **Respondida:** reciben cotizaciones en pesos; ocasionalmente presentan el presupuesto en dólares a un cliente del exterior. | | D-09 |
 | Q5 ⚑ | ¿Pueden pasarnos su **Excel de precios** y **3–5 presupuestos reales** (con costos y precio final), más una propuesta que hayan mandado? | Fixtures de importación y vectores dorados ("al centavo") | D-06, MVP §4 |
 | Q6 | ¿Redondean los precios (a $100 o a $1.000)? ¿Muestran precio unitario, solo importes por línea o totales por rubro? | Política de redondeo y modo de propuesta por defecto | D-06, D-23 |
 | Q7 | Un cliente con "markup preferencial", ¿pisa también el markup especial de un producto? | Precedencia de la cadena de markup | D-07 |
 | Q8 | ¿Cómo aprueban hoy sus clientes (mail, OC, WhatsApp)? | Peso de la aprobación online frente a la manual | D-22 |
 | Q9 | ¿Cuántas personas lo van a usar y quién **no** debería ver los márgenes? | Roles y redacción de campos | PRODUCT_SPEC §9 |
-| Q10 | ¿Presupuesto mensual de infraestructura? (estimado en D-18) | Tiers de hosting | D-18 |
+| ~~Q10~~ | ~~Presupuesto de infraestructura~~ → **Respondida:** planes gratuitos (Neon, Render, Vercel) | | D-18 |
 | Q11 | ¿Tenés dominio propio? | Emails (SPF/DKIM), links públicos, cookies | D-13, D-18 |
 
 ---
@@ -71,19 +71,18 @@ Pendiente (Q1). Mientras tanto, los documentos usan "la plataforma". El código 
 - **Duda real:** si el cliente "Coca-Cola: 20%" debe pisar a un producto con markup especial del 60% (alquiler de equipo propio). Alternativa: reglas de cliente por categoría (`cliente + categoría`). Se decide con la respuesta del piloto. El modelo de datos (`markup_rules` con `scope`) soporta ambas variantes.
 - **Cuándo se aplica:** al crear la línea. Un cambio de reglas no altera los borradores sin una acción explícita ("Re-aplicar reglas").
 
-## D-08 · Impuestos y cargos sobre la venta — ❓ (Q3)
+## D-08 · Impuestos y cargos sobre la venta — ✅ (régimen) · ❓ (cargos)
 
-- **Régimen de la organización** (`RI` / `MONOTRIBUTO` / `EXENTO`) define:
-  - **El costo efectivo:** un RI computa costos netos de IVA (el IVA es crédito fiscal). Un monotributista computa el IVA pagado como costo.
-  - **La propuesta:** un RI muestra "+ IVA" o "IVA incluido". Un monotributista muestra el precio final sin discriminar.
-- El costo se guarda **tal como lo cotizó el proveedor** (monto + ¿incluye IVA? + alícuota) y el motor lo normaliza. Así nadie tiene que hacer la cuenta al cargar.
-- **Cargos sobre la venta** (IIBB, impuesto al cheque, comisiones) configurables. Cuentan en el **margen real**. El margen objetivo puede compensarlos (`P = C / (1 − g − c)`). Ejemplo V08: sin compensar, un "25%" termina siendo **21,5%** real con IIBB del 3,5%.
+- **Piloto: Responsable Inscripto.** Los costos se cargan **netos de IVA** (como hoy) y el presupuesto se presenta como **subtotal + IVA = total**.
+- El modelo igual guarda si un costo incluye IVA (para proveedores que facturan con IVA incluido o para futuras productoras monotributistas). El motor normaliza según el régimen de la organización (DOMAIN_MODEL §5.2, L1). La UI del MVP asume "sin IVA" por defecto.
+- **Cargos sobre la venta** (IIBB, impuesto al cheque, comisiones): configurables. Falta saber cuáles usa el piloto (pregunta pendiente en Q3).
 - **Fuera del MVP:** percepciones y retenciones, facturación electrónica (ARCA) y multi-jurisdicción de IIBB.
 
-## D-09 · Multi-moneda — ❓ (Q4)
+## D-09 · Moneda — ✅
 
-- **Propuesta:** el modelo soporta costos en ARS y USD y presupuestos en ARS o USD desde el día 1 (el costo de agregarlo después es alto). En la UI del MVP se habilita solo si el piloto lo necesita.
-- El tipo de cambio se carga a mano con historial. Queda **congelado en la versión** y cambiarlo es una acción explícita con diff. El tipo de cambio automático (BNA / MEP) queda para V2.
+- **Costos siempre en ARS** en el MVP (así cotizan los proveedores del piloto).
+- El presupuesto se arma en ARS. **Opcionalmente se presenta en USD** (cliente del exterior): la versión guarda un tipo de cambio congelado y la propuesta muestra los importes convertidos. Cambiarlo es una acción explícita.
+- Costos en USD por línea quedan para V2 (el modelo ya tiene `currency` en `price_history`, así que no requiere migración de datos).
 
 ## D-10 · Presupuesto → versión → propuesta (sin tablas `quotes`) — 🟡
 
@@ -129,11 +128,15 @@ Pendiente (Q1). Mientras tanto, los documentos usan "la plataforma". El código 
 
 - **Recomendación:** Cloudflare R2 (API S3, sin costo de egreso). Alternativa: AWS S3. El código usa la API S3 genérica (boto3) y se cambia de proveedor por configuración.
 
-## D-18 · Hosting, región y costos — 🟡 (Q10)
+## D-18 · Hosting, región y costos — ✅ (planes gratuitos para staging y piloto)
 
-- Vercel (frontend), Render (API + cron) y Neon (Postgres), con **API y DB en us-east, co-ubicadas**. Se mide la latencia desde Argentina en la Fase 1. Render no tiene región en Sudamérica, así que mover solo la DB a São Paulo empeoraría la latencia (la API tiene que estar al lado de la DB).
-- **Nada de planes gratuitos en producción:** Render free "duerme" (30–50 s de arranque) y **Vercel Hobby no permite uso comercial**.
-- **Orden de magnitud:** US$ 50–100/mes para el piloto (Vercel Pro, Render Starter/Standard + cron, Neon de pago, R2/Resend/Sentry en sus planes gratuitos o de entrada). Hay que confirmarlo con los precios vigentes al contratar.
+- Vercel (frontend), Render (API) y Neon (Postgres), con **API y DB en us-east, co-ubicadas**.
+- **Decisión:** se arranca con los **planes gratuitos** de los tres. Las consecuencias, aceptadas:
+  - **Render free "duerme" tras ~15 min sin tráfico:** el primer request después tarda ~30–60 s. Para el piloto interno es tolerable; para propuestas a clientes reales (Fase 3) conviene pasar a Starter (~US$ 7/mes) o mantenerla despierta.
+  - **Render free no tiene pre-deploy command:** las migraciones corren al arrancar el contenedor (`RUN_MIGRATIONS=true`), antes de levantar uvicorn. Si una migración falla, el contenedor no arranca y Render mantiene la versión anterior.
+  - **Neon free** suspende el cómputo sin uso (cold start ~0,5 s) y tiene límites de horas y almacenamiento holgados para el piloto.
+  - **Vercel Hobby** no permite uso comercial: alcanza para desarrollo y piloto; antes de cobrarle a una productora hay que pasar a Pro.
+- Se mide la latencia desde Argentina con el sistema desplegado.
 
 ## D-19 · Acceso a datos sincrónico — 🟡
 

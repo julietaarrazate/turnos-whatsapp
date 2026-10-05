@@ -1,6 +1,6 @@
 # Deploy: staging y producción
 
-> Estado: **listo para configurar**. Nada está desplegado todavía: crear las cuentas y los recursos requiere tu aprobación (tienen costo). Ver ARCHITECTURE §3 y DECISIONS D-18.
+> Estado: staging en **planes gratuitos** (D-18). Ver ARCHITECTURE §3.
 
 ```
 Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI, Docker) ──► Neon (Postgres 16)
@@ -38,7 +38,7 @@ Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI
 | `RESEND_API_KEY` | de Resend |
 | `SENTRY_DSN` | proyecto Python en Sentry (opcional) |
 
-3. Cada deploy corre `alembic upgrade head` **antes** de cambiar de versión (pre-deploy command). Por eso las migraciones son *expand/contract*.
+3. Con `RUN_MIGRATIONS=true`, el contenedor corre `alembic upgrade head` antes de levantar la API (el plan free de Render no tiene pre-deploy command). Si la migración falla, el contenedor no arranca y Render mantiene la versión anterior. Por eso las migraciones son *expand/contract*. En un plan pago conviene usar `preDeployCommand: alembic upgrade head` y sacar la variable.
 4. El health check es `/readyz`: verifica que la API llegue a la base.
 
 ## 3. Vercel (frontend)
@@ -52,7 +52,7 @@ Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI
 | `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` | proyecto Next.js en Sentry (opcional) |
 | `NEXT_PUBLIC_APP_ENV` / `APP_ENV` | `staging` o `production` |
 
-3. Plan **Pro**: el plan Hobby no permite uso comercial.
+3. Plan Hobby para desarrollo y piloto. Antes de cobrarle a una productora: **Pro** (Hobby no permite uso comercial).
 
 ## 4. Email (Resend)
 
