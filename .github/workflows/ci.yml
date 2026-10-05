@@ -92,6 +92,19 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+  docker:
+    # Construye la imagen de producción de la API y verifica que arranca.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t api:ci backend
+      - name: El contenedor arranca y responde /healthz
+        run: |
+          docker run -d --name api -p 8000:8000 -e ENV=local api:ci
+          for i in $(seq 1 20); do curl -sf localhost:8000/healthz && exit 0; sleep 1; done
+          docker logs api
+          exit 1
+
   security:
     runs-on: ubuntu-latest
     permissions:

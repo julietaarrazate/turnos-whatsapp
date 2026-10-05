@@ -1330,6 +1330,7 @@
     },
     "/healthz": {
       "get": {
+        "description": "El proceso responde.",
         "operationId": "healthz_healthz_get",
         "responses": {
           "200": {
@@ -1348,6 +1349,26 @@
           }
         },
         "summary": "Healthz",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "description": "El proceso puede atender: llega a la base de datos.",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readyz",
         "tags": [
           "ops"
         ]

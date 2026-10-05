@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal, Self
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEV_JWT_SECRET = "dev-insecure-secret-change-me-dev-insecure-secret"  # noqa: S105
@@ -38,6 +38,23 @@ class Settings(BaseSettings):
     resend_api_key: SecretStr | None = None
 
     rate_limit_enabled: bool = True
+
+    # Observabilidad
+    sentry_dsn: str | None = None
+    sentry_traces_sample_rate: float = 0.1
+    # SHA del commit. Render lo expone como RENDER_GIT_COMMIT.
+    release: str | None = Field(
+        default=None, validation_alias=AliasChoices("RELEASE", "RENDER_GIT_COMMIT")
+    )
+
+    @field_validator("database_url", "migrator_database_url")
+    @classmethod
+    def _use_psycopg_driver(cls, value: str) -> str:
+        """Neon entrega ``postgres(ql)://``; SQLAlchemy necesita el driver explícito."""
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value.removeprefix(prefix)
+        return value
 
     @model_validator(mode="after")
     def _check_production_secrets(self) -> Self:
