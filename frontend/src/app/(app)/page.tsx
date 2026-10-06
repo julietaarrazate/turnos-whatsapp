@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/ui/page-header";
 import { useSession } from "@/features/auth/session";
+import { FollowUpCard } from "@/features/budgets/follow-up-card";
 
 function greeting(): string {
   const hour = Number(
@@ -16,8 +17,11 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader title={`${greeting()}, ${firstName}`} description="Lo que pasa hoy en tu productora." />
+      <div className="mb-4">
+        <FollowUpCard />
+      </div>
       <section className="rounded-xl border border-dashed border-line bg-surface p-6 text-sm text-ink-muted">
-        El tablero (enviado, aceptado, en negociación, margen y “para hacer hoy”) llega en la Fase 5. Mientras tanto
+        El tablero (enviado, aceptado, en negociación y margen) llega en la Fase 5. Mientras tanto
         podés configurar tu organización e invitar a tu equipo desde <strong>Configuración</strong>.
       </section>
     </>

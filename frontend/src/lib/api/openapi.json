@@ -2188,6 +2188,15 @@
         "title": "FieldChange",
         "type": "object"
       },
+      "FollowUp": {
+        "enum": [
+          "EXPIRING",
+          "VIEWED_NO_ANSWER",
+          "NO_RESPONSE"
+        ],
+        "title": "FollowUp",
+        "type": "string"
+      },
       "FreezeIn": {
         "properties": {
           "change_note": {
@@ -2468,6 +2477,58 @@
         ],
         "title": "IvaDisplay",
         "type": "string"
+      },
+      "LastProposal": {
+        "properties": {
+          "first_viewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Viewed At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "sent_at": {
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "valid_until": {
+            "title": "Valid Until",
+            "type": "string"
+          },
+          "view_count": {
+            "title": "View Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "status",
+          "sent_at",
+          "valid_until",
+          "first_viewed_at",
+          "view_count"
+        ],
+        "title": "LastProposal",
+        "type": "object"
       },
       "LineCost": {
         "description": "Solo con `cost.view`.",
@@ -4025,6 +4086,10 @@
             "title": "Base Currency",
             "type": "string"
           },
+          "follow_up_days": {
+            "title": "Follow Up Days",
+            "type": "integer"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -4076,13 +4141,27 @@
           "tax_condition",
           "base_currency",
           "timezone",
-          "viewer_sees_financials"
+          "viewer_sees_financials",
+          "follow_up_days"
         ],
         "title": "OrganizationOut",
         "type": "object"
       },
       "OrganizationUpdate": {
         "properties": {
+          "follow_up_days": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Days"
+          },
           "name": {
             "anyOf": [
               {
@@ -4145,6 +4224,172 @@
         ],
         "title": "PasswordResetRequest",
         "type": "object"
+      },
+      "Pipeline": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/PipelineStatus"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "follow_up": {
+            "title": "Follow Up",
+            "type": "integer"
+          },
+          "follow_up_days": {
+            "title": "Follow Up Days",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "counts",
+          "follow_up",
+          "follow_up_days",
+          "truncated"
+        ],
+        "title": "Pipeline",
+        "type": "object"
+      },
+      "PipelineItem": {
+        "properties": {
+          "approved_version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Version No"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/BudgetCurrency"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_name": {
+            "title": "Event Name",
+            "type": "string"
+          },
+          "event_status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "follow_up": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FollowUp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastProposal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "pipeline_status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          },
+          "proposals_sent": {
+            "title": "Proposals Sent",
+            "type": "integer"
+          },
+          "sale_net": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Net",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          },
+          "version_status": {
+            "$ref": "#/components/schemas/VersionStatus"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "title",
+          "currency",
+          "event_id",
+          "event_name",
+          "event_status",
+          "client_name",
+          "version_no",
+          "version_status",
+          "sale_net",
+          "updated_at",
+          "approved_version_no",
+          "pipeline_status",
+          "follow_up",
+          "proposals_sent",
+          "last_proposal"
+        ],
+        "title": "PipelineItem",
+        "type": "object"
+      },
+      "PipelineStatus": {
+        "enum": [
+          "DRAFT",
+          "SENT",
+          "VIEWED",
+          "NEGOTIATION",
+          "ACCEPTED",
+          "LOST"
+        ],
+        "title": "PipelineStatus",
+        "type": "string"
       },
       "PreferredOffer": {
         "properties": {
@@ -10257,6 +10502,83 @@
         "summary": "Update Fiscal",
         "tags": [
           "organization"
+        ]
+      }
+    },
+    "/api/v1/pipeline": {
+      "get": {
+        "description": "Pipeline comercial (B-12): estado derivado de cada presupuesto y \"para seguir\".",
+        "operationId": "get_pipeline_api_v1_pipeline_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PipelineStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "follow_up",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Follow Up",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pipeline"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Pipeline",
+        "tags": [
+          "proposals"
         ]
       }
     },

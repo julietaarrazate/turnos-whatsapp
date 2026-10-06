@@ -9,15 +9,23 @@ from app.modules.budgets.public import (
     sendable_version,
 )
 from app.modules.budgets.router import router
-from app.modules.budgets.service import ensure_budget, freeze_for_proposal, parse_if_match
+from app.modules.budgets.schemas import BudgetSummary
+from app.modules.budgets.service import (
+    ensure_budget,
+    freeze_for_proposal,
+    list_budgets,
+    parse_if_match,
+)
 
 __all__ = [
+    "BudgetSummary",
     "DisplayMode",
     "IvaDisplay",
     "SendableVersion",
     "budget_event_id",
     "ensure_budget",
     "freeze_for_proposal",
+    "list_budgets",
     "parse_if_match",
     "public_snapshot",
     "router",
