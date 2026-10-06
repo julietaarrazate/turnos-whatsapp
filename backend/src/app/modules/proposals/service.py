@@ -44,6 +44,7 @@ from app.modules.proposals.models import (
     ProposalActivity,
     ProposalStatus,
 )
+from app.modules.proposals.pdf import render_pdf
 from app.modules.proposals.public_schemas import (
     AcceptIn,
     PublicDecision,
@@ -355,6 +356,23 @@ def approve(
     return _out(proposal), emails
 
 
+def _pdf(proposal: Proposal) -> tuple[bytes, str]:
+    snapshot = PublicSnapshot.model_validate(proposal.public_snapshot)
+    return render_pdf(proposal.content_hash, snapshot), f"propuesta-{proposal.number}.pdf"
+
+
+def proposal_pdf(db: AppSession, ctx: TenantContext, proposal_id: UUID) -> tuple[bytes, str]:
+    """El mismo PDF que baja el cliente, para la productora (no cuenta como descarga)."""
+    proposal = db.execute(
+        select(Proposal).where(
+            Proposal.id == proposal_id, Proposal.organization_id == ctx.organization_id
+        )
+    ).scalar_one_or_none()
+    if proposal is None:
+        raise not_found()
+    return _pdf(proposal)
+
+
 # --- Público (sin sesión, solo el token) -----------------------------------------------------
 
 
@@ -419,6 +437,15 @@ def public_view(
         proposal.status = ProposalStatus.VIEWED.value
     db.flush()
     return _public_out(db, actor, proposal), emails
+
+
+def public_pdf(db: AppSession, raw_token: str, client: ClientInfo) -> tuple[bytes, str]:
+    """P-03 / P-07: el PDF del link; se registra la descarga (salvo robots de vista previa)."""
+    proposal = _public_proposal(db, raw_token)
+    if not _is_preview_bot(client.user_agent):
+        _activity(db, proposal, ActivityType.PDF_DOWNLOADED, client)
+        db.flush()
+    return _pdf(proposal)
 
 
 def _check_hash(proposal: Proposal, seen: str) -> None:

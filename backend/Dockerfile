@@ -1,4 +1,4 @@
-# Imagen de la API. En la Fase 3 se suman las librerías de sistema de WeasyPrint (PDF).
+# Imagen de la API, con las librerías de sistema de WeasyPrint (PDF de propuestas).
 # PYTHON_IMAGE permite usar un mirror (p. ej. public.ecr.aws/docker/library/python:3.12-slim).
 ARG PYTHON_IMAGE=python:3.12-slim
 FROM ${PYTHON_IMAGE} AS base
@@ -8,6 +8,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
+
+# WeasyPrint: Pango (texto), HarfBuzz subset (fuentes embebidas) y una fuente con tildes y ñ.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv==0.8.17
 

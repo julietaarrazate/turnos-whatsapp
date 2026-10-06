@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, cast
 
@@ -6,11 +7,17 @@ from sqlalchemy import text
 
 from app.core.db import DbContext, session_scope
 from app.core.enums import Role
+from app.modules.catalog import today_ar
 from tests.conftest import make_client
 from tests.security.harness import OrgWorld, build_org, logged_in
 
 Json = dict[str, Any]
 FORBIDDEN_KEYS = ("cost", "markup", "margin", "profit", "supplier", "internal", "notes")
+
+
+def yesterday_ar() -> date:
+    """Ayer en Argentina: la vigencia se compara con la fecha local, no con la UTC de la DB."""
+    return today_ar() - timedelta(days=1)
 
 
 def _ok(response: Any, status: int = 200) -> Json:
@@ -117,8 +124,8 @@ def test_revoked_invalid_and_expired_links() -> None:
 
     with session_scope(DbContext(organization_id=world.organization_id)) as s:
         s.execute(
-            text("UPDATE proposals SET valid_until = current_date - 1 WHERE id = :id"),
-            {"id": created["proposal"]["id"]},
+            text("UPDATE proposals SET valid_until = :yesterday WHERE id = :id"),
+            {"yesterday": yesterday_ar(), "id": created["proposal"]["id"]},
         )
     expired = _ok(_public(created["public_path"]))
     assert (expired["status"], expired["can_decide"]) == ("EXPIRED", False)
