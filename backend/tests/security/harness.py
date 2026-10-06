@@ -244,6 +244,10 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("POST", "/api/v1/budgets/{budget_id}/draft/reapply-rules"): {},
     ("POST", "/api/v1/budgets/{budget_id}/proposals"): {},
     ("POST", "/api/v1/proposals/{proposal_id}/revoke"): {},
+    ("POST", "/api/v1/events/{event_id}/start-production"): {},
+    ("POST", "/api/v1/events/{event_id}/complete"): {},
+    ("POST", "/api/v1/events/{event_id}/close"): {},
+    ("POST", "/api/v1/events/{event_id}/reopen"): {"reason": "Faltaba una factura"},
     ("POST", "/api/v1/proposals/{proposal_id}/approve"): {"po_number": "OC-1"},
     ("POST", "/api/v1/budgets/{budget_id}/duplicate"): lambda w: {
         "event": {"client_id": str(w.ids["client_id"]), "name": "Copia"}
