@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Copy, ExternalLink, Send } from "lucide-react";
+import { BadgeCheck, Copy, ExternalLink, FileDown, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -307,6 +307,13 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
                   {p.view_count ? ` · vista ${p.view_count} ${p.view_count === 1 ? "vez" : "veces"}` : " · sin abrir"}
                 </span>
                 <span className="ml-auto flex gap-1">
+                  <a
+                    href={`/api/v1/proposals/${p.id}/pdf`}
+                    aria-label={`PDF de la propuesta #${p.number}`}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-sm text-accent hover:bg-subtle"
+                  >
+                    <FileDown className="size-4" aria-hidden /> PDF
+                  </a>
                   {can("proposal.decide") && APPROVABLE.includes(p.status) ? (
                     <Button size="sm" variant="secondary" onClick={() => setApproving(p)}>
                       <BadgeCheck className="size-4" aria-hidden /> Aprobar

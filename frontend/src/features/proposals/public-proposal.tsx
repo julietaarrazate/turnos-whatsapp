@@ -1,3 +1,5 @@
+import { FileDown } from "lucide-react";
+
 import type { PublicProposal } from "@/lib/api/types";
 import { formatDateTime, formatDay } from "@/lib/format/date";
 import { formatMoney } from "@/lib/format/number";
@@ -40,6 +42,12 @@ export function PublicProposalView({ data, token }: { data: PublicProposal; toke
           {p.event.city ? ` · ${p.event.city}` : ""}
         </p>
         <p className="text-sm text-ink-muted">Válida hasta el {formatDay(p.valid_until)}</p>
+        <a
+          href={`/api/v1/public/proposals/${encodeURIComponent(token)}/pdf`}
+          className="mt-2 inline-flex w-fit items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium"
+        >
+          <FileDown className="size-4" aria-hidden /> Descargar PDF
+        </a>
       </header>
 
       {notice ? (

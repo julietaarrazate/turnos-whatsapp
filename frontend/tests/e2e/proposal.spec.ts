@@ -57,9 +57,15 @@ test("generar propuesta y verla como el cliente, sin datos internos", async ({ p
   expect(html).not.toContain("12.345,67");
   expect(html).not.toContain("12345.67");
   await expect(client.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  // El mismo contenido en PDF.
+  const [download] = await Promise.all([client.waitForEvent("download"), client.getByRole("link", { name: "Descargar PDF" }).click()]);
+  expect(download.suggestedFilename()).toMatch(/^propuesta-\d+\.pdf$/);
+  const pdf = await (await client.request.get(`${new URL(link).pathname.replace("/p/", "/api/v1/public/proposals/")}/pdf`)).body();
+  expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
   await client.close();
 
   // La productora ve que la abrieron.
   await page.reload();
   await expect(page.getByRole("region", { name: "Propuestas" })).toContainText("Vista");
+  await expect(page.getByRole("link", { name: /PDF de la propuesta #\d+/ })).toBeVisible();
 });

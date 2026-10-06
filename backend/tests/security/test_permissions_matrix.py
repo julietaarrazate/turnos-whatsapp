@@ -24,7 +24,8 @@ def test_role_access_matches_matrix(route: RouteInfo, role: Role) -> None:
     response = call(client, route, world)
     assert route.permission is not None
     allowed = route.permission in ROLE_PERMISSIONS[role]
-    body = response.json() if response.content else None
+    is_json = "json" in response.headers.get("content-type", "")  # el PDF es binario
+    body = response.json() if response.content and is_json else None
     code = body.get("code") if isinstance(body, dict) else None
     if allowed:
         assert code != "permission_denied", f"{role} debería poder: {response.text}"

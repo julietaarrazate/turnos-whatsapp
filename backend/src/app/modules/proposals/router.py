@@ -1,7 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, Path, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, Path, Response, status
 
 from app.core.db import DbSession
 from app.core.permissions import Permission
@@ -43,6 +43,23 @@ def revoke(proposal_id: UUID, ctx: Send, db: DbSession) -> ProposalOut:
     return service.revoke(db, ctx, proposal_id)
 
 
+_PDF: dict[int | str, dict[str, Any]] = {
+    200: {"content": {"application/pdf": {}}, "description": "PDF de la propuesta"}
+}
+
+
+def _pdf_response(pdf: bytes, filename: str) -> Response:
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            # Si la anulan, el link deja de servir: nada de caches intermedios.
+            "Cache-Control": "private, no-store",
+        },
+    )
+
+
 def _notify(background: BackgroundTasks, emails: list[Email]) -> None:
     """Los avisos salen después del commit: si la transacción falla, no se manda nada."""
     for email in emails:
@@ -57,6 +74,20 @@ def approve(
     result, emails = service.approve(db, ctx, proposal_id, body)
     _notify(background, emails)
     return result
+
+
+@router.get("/proposals/{proposal_id}/pdf", response_class=Response, responses=_PDF)
+def proposal_pdf(proposal_id: UUID, ctx: View, db: DbSession) -> Response:
+    return _pdf_response(*service.proposal_pdf(db, ctx, proposal_id))
+
+
+@public_router.get(
+    "/proposals/{token}/pdf", dependencies=[Public], response_class=Response, responses=_PDF
+)
+def public_pdf(token: Token, db: DbSession, client: Client) -> Response:
+    """El PDF que descarga el cliente: mismo contenido que el link (P-03)."""
+    enforce(f"proposal-pdf:ip:{client.ip}", limit=30, window_seconds=600)
+    return _pdf_response(*service.public_pdf(db, token, client))
 
 
 @public_router.get("/proposals/{token}", dependencies=[Public])

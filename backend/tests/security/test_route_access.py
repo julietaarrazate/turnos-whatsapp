@@ -17,6 +17,8 @@ PUBLIC_ROUTES = {
     # Aceptar / rechazar: solo con el token, hash del contenido visto y rate limit por IP.
     "POST /api/v1/public/proposals/{token}/accept",
     "POST /api/v1/public/proposals/{token}/reject",
+    # PDF del mismo snapshot público (P-03).
+    "GET /api/v1/public/proposals/{token}/pdf",
 }
 
 

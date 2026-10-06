@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Propuesta #{{ p.proposal_number }} · {{ p.title }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm;
+    @bottom-left { content: element(footer); }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font-family: "DejaVu Sans", Arial, sans-serif; font-size: 8pt; color: #6b7280; }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif; font-size: 10pt; color: #111827; line-height: 1.4; }
+  .org { color: #3b4fd8; font-weight: 600; font-size: 10pt; margin: 0; }
+  h1 { font-size: 18pt; margin: 2mm 0 1mm; }
+  .muted { color: #6b7280; }
+  header { border-bottom: 1px solid #e5e7eb; padding-bottom: 4mm; margin-bottom: 6mm; }
+  header p { margin: 0.5mm 0; }
+  section { margin-bottom: 5mm; }
+  .section-head { display: flex; justify-content: space-between; font-weight: 600; font-size: 11pt; margin-bottom: 1.5mm; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 2mm 0; border-bottom: 1px solid #f0f1f3; vertical-align: top; }
+  td.amount { text-align: right; white-space: nowrap; padding-left: 4mm; }
+  .desc { white-space: pre-line; }
+  .detail { font-size: 8.5pt; color: #6b7280; }
+  .totals { margin-left: auto; width: 75mm; border: 1px solid #e5e7eb; border-radius: 2mm; padding: 2mm 4mm; page-break-inside: avoid; }
+  .totals div { display: flex; justify-content: space-between; padding: 0.6mm 0; }
+  .totals .grand { border-top: 1px solid #e5e7eb; margin-top: 1mm; padding-top: 2mm; font-weight: 700; font-size: 12pt; }
+  h2 { font-size: 10.5pt; margin: 4mm 0 1mm; }
+  .terms { white-space: pre-line; color: #374151; }
+  tr { page-break-inside: avoid; }
+  /* Pie con datos de la productora: elemento HTML (escapado), no texto dentro del CSS. */
+  .footer { position: running(footer); font-size: 8pt; color: #6b7280; }
+</style>
+</head>
+<body>
+<div class="footer">{{ p.organization.legal_name or p.organization.name }}{% if p.organization.tax_id %} · CUIT {{ p.organization.tax_id }}{% endif %}</div>
+<header>
+  <p class="org">{{ p.organization.name }}</p>
+  <h1>{{ p.title }}</h1>
+  <p class="muted">Propuesta #{{ p.proposal_number }} para {{ p.client.name or "" }}{% if p.event.start_date %} · {{ p.event.start_date | day }}{% endif %}{% if p.event.venue %} · {{ p.event.venue }}{% endif %}{% if p.event.city %} · {{ p.event.city }}{% endif %}</p>
+  <p class="muted">Válida hasta el {{ p.valid_until | day }} · Presupuesto #{{ p.budget_number }} v{{ p.version_no }}</p>
+</header>
+
+{% set detailed = p.display_mode == "DETAILED" %}
+{% for section in p.sections %}
+<section>
+  <div class="section-head"><span>{{ section.title }}</span>{% if section.total %}<span>{{ money(section.total) }}</span>{% endif %}</div>
+  <table>
+    {% for item in section["items"] %}
+    <tr>
+      <td>
+        <div class="desc">{{ item.description }}</div>
+        <div class="detail">{{ item.quantity | qty }} {{ item.unit }}{% if item.days %} × {{ item.days }} {{ "día" if item.days == 1 else "días" }}{% endif %}{% if detailed and item.unit_price %} · {{ money(item.unit_price) }} c/u{% endif %}</div>
+      </td>
+      {% if detailed and item.amount %}<td class="amount">{{ money(item.amount) }}</td>{% endif %}
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+{% endfor %}
+
+<div class="totals">
+  {% if p.iva_display != "IVA_INCLUDED" %}
+    {% if p.totals.global_discount %}
+    <div><span>Subtotal</span><span>{{ money(p.totals.subtotal) }}</span></div>
+    <div><span>Descuento</span><span>−{{ money(p.totals.global_discount) }}</span></div>
+    {% endif %}
+    <div><span>Neto</span><span>{{ money(p.totals.net) }}</span></div>
+    <div><span>IVA</span><span>{{ money(p.totals.iva) }}</span></div>
+  {% endif %}
+  <div class="grand"><span>Total{% if p.iva_display == "IVA_INCLUDED" %} (IVA incluido){% endif %}</span><span>{{ money(p.totals.total) }}</span></div>
+</div>
+
+{% if p.payment_terms %}
+<h2>Forma de pago</h2>
+<p class="terms">{{ p.payment_terms }}</p>
+{% endif %}
+{% if p.terms %}
+<h2>Condiciones</h2>
+<p class="terms">{{ p.terms }}</p>
+{% endif %}
+</body>
+</html>

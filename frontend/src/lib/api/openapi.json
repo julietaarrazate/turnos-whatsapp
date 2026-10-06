@@ -11025,6 +11025,45 @@
         ]
       }
     },
+    "/api/v1/proposals/{proposal_id}/pdf": {
+      "get": {
+        "operationId": "proposal_pdf_api_v1_proposals__proposal_id__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "PDF de la propuesta"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Proposal Pdf",
+        "tags": [
+          "proposals"
+        ]
+      }
+    },
     "/api/v1/proposals/{proposal_id}/revoke": {
       "post": {
         "operationId": "revoke_api_v1_proposals__proposal_id__revoke_post",
@@ -11163,6 +11202,47 @@
           }
         },
         "summary": "Public Accept",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/public/proposals/{token}/pdf": {
+      "get": {
+        "description": "El PDF que descarga el cliente: mismo contenido que el link (P-03).",
+        "operationId": "public_pdf_api_v1_public_proposals__token__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 20,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "PDF de la propuesta"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Pdf",
         "tags": [
           "public"
         ]
