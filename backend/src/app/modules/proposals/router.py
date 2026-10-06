@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, Path, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, Path, Query, Response, status
 
 from app.core.db import DbSession
 from app.core.permissions import Permission
@@ -10,6 +10,7 @@ from app.modules.auth import Client, Public, TenantContext, require
 from app.modules.budgets import parse_if_match
 from app.modules.notifications import Email, send_email
 from app.modules.proposals import service
+from app.modules.proposals.pipeline import Pipeline, PipelineStatus, pipeline
 from app.modules.proposals.public_schemas import AcceptIn, PublicProposal, RejectIn
 from app.modules.proposals.schemas import ApproveIn, ProposalCreated, ProposalIn, ProposalOut
 
@@ -39,6 +40,18 @@ def create_proposal(
     created, emails = service.create_proposal(db, ctx, budget_id, lock, body)
     _notify(background, emails)
     return created
+
+
+@router.get("/pipeline")
+def get_pipeline(
+    ctx: View,
+    db: DbSession,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    status: PipelineStatus | None = None,
+    follow_up: bool = False,
+) -> Pipeline:
+    """Pipeline comercial (B-12): estado derivado de cada presupuesto y "para seguir"."""
+    return pipeline(db, ctx, q=q, status=status, follow_up_only=follow_up)
 
 
 @router.get("/budgets/{budget_id}/proposals")

@@ -83,3 +83,29 @@ test("el cliente rechaza y la productora aprueba otra con OC", async ({ page, br
   await expect(panel).toContainText("OC OC-4471");
   await expect(panel.getByRole("button", { name: "Marcar como perdido" })).toHaveCount(0);
 });
+
+test("el pipeline muestra el estado de cada presupuesto y filtra", async ({ page, browser }, testInfo) => {
+  const suffix = `${testInfo.project.name}-pipe-${Date.now()}`;
+  await login(page);
+  const { path } = await sentProposal(page.request, suffix);
+
+  await page.goto("/budgets");
+  const list = page.getByRole("list", { name: "Presupuestos" });
+  const row = list.getByRole("listitem").filter({ hasText: `Fiesta ${suffix}` });
+  await expect(row).toContainText("Enviado");
+  await page.getByRole("group", { name: "Filtrar por estado" }).getByRole("button", { name: /^Aceptado/ }).click();
+  await expect(row).toHaveCount(0);
+
+  const client = await browser.newPage();
+  await client.goto(path);
+  await client.getByRole("button", { name: "Aceptar propuesta" }).click();
+  await client.getByLabel("Tu nombre").fill("Ana");
+  await client.getByLabel("Tu email").fill("ana@cliente.example.com");
+  await client.getByRole("button", { name: "Confirmar aceptación" }).click();
+  await expect(client.getByText("¡Listo! Aceptaste la propuesta.")).toBeVisible();
+  await client.close();
+
+  await page.reload();
+  await page.getByRole("group", { name: "Filtrar por estado" }).getByRole("button", { name: /^Aceptado/ }).click();
+  await expect(list.getByRole("listitem").filter({ hasText: `Fiesta ${suffix}` })).toContainText("Aceptado");
+});

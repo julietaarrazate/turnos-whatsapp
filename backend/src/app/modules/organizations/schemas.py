@@ -17,11 +17,13 @@ class OrganizationOut(BaseModel):
     base_currency: str
     timezone: str
     viewer_sees_financials: bool
+    follow_up_days: int  # "para seguir": días sin decisión desde el envío
 
 
 class OrganizationUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     viewer_sees_financials: bool | None = None
+    follow_up_days: int | None = Field(default=None, ge=1, le=60)
 
 
 class OrganizationFiscalUpdate(BaseModel):

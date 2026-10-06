@@ -767,6 +767,26 @@ export interface paths {
         patch: operations["update_fiscal_api_v1_organization_fiscal_patch"];
         trace?: never;
     };
+    "/api/v1/pipeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Pipeline
+         * @description Pipeline comercial (B-12): estado derivado de cada presupuesto y "para seguir".
+         */
+        get: operations["get_pipeline_api_v1_pipeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pricing/fx-rates": {
         parameters: {
             query?: never;
@@ -1827,6 +1847,11 @@ export interface components {
             /** Field */
             field: string;
         };
+        /**
+         * FollowUp
+         * @enum {string}
+         */
+        FollowUp: "EXPIRING" | "VIEWED_NO_ANSWER" | "NO_RESPONSE";
         /** FreezeIn */
         FreezeIn: {
             /** Change Note */
@@ -1944,6 +1969,28 @@ export interface components {
          * @enum {string}
          */
         IvaDisplay: "PLUS_IVA" | "IVA_INCLUDED";
+        /** LastProposal */
+        LastProposal: {
+            /** First Viewed At */
+            first_viewed_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            /**
+             * Sent At
+             * Format: date-time
+             */
+            sent_at: string;
+            status: components["schemas"]["ProposalStatus"];
+            /** Valid Until */
+            valid_until: string;
+            /** View Count */
+            view_count: number;
+        };
         /**
          * LineCost
          * @description Solo con `cost.view`.
@@ -2351,6 +2398,8 @@ export interface components {
         OrganizationOut: {
             /** Base Currency */
             base_currency: string;
+            /** Follow Up Days */
+            follow_up_days: number;
             /**
              * Id
              * Format: uuid
@@ -2370,6 +2419,8 @@ export interface components {
         };
         /** OrganizationUpdate */
         OrganizationUpdate: {
+            /** Follow Up Days */
+            follow_up_days?: number | null;
             /** Name */
             name?: string | null;
             /** Viewer Sees Financials */
@@ -2390,6 +2441,66 @@ export interface components {
              */
             email: string;
         };
+        /** Pipeline */
+        Pipeline: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Follow Up */
+            follow_up: number;
+            /** Follow Up Days */
+            follow_up_days: number;
+            /** Items */
+            items: components["schemas"]["PipelineItem"][];
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** PipelineItem */
+        PipelineItem: {
+            /** Approved Version No */
+            approved_version_no: number | null;
+            /** Client Name */
+            client_name: string;
+            currency: components["schemas"]["BudgetCurrency"];
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Event Name */
+            event_name: string;
+            event_status: components["schemas"]["EventStatus"];
+            follow_up: components["schemas"]["FollowUp"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            last_proposal: components["schemas"]["LastProposal"] | null;
+            /** Number */
+            number: number;
+            pipeline_status: components["schemas"]["PipelineStatus"];
+            /** Proposals Sent */
+            proposals_sent: number;
+            /** Sale Net */
+            sale_net: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version No */
+            version_no: number;
+            version_status: components["schemas"]["VersionStatus"];
+        };
+        /**
+         * PipelineStatus
+         * @enum {string}
+         */
+        PipelineStatus: "DRAFT" | "SENT" | "VIEWED" | "NEGOTIATION" | "ACCEPTED" | "LOST";
         /** PreferredOffer */
         PreferredOffer: {
             current_cost: components["schemas"]["CostOut"] | null;
@@ -5169,6 +5280,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganizationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pipeline_api_v1_pipeline_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                status?: components["schemas"]["PipelineStatus"] | null;
+                follow_up?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pipeline"];
                 };
             };
             /** @description Validation Error */

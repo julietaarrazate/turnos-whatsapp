@@ -38,7 +38,7 @@ export function OrganizationSettings() {
   });
 
   const update = useMutation({
-    mutationFn: async (body: { name?: string; viewer_sees_financials?: boolean }) =>
+    mutationFn: async (body: { name?: string; viewer_sees_financials?: boolean; follow_up_days?: number }) =>
       unwrap(await api.PATCH("/api/v1/organization", { body })),
     onSuccess: (data) => {
       queryClient.setQueryData(ORG_KEY, data);
@@ -89,6 +89,26 @@ export function OrganizationSettings() {
             disabled={!canEdit || update.isPending}
             onChange={(value) => update.mutate({ viewer_sees_financials: value })}
           />
+          <label className="flex flex-wrap items-center gap-2 text-sm">
+            <span>&ldquo;Para seguir&rdquo;: propuestas sin respuesta después de</span>
+            <input
+              key={data.follow_up_days}
+              type="number"
+              min={1}
+              max={60}
+              defaultValue={data.follow_up_days}
+              disabled={!canEdit || update.isPending}
+              aria-label="Días para seguir"
+              className="h-9 w-16 rounded-lg border border-line bg-surface px-2 text-right tabular-nums"
+              onBlur={(e) => {
+                const days = Number(e.currentTarget.value);
+                if (Number.isInteger(days) && days >= 1 && days <= 60 && days !== data.follow_up_days) {
+                  update.mutate({ follow_up_days: days });
+                }
+              }}
+            />
+            <span>días</span>
+          </label>
         </Section>
         {update.isError ? <Notice tone="error">{errorMessage(update.error)}</Notice> : null}
 

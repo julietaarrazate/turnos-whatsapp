@@ -12,7 +12,7 @@ from app.core.permissions import VIEWER_SEES_FINANCIALS, Permission
 from app.core.security import utcnow
 from app.modules.audit import AuditLog, diff, record
 from app.modules.auth import Invitation, TenantContext, create_invitation
-from app.modules.identity import Membership, MembershipStatus, Organization, User
+from app.modules.identity import FOLLOW_UP_DAYS, Membership, MembershipStatus, Organization, User
 from app.modules.notifications import Email
 from app.modules.organizations.schemas import (
     MemberOut,
@@ -64,6 +64,7 @@ def organization_out(org: Organization) -> OrganizationOut:
         base_currency=org.base_currency,
         timezone=org.timezone,
         viewer_sees_financials=bool(org.settings.get(VIEWER_SEES_FINANCIALS, False)),
+        follow_up_days=org.follow_up_days,
     )
 
 
@@ -80,6 +81,8 @@ def update_organization(
         org.name = body.name.strip()
     if body.viewer_sees_financials is not None:
         org.settings = {**org.settings, VIEWER_SEES_FINANCIALS: body.viewer_sees_financials}
+    if body.follow_up_days is not None:
+        org.settings = {**org.settings, FOLLOW_UP_DAYS: body.follow_up_days}
     db.flush()
     after = organization_out(org).model_dump(mode="json")
     old, new = diff(before, after)

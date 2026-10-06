@@ -16,6 +16,10 @@ class MembershipStatus(StrEnum):
     DISABLED = "DISABLED"
 
 
+FOLLOW_UP_DAYS = "follow_up_days"
+DEFAULT_FOLLOW_UP_DAYS = 5  # PRODUCT_SPEC §8: "para seguir" tras N días sin decisión
+
+
 class Organization(IdMixin, TimestampMixin, Base):
     __tablename__ = "organizations"
     __table_args__ = (
@@ -33,6 +37,11 @@ class Organization(IdMixin, TimestampMixin, Base):
         server_default="America/Argentina/Buenos_Aires",
     )
     settings: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+
+    @property
+    def follow_up_days(self) -> int:
+        value = self.settings.get(FOLLOW_UP_DAYS)
+        return value if isinstance(value, int) and value > 0 else DEFAULT_FOLLOW_UP_DAYS
 
 
 class Membership(IdMixin, TimestampMixin, Base):
