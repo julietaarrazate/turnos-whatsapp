@@ -473,6 +473,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budgets/{budget_id}/versions/{version_no}/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Version
+         * @description Excel de la versión: costos y márgenes solo si el rol los puede ver.
+         */
+        get: operations["export_version_api_v1_budgets__budget_id__versions__version_no__export_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categories": {
         parameters: {
             query?: never;
@@ -2587,6 +2607,8 @@ export interface components {
         };
         /** ProposalCreated */
         ProposalCreated: {
+            /** Emailed To */
+            emailed_to: string[];
             proposal: components["schemas"]["ProposalOut"];
             /** Public Path */
             public_path: string;
@@ -2599,6 +2621,10 @@ export interface components {
         ProposalIn: {
             /** @default BY_SECTION */
             display_mode?: components["schemas"]["DisplayMode"];
+            /** Email Message */
+            email_message?: string | null;
+            /** Email To */
+            email_to?: string[];
             /** @default PLUS_IVA */
             iva_display?: components["schemas"]["IvaDisplay"];
             /** Payment Terms */
@@ -4340,6 +4366,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_version_api_v1_budgets__budget_id__versions__version_no__export_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+                version_no: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planilla de la versión */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
                 };
             };
             /** @description Validation Error */

@@ -29,13 +29,14 @@ const STATUS: Record<Proposal["status"], { label: string; tone: string }> = {
   REVOKED: { label: "Anulada", tone: "bg-subtle text-ink-muted" },
 };
 
-function ShareBox({ path, budget }: { path: string; budget: Budget }) {
+function ShareBox({ path, budget, emailedTo }: { path: string; budget: Budget; emailedTo: string[] }) {
   const url = typeof window === "undefined" ? path : `${window.location.origin}${path}`;
   const [copied, setCopied] = useState(false);
   const message = `Hola! Te comparto la propuesta para ${budget.event.name}: ${url}`;
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-success/30 bg-success/10 p-4">
       <p className="text-sm font-medium">Propuesta lista. Compartí este link con el cliente:</p>
+      {emailedTo.length ? <p className="text-sm">Se envió por email a {emailedTo.join(", ")}.</p> : null}
       <input readOnly value={url} aria-label="Link de la propuesta" onFocus={(e) => e.currentTarget.select()} className="h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm" />
       <div className="flex flex-wrap gap-2">
         <Button
@@ -65,7 +66,17 @@ function ShareBox({ path, budget }: { path: string; budget: Budget }) {
   );
 }
 
-function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: BudgetEditor; onSent: (path: string) => void }) {
+type Sent = { path: string; emailedTo: string[] };
+
+/** "a@x.com, b@y.com" o uno por línea → lista sin vacíos. */
+function emailList(raw: string): string[] {
+  return raw
+    .split(/[\s,;]+/)
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
+
+function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: BudgetEditor; onSent: (sent: Sent | null) => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -75,7 +86,7 @@ function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: Budget
     <dialog
       ref={dialog}
       aria-label="Generar propuesta"
-      onClose={() => onSent("")}
+      onClose={() => onSent(null)}
       className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-ink/30"
     >
       <form
@@ -89,10 +100,12 @@ function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: Budget
             valid_days: Number(form.get("valid_days") || 7),
             payment_terms: textValue(form, "payment_terms"),
             terms: textValue(form, "terms"),
+            email_to: emailList(String(form.get("email_to") ?? "")),
+            email_message: textValue(form, "email_message"),
           };
           setSending(true);
           setError(null);
-          let path = "";
+          let sent: Sent | null = null;
           void editor
             .run(async (lock) => {
               const created = unwrap(
@@ -101,13 +114,13 @@ function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: Budget
                   body,
                 }),
               );
-              path = created.public_path;
+              sent = { path: created.public_path, emailedTo: created.emailed_to };
               return unwrap(await api.GET("/api/v1/budgets/{budget_id}", { params: { path: { budget_id: budget.id } } }));
             })
             .then((result) => {
               setSending(false);
-              if (result && path) {
-                onSent(path);
+              if (result && sent) {
+                onSent(sent);
                 dialog.current?.close();
               } else {
                 setError("No se pudo generar la propuesta. Revisá el presupuesto e intentá de nuevo.");
@@ -143,6 +156,16 @@ function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: Budget
         <TextField label="Vigencia (días)" name="valid_days" type="number" min={1} max={120} defaultValue={7} />
         <TextAreaField label="Forma de pago (opcional)" name="payment_terms" rows={2} maxLength={2000} placeholder="Ej.: 50 % al confirmar, saldo 7 días antes del evento" />
         <TextAreaField label="Condiciones (opcional)" name="terms" rows={3} maxLength={5000} />
+        <TextField
+          label="Enviar por email a (opcional)"
+          name="email_to"
+          type="text"
+          inputMode="email"
+          autoComplete="off"
+          placeholder="cliente@empresa.com, otra@empresa.com"
+          hint="Hasta 5 direcciones. Si te responden, el mail te llega a vos."
+        />
+        <TextAreaField label="Mensaje del email (opcional)" name="email_message" rows={2} maxLength={2000} />
         {error ? <Notice tone="error">{error}</Notice> : null}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => dialog.current?.close()}>
@@ -231,7 +254,7 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
   const { can } = useSession();
   const queryClient = useQueryClient();
   const [sending, setSending] = useState(false);
-  const [sharePath, setSharePath] = useState<string | null>(null);
+  const [shared, setShared] = useState<Sent | null>(null);
   const [approving, setApproving] = useState<Proposal | null>(null);
   const proposals = useQuery({
     queryKey: proposalsKey(budget.id),
@@ -275,7 +298,7 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
         ) : null}
       </div>
       <div className="flex flex-col gap-3 px-4 py-3">
-        {sharePath ? <ShareBox path={sharePath} budget={budget} /> : null}
+        {shared ? <ShareBox path={shared.path} emailedTo={shared.emailedTo} budget={budget} /> : null}
         {revoke.isError ? <Notice tone="error">{errorMessage(revoke.error)}</Notice> : null}
         {markLost.isError ? <Notice tone="error">{errorMessage(markLost.error)}</Notice> : null}
         {suggestLost && latest ? (
@@ -351,10 +374,10 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
         <SendDialog
           budget={budget}
           editor={editor}
-          onSent={(path) => {
+          onSent={(sent) => {
             setSending(false);
-            if (path) {
-              setSharePath(path);
+            if (sent) {
+              setShared(sent);
               void queryClient.invalidateQueries({ queryKey: proposalsKey(budget.id) });
             }
           }}

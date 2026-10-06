@@ -1,7 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, status
+from fastapi import APIRouter, Depends, Header, Query, Response, status
 
 from app.core.db import DbSession
 from app.core.idempotency import run_idempotent
@@ -77,6 +77,30 @@ def get_budget(budget_id: UUID, ctx: View, db: DbSession) -> BudgetOut:
 @router.get("/{budget_id}/versions/{version_no}")
 def get_version(budget_id: UUID, version_no: int, ctx: View, db: DbSession) -> BudgetOut:
     return service.get_version(db, ctx, budget_id, version_no)
+
+
+_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+_XLSX_RESPONSE: dict[int | str, dict[str, Any]] = {
+    200: {"content": {_XLSX: {}}, "description": "Planilla de la versión"}
+}
+
+
+@router.get(
+    "/{budget_id}/versions/{version_no}/export.xlsx",
+    response_class=Response,
+    responses=_XLSX_RESPONSE,
+)
+def export_version(budget_id: UUID, version_no: int, ctx: View, db: DbSession) -> Response:
+    """Excel de la versión: costos y márgenes solo si el rol los puede ver."""
+    content, filename = service.export_version(db, ctx, budget_id, version_no)
+    return Response(
+        content=content,
+        media_type=_XLSX,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.get("/{budget_id}/compare")

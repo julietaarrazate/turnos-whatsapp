@@ -43,6 +43,7 @@ from app.domain.pricing import (
 )
 from app.modules.audit import diff, record
 from app.modules.auth import TenantContext
+from app.modules.budgets.export import version_xlsx
 from app.modules.budgets.models import (
     Budget,
     BudgetCurrency,
@@ -677,6 +678,21 @@ def list_budgets(
 
 def get_budget(db: AppSession, ctx: TenantContext, budget_id: UUID) -> BudgetOut:
     return budget_out(db, ctx, _budget(db, ctx, budget_id))
+
+
+def export_version(
+    db: AppSession, ctx: TenantContext, budget_id: UUID, version_no: int
+) -> tuple[bytes, str]:
+    """Excel de la versión con lo que el rol puede ver (queda en el audit: puede tener costos)."""
+    budget = get_version(db, ctx, budget_id, version_no)
+    _audit(
+        db,
+        ctx,
+        "budget.exported",
+        budget.id,
+        after={"version_no": version_no, "costs": budget.version.costs is not None},
+    )
+    return version_xlsx(budget), f"presupuesto-{budget.number}-v{version_no}.xlsx"
 
 
 def get_version(db: AppSession, ctx: TenantContext, budget_id: UUID, version_no: int) -> BudgetOut:

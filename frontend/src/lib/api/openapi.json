@@ -4858,6 +4858,13 @@
       },
       "ProposalCreated": {
         "properties": {
+          "emailed_to": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Emailed To",
+            "type": "array"
+          },
           "proposal": {
             "$ref": "#/components/schemas/ProposalOut"
           },
@@ -4868,7 +4875,8 @@
         },
         "required": [
           "proposal",
-          "public_path"
+          "public_path",
+          "emailed_to"
         ],
         "title": "ProposalCreated",
         "type": "object"
@@ -4879,6 +4887,27 @@
           "display_mode": {
             "$ref": "#/components/schemas/DisplayMode",
             "default": "BY_SECTION"
+          },
+          "email_message": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Message"
+          },
+          "email_to": {
+            "items": {
+              "format": "email",
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Email To",
+            "type": "array"
           },
           "iva_display": {
             "$ref": "#/components/schemas/IvaDisplay",
@@ -9046,6 +9075,55 @@
           }
         },
         "summary": "Get Version",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/api/v1/budgets/{budget_id}/versions/{version_no}/export.xlsx": {
+      "get": {
+        "description": "Excel de la versión: costos y márgenes solo si el rol los puede ver.",
+        "operationId": "export_version_api_v1_budgets__budget_id__versions__version_no__export_xlsx_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_no",
+            "required": true,
+            "schema": {
+              "title": "Version No",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+            },
+            "description": "Planilla de la versión"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Version",
         "tags": [
           "budgets"
         ]

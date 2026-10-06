@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from app.modules.budgets import DisplayMode, IvaDisplay
 from app.modules.proposals.models import ApprovalMethod, ProposalStatus
@@ -17,6 +17,9 @@ class ProposalIn(BaseModel):
     valid_days: int = Field(default=7, ge=1, le=120)
     terms: str | None = Field(default=None, max_length=5000)
     payment_terms: str | None = Field(default=None, max_length=2000)
+    # P-04: mandar el link por email al generarla (después ya no se puede: solo queda el hash).
+    email_to: list[EmailStr] = Field(default_factory=list, max_length=5)
+    email_message: str | None = Field(default=None, max_length=2000)
 
 
 class ProposalOut(BaseModel):
@@ -47,6 +50,7 @@ class ProposalCreated(BaseModel):
     proposal: ProposalOut
     # Solo se muestra al generar: en la base queda el hash (§8.4).
     public_path: str
+    emailed_to: list[str]
 
 
 class ApproveIn(BaseModel):
