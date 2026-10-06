@@ -20,6 +20,7 @@ class Email:
     subject: str
     text: str
     template: str
+    reply_to: str | None = None  # p. ej. quien envió la propuesta, para que el cliente le responda
 
 
 class EmailBackend(Protocol):
@@ -50,6 +51,7 @@ class ResendBackend:
                 "to": [email.to],
                 "subject": email.subject,
                 "text": email.text,
+                **({"reply_to": email.reply_to} if email.reply_to else {}),
             },
             timeout=10,
         )

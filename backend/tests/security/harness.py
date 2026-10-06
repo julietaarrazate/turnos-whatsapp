@@ -150,7 +150,7 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
     sent = budgets.create_budget(s, ctx, BudgetCreate(event_id=budget.event.id, title="Enviado"))
     sent_line = LineIn(section_id=sent.version.sections[0].id, product_id=ids["product_id"])
     sent = budgets.add_line(s, ctx, sent.id, sent.version.lock_version, sent_line)
-    created = proposals.create_proposal(s, ctx, sent.id, sent.version.lock_version, ProposalIn())
+    created, _ = proposals.create_proposal(s, ctx, sent.id, sent.version.lock_version, ProposalIn())
     return {
         "proposal_id": created.proposal.id,
         "sent_budget_id": sent.id,

@@ -33,7 +33,7 @@ from app.modules.events import (
     on_proposal_accepted,
     on_proposal_sent,
 )
-from app.modules.identity import Organization
+from app.modules.identity import Organization, User
 from app.modules.notifications import Email
 from app.modules.proposals.models import (
     ACTIVE,
@@ -170,9 +170,38 @@ def _out(proposal: Proposal) -> ProposalOut:
 # --- Interno (con sesión) ------------------------------------------------------------------
 
 
+def _sent_emails(
+    db: AppSession, ctx: TenantContext, proposal: Proposal, body: ProposalIn, url: str
+) -> list[Email]:
+    """P-04: el link por email. Responder le llega a quien la envió (reply-to)."""
+    sender = db.get(User, ctx.user_id)
+    snapshot = proposal.public_snapshot
+    org_name = snapshot["organization"]["name"]
+    lines = [
+        (body.email_message or "").strip()
+        or f"Hola! Te compartimos la propuesta para {snapshot['title']}.",
+        "",
+        f"Verla y responder: {url}",
+        f"Válida hasta el {proposal.valid_until.strftime('%d/%m/%Y')}.",
+        "",
+        sender.name if sender else org_name,
+        org_name,
+    ]
+    return [
+        Email(
+            to=str(to),
+            subject=f"Propuesta de {org_name}: {snapshot['title']}",
+            text="\n".join(lines),
+            template="proposal_sent",
+            reply_to=sender.email if sender else None,
+        )
+        for to in dict.fromkeys(str(e).lower() for e in body.email_to)
+    ]
+
+
 def create_proposal(
     db: AppSession, ctx: TenantContext, budget_id: UUID, if_match: int | None, body: ProposalIn
-) -> ProposalCreated:
+) -> tuple[ProposalCreated, list[Email]]:
     version_no = body.version_no or freeze_for_proposal(db, ctx, budget_id, if_match)
     version = sendable_version(db, ctx, budget_id, version_no)
 
@@ -220,6 +249,7 @@ def create_proposal(
         valid_until=valid_until,
         public_snapshot=snapshot,
         content_hash=content_hash(snapshot),
+        sent_via="EMAIL" if body.email_to else "LINK",
         created_by=ctx.user_id,
     )
     db.add(proposal)
@@ -232,11 +262,21 @@ def create_proposal(
         ctx.user_id,
         "proposal.sent",
         proposal.id,
-        after={"number": number, "version_no": version.version_no, "hash": proposal.content_hash},
+        after={
+            "number": number,
+            "version_no": version.version_no,
+            "hash": proposal.content_hash,
+            "emailed_to": len(body.email_to),
+        },
     )
     db.flush()
     db.refresh(proposal)
-    return ProposalCreated(proposal=_out(proposal), public_path=f"{PUBLIC_PATH}{token}")
+    path = f"{PUBLIC_PATH}{token}"
+    emails = _sent_emails(db, ctx, proposal, body, f"{get_settings().app_base_url}{path}")
+    created = ProposalCreated(
+        proposal=_out(proposal), public_path=path, emailed_to=[e.to for e in emails]
+    )
+    return created, emails
 
 
 def list_proposals(db: AppSession, ctx: TenantContext, budget_id: UUID) -> list[ProposalOut]:

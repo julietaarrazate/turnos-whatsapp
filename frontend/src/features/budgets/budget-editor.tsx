@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, ChevronUp, Lock, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, FileSpreadsheet, Lock, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -227,6 +227,12 @@ function VersionBar({ budget, editor, editable }: { budget: Budget; editor: Edit
           </Button>
         </>
       ) : null}
+      <a
+        href={`/api/v1/budgets/${budget.id}/versions/${budget.version.version_no}/export.xlsx`}
+        className="inline-flex h-8 items-center gap-1 px-3 text-sm text-ink hover:underline"
+      >
+        <FileSpreadsheet className="size-4" aria-hidden /> Excel
+      </a>
       {editable ? (
         <Link href={`/budgets/new?from=${budget.id}`} className="inline-flex h-8 items-center px-3 text-sm text-ink hover:underline">
           Duplicar para otro evento

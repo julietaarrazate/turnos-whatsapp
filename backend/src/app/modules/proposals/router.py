@@ -25,12 +25,20 @@ Token = Annotated[str, Path(min_length=20, max_length=100)]
 
 @router.post("/budgets/{budget_id}/proposals", status_code=status.HTTP_201_CREATED)
 def create_proposal(
-    budget_id: UUID, body: ProposalIn, ctx: Send, db: DbSession, if_match: OptionalIfMatch = None
+    budget_id: UUID,
+    body: ProposalIn,
+    ctx: Send,
+    db: DbSession,
+    background: BackgroundTasks,
+    *,
+    if_match: OptionalIfMatch = None,
 ) -> ProposalCreated:
     """Generar propuesta: congela el borrador (If-Match) o usa la versión indicada, reemplaza la
     propuesta activa anterior y devuelve el link público (una sola vez)."""
     lock = parse_if_match(if_match) if if_match is not None else None
-    return service.create_proposal(db, ctx, budget_id, lock, body)
+    created, emails = service.create_proposal(db, ctx, budget_id, lock, body)
+    _notify(background, emails)
+    return created
 
 
 @router.get("/budgets/{budget_id}/proposals")

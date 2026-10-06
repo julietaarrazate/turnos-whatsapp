@@ -39,9 +39,11 @@ test("generar propuesta y verla como el cliente, sin datos internos", async ({ p
   const dialog = page.getByRole("dialog", { name: "Generar propuesta" });
   await dialog.getByLabel("Qué ve el cliente").selectOption("DETAILED");
   await dialog.getByLabel("Forma de pago (opcional)").fill("50 % al confirmar");
+  await dialog.getByLabel("Enviar por email a (opcional)").fill("cliente@example.com");
   await dialog.getByRole("button", { name: "Generar" }).click();
   const link = await page.getByLabel("Link de la propuesta").inputValue();
   expect(link).toContain("/p/");
+  await expect(page.getByText("Se envió por email a cliente@example.com.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Propuestas" })).toContainText("Enviada");
   await expect(page.getByText(/Versión 1 guardada/)).toBeVisible();
 
@@ -68,4 +70,7 @@ test("generar propuesta y verla como el cliente, sin datos internos", async ({ p
   await page.reload();
   await expect(page.getByRole("region", { name: "Propuestas" })).toContainText("Vista");
   await expect(page.getByRole("link", { name: /PDF de la propuesta #\d+/ })).toBeVisible();
+  // Excel de la versión (la productora ve costos: es la dueña).
+  const [excel] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Excel" }).click()]);
+  expect(excel.suggestedFilename()).toMatch(/^presupuesto-\d+-v1\.xlsx$/);
 });
