@@ -9,7 +9,7 @@ from app.core.db import DbContext, session_scope
 from app.core.enums import Role
 from app.modules.notifications import console_backend
 from tests.conftest import make_client
-from tests.proposals.test_proposals import Json, _ok, _send
+from tests.proposals.test_proposals import Json, _ok, _send, yesterday_ar
 from tests.security.harness import OrgWorld, build_org, logged_in
 
 BROWSER = {"User-Agent": "Mozilla/5.0 (iPhone) Safari"}
@@ -122,8 +122,8 @@ def test_expired_superseded_and_closed_events_cannot_be_decided_online() -> None
 
     with session_scope(DbContext(organization_id=world.organization_id)) as s:
         s.execute(
-            text("UPDATE proposals SET valid_until = current_date - 1 WHERE id = :id"),
-            {"id": second["proposal"]["id"]},
+            text("UPDATE proposals SET valid_until = :yesterday WHERE id = :id"),
+            {"yesterday": yesterday_ar(), "id": second["proposal"]["id"]},
         )
     expired = _decide(second, "accept", name="Ana", email="a@x.com")
     assert (expired.status_code, expired.json()["code"]) == (409, "proposal_expired")
@@ -153,8 +153,8 @@ def test_manual_approval_with_po_and_additionals_change_the_baseline() -> None:
     # Venció, pero la OC llegó: la productora la puede aprobar igual.
     with session_scope(DbContext(organization_id=world.organization_id)) as s:
         s.execute(
-            text("UPDATE proposals SET valid_until = current_date - 1 WHERE id = :id"),
-            {"id": first["proposal"]["id"]},
+            text("UPDATE proposals SET valid_until = :yesterday WHERE id = :id"),
+            {"yesterday": yesterday_ar(), "id": first["proposal"]["id"]},
         )
     approved = _ok(manager.post(path, json={"po_number": " OC-4471 ", "comment": "Por mail"}))
     assert (approved["status"], approved["approval_method"]) == ("ACCEPTED", "MANUAL")
