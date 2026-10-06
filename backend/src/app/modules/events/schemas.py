@@ -45,6 +45,10 @@ class EventUpdate(BaseModel):
     notes: str | None = Field(default=None, max_length=5000)
 
 
+class ReasonIn(BaseModel):
+    reason: str = Field(min_length=1, max_length=2000)
+
+
 class StatusChangeIn(BaseModel):
     to_status: EventStatus
     reason: str | None = Field(default=None, max_length=2000)

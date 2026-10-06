@@ -8,7 +8,14 @@ from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
 from app.modules.events import service
 from app.modules.events.models import EventStatus
-from app.modules.events.schemas import EventIn, EventOut, EventPage, EventUpdate, StatusChangeIn
+from app.modules.events.schemas import (
+    EventIn,
+    EventOut,
+    EventPage,
+    EventUpdate,
+    ReasonIn,
+    StatusChangeIn,
+)
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
@@ -16,6 +23,8 @@ View = Annotated[TenantContext, Depends(require(Permission.ORG_VIEW))]
 Edit = Annotated[TenantContext, Depends(require(Permission.BUDGET_EDIT))]
 # Marcar perdido, cancelar y reabrir (PRODUCT_SPEC §9: "Aprobar manualmente / marcar perdido").
 Decide = Annotated[TenantContext, Depends(require(Permission.PROPOSAL_DECIDE))]
+Produce = Annotated[TenantContext, Depends(require(Permission.PRODUCTION_MANAGE))]
+Close = Annotated[TenantContext, Depends(require(Permission.EVENT_CLOSE))]
 
 
 @router.get("")
@@ -53,3 +62,27 @@ def update_event(event_id: UUID, body: EventUpdate, ctx: Edit, db: DbSession) ->
 def change_status(event_id: UUID, body: StatusChangeIn, ctx: Decide, db: DbSession) -> EventOut:
     """Marcar perdido, cancelar o reabrir. Los demás cambios de estado son automáticos."""
     return service.change_status(db, ctx, event_id, body)
+
+
+@router.post("/{event_id}/start-production")
+def start_production(event_id: UUID, ctx: Produce, db: DbSession) -> EventOut:
+    """Iniciar producción (APPROVED → IN_PRODUCTION) a partir de la versión aceptada."""
+    return service.start_production(db, ctx, event_id)
+
+
+@router.post("/{event_id}/complete")
+def complete(event_id: UUID, ctx: Produce, db: DbSession) -> EventOut:
+    """Evento realizado (IN_PRODUCTION → COMPLETED)."""
+    return service.complete(db, ctx, event_id)
+
+
+@router.post("/{event_id}/close")
+def close(event_id: UUID, ctx: Close, db: DbSession) -> EventOut:
+    """Cierre financiero (COMPLETED → CLOSED, MANAGER+)."""
+    return service.close(db, ctx, event_id)
+
+
+@router.post("/{event_id}/reopen")
+def reopen(event_id: UUID, body: ReasonIn, ctx: Close, db: DbSession) -> EventOut:
+    """Reabrir un evento cerrado (CLOSED → COMPLETED), con motivo."""
+    return service.reopen(db, ctx, event_id, body.reason)

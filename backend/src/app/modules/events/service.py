@@ -340,6 +340,55 @@ def change_status(
     return event_out(db, ctx, event)
 
 
+def _advance(
+    db: AppSession,
+    ctx: TenantContext,
+    event_id: UUID,
+    expected: EventStatus,
+    to: EventStatus,
+    *,
+    reason: str | None = None,
+) -> Event:
+    """Transición manual del ciclo de producción (§3.1): solo desde el estado esperado."""
+    event = get_event(db, ctx, event_id, for_update=True)
+    current = EventStatus(event.status)
+    if current is not expected:
+        raise AppError(
+            409,
+            "event_transition_invalid",
+            f"No se puede pasar de {current.value} a {to.value}",
+        )
+    _set_status(db, ctx, event, to, reason)
+    db.flush()
+    return event
+
+
+def start_production(db: AppSession, ctx: TenantContext, event_id: UUID) -> EventOut:
+    """APPROVED → IN_PRODUCTION. Parte de la versión aceptada (la baseline)."""
+    event = get_event(db, ctx, event_id)
+    if event.status == S.APPROVED and event.accepted_budget_version_id is None:
+        raise AppError(409, "no_baseline", "El evento no tiene un presupuesto aprobado")
+    return event_out(db, ctx, _advance(db, ctx, event_id, S.APPROVED, S.IN_PRODUCTION))
+
+
+def complete(db: AppSession, ctx: TenantContext, event_id: UUID) -> EventOut:
+    """IN_PRODUCTION → COMPLETED: el evento se hizo; se siguen cargando costos."""
+    return event_out(db, ctx, _advance(db, ctx, event_id, S.IN_PRODUCTION, S.COMPLETED))
+
+
+def close(db: AppSession, ctx: TenantContext, event_id: UUID) -> EventOut:
+    """COMPLETED → CLOSED: cierre financiero; los costos quedan de solo lectura."""
+    return event_out(db, ctx, _advance(db, ctx, event_id, S.COMPLETED, S.CLOSED))
+
+
+def reopen(db: AppSession, ctx: TenantContext, event_id: UUID, reason: str) -> EventOut:
+    """CLOSED → COMPLETED, con motivo (queda en el historial y en el audit)."""
+    reason = reason.strip()
+    if not reason:
+        raise AppError(422, "reason_required", "Indicá el motivo")
+    return event_out(db, ctx, _advance(db, ctx, event_id, S.CLOSED, S.COMPLETED, reason=reason))
+
+
 def on_budget_created(db: AppSession, ctx: TenantContext, event_id: UUID) -> None:
     """§6 `BudgetCreated`: LEAD → QUOTING (automático)."""
     event = get_event(db, ctx, event_id, for_update=True)

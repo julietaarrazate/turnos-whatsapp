@@ -50,7 +50,23 @@ test("el cliente acepta online y el evento queda aprobado", async ({ page, brows
   await expect(panel).toContainText("Aceptada");
   await expect(panel).toContainText("Aceptada online por Ana Pérez (ana@cliente.example.com)");
   await page.goto(`/events/${budget.event.id}`);
+  await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Presupuestos" }).click();
   await expect(page.getByText("Aprobado v1")).toBeVisible();
+
+  // Ciclo de producción desde la ficha: iniciar, realizado, cerrar y reabrir con motivo.
+  await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Resumen" }).click();
+  await page.getByRole("button", { name: "Iniciar producción" }).click();
+  await expect(page.getByRole("heading", { name: "Estado: En producción" })).toBeVisible();
+  await page.getByRole("button", { name: "Marcar como realizado" }).click();
+  await expect(page.getByRole("heading", { name: "Estado: Realizado" })).toBeVisible();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Cerrar evento" }).click();
+  await expect(page.getByRole("heading", { name: "Estado: Cerrado" })).toBeVisible();
+  await page.getByRole("button", { name: "Reabrir evento" }).click();
+  await page.getByLabel("¿Por qué se reabre?").fill("Faltaba una factura");
+  await page.getByRole("button", { name: "Reabrir", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Estado: Realizado" })).toBeVisible();
+  await expect(page.getByText("Faltaba una factura")).toBeVisible();
 });
 
 test("el cliente rechaza y la productora aprueba otra con OC", async ({ page, browser }, testInfo) => {
