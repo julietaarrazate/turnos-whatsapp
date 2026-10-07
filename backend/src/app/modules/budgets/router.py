@@ -1,3 +1,4 @@
+import hashlib
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -10,6 +11,7 @@ from app.modules.auth import TenantContext, require
 from app.modules.budgets import service
 from app.modules.budgets.schemas import (
     BudgetCreate,
+    BudgetImportIn,
     BudgetOut,
     BudgetPage,
     CompareOut,
@@ -17,12 +19,14 @@ from app.modules.budgets.schemas import (
     DuplicateIn,
     DuplicateOut,
     FreezeIn,
+    ImportPreviewOut,
     LineIn,
     LineUpdate,
     RefreshCostsIn,
     RulesPreview,
     SectionIn,
     SectionUpdate,
+    SheetImportIn,
     VersionUpdate,
 )
 
@@ -65,6 +69,31 @@ def create_budget(
         payload=body.model_dump(mode="json"),
         model=BudgetOut,
         run=lambda: service.create_budget(db, ctx, body),
+    )
+
+
+@router.post("/import/preview")
+def preview_import(body: SheetImportIn, ctx: Edit) -> ImportPreviewOut:
+    """Leer la planilla de presupuesto de la productora (.xlsx) sin guardar nada."""
+    return service.preview_import(ctx, body)
+
+
+@router.post("/import", status_code=status.HTTP_201_CREATED)
+def import_budget(
+    body: BudgetImportIn, ctx: Edit, db: DbSession, idempotency_key: IdempotencyKey = None
+) -> BudgetOut:
+    """Nuevo presupuesto con los rubros, líneas, costos y fee de una hoja de la planilla."""
+    payload = body.model_dump(mode="json", exclude={"file_base64"})
+    payload["file_sha256"] = hashlib.sha256(body.file_base64.encode()).hexdigest()
+    return run_idempotent(
+        db,
+        organization_id=ctx.organization_id,
+        user_id=ctx.user_id,
+        key=idempotency_key,
+        scope="budget.import",
+        payload=payload,
+        model=BudgetOut,
+        run=lambda: service.import_budget(db, ctx, body),
     )
 
 

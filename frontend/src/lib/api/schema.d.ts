@@ -195,6 +195,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/budgets/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Budget
+         * @description Nuevo presupuesto con los rubros, líneas, costos y fee de una hoja de la planilla.
+         */
+        post: operations["import_budget_api_v1_budgets_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Import
+         * @description Leer la planilla de presupuesto de la productora (.xlsx) sin guardar nada.
+         */
+        post: operations["preview_import_api_v1_budgets_import_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets/{budget_id}": {
         parameters: {
             query?: never;
@@ -1472,6 +1512,23 @@ export interface components {
             start_date: string | null;
             status: components["schemas"]["EventStatus"];
         };
+        /**
+         * BudgetImportIn
+         * @description B-01 desde una planilla: el mismo alta (evento existente o nuevo) con las líneas.
+         */
+        BudgetImportIn: {
+            /** @default ARS */
+            currency?: components["schemas"]["BudgetCurrency"];
+            event?: components["schemas"]["EventIn"] | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** File Base64 */
+            file_base64: string;
+            /** Sheet */
+            sheet?: string | null;
+            /** Title */
+            title?: string | null;
+        };
         /** BudgetOut */
         BudgetOut: {
             currency: components["schemas"]["BudgetCurrency"];
@@ -2136,6 +2193,58 @@ export interface components {
          * @enum {string}
          */
         HireStatus: "TO_HIRE" | "CONFIRMED" | "INVOICED" | "PAID" | "CANCELLED";
+        /** ImportLineOut */
+        ImportLineOut: {
+            /** Cost Amount */
+            cost_amount: string;
+            /** Cost Is Total */
+            cost_is_total: boolean;
+            /** Days */
+            days: number;
+            /** Description */
+            description: string | null;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes: string | null;
+            price_label: components["schemas"]["ClientPriceLabel"] | null;
+            /** Quantity */
+            quantity: string;
+            /** Sale Total */
+            sale_total: string;
+        };
+        /** ImportPreviewOut */
+        ImportPreviewOut: {
+            /** Line Count */
+            line_count: number;
+            /** Management Fee Rate */
+            management_fee_rate: string;
+            /** Notes */
+            notes: string[];
+            /** Sections */
+            sections: components["schemas"]["ImportSectionOut"][];
+            /** Sheet */
+            sheet: string;
+            /** Sheet Fee */
+            sheet_fee: string | null;
+            /** Sheet Subtotal */
+            sheet_subtotal: string | null;
+            /** Sheets */
+            sheets: string[];
+            /** Subtotal */
+            subtotal: string;
+            /** Title Hint */
+            title_hint: string;
+            /** Warnings */
+            warnings: string[];
+        };
+        /** ImportSectionOut */
+        ImportSectionOut: {
+            /** Lines */
+            lines: components["schemas"]["ImportLineOut"][];
+            /** Title */
+            title: string;
+        };
         /** InvitationAccept */
         InvitationAccept: {
             /** Name */
@@ -3336,6 +3445,16 @@ export interface components {
             /** Title Client */
             title_client?: string | null;
         };
+        /**
+         * SheetImportIn
+         * @description La planilla de presupuesto de la productora (.xlsx en base64) y, si tiene varias, la hoja.
+         */
+        SheetImportIn: {
+            /** File Base64 */
+            file_base64: string;
+            /** Sheet */
+            sheet?: string | null;
+        };
         /** StatusChangeIn */
         StatusChangeIn: {
             /** Reason */
@@ -4092,6 +4211,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_budget_api_v1_budgets_import_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_import_api_v1_budgets_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SheetImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreviewOut"];
                 };
             };
             /** @description Validation Error */

@@ -8,7 +8,8 @@ Reglas (DOMAIN_MODEL §2.6, §3.2, §5; ARCHITECTURE §4.4–4.5):
 - Una versión FROZEN no cambia nunca (servicio + trigger).
 """
 
-from base64 import urlsafe_b64decode, urlsafe_b64encode
+import binascii
+from base64 import b64decode, urlsafe_b64decode, urlsafe_b64encode
 from dataclasses import replace
 from datetime import datetime
 from decimal import Decimal
@@ -56,6 +57,7 @@ from app.modules.budgets.models import (
 from app.modules.budgets.schemas import (
     BudgetCreate,
     BudgetEvent,
+    BudgetImportIn,
     BudgetOut,
     BudgetPage,
     BudgetSummary,
@@ -70,6 +72,9 @@ from app.modules.budgets.schemas import (
     FieldChange,
     FreezeIn,
     FxOut,
+    ImportLineOut,
+    ImportPreviewOut,
+    ImportSectionOut,
     LineCost,
     LineDiff,
     LineIn,
@@ -83,6 +88,7 @@ from app.modules.budgets.schemas import (
     SectionIn,
     SectionOut,
     SectionUpdate,
+    SheetImportIn,
     TotalsDelta,
     VersionCosts,
     VersionMargins,
@@ -90,6 +96,7 @@ from app.modules.budgets.schemas import (
     VersionSummary,
     VersionUpdate,
 )
+from app.modules.budgets.sheet_import import SheetBudget, pick_sheet
 from app.modules.catalog import Product, category_info, current_prices, line_source, today_ar
 from app.modules.clients import Client
 from app.modules.events import (
@@ -767,6 +774,146 @@ def create_budget(db: AppSession, ctx: TenantContext, body: BudgetCreate) -> Bud
     on_budget_created(db, ctx, event.id)
     _audit(
         db, ctx, "budget.created", budget.id, after={"number": budget.number, "event": event.name}
+    )
+    return budget_out(db, ctx, budget, version)
+
+
+# --- Importar desde la planilla de la productora --------------------------------------------
+
+
+def _xlsx_bytes(ctx: TenantContext, file_base64: str) -> bytes:
+    # La planilla trae costos (META): sin cost.view no se puede ni previsualizar.
+    if not ctx.can(Permission.COST_VIEW):
+        raise AppError(403, "permission_denied", "No tenés permiso para ver ni cargar costos")
+    try:
+        return b64decode(file_base64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise AppError(422, "import_not_xlsx", "El archivo no llegó bien; probá de nuevo") from exc
+
+
+def preview_import(ctx: TenantContext, body: SheetImportIn) -> ImportPreviewOut:
+    """Lo que se importaría, sin guardar nada: para revisarlo antes de crear el presupuesto."""
+    parsed, sheets = pick_sheet(_xlsx_bytes(ctx, body.file_base64), body.sheet)
+    return ImportPreviewOut(
+        sheets=sheets,
+        sheet=parsed.sheet,
+        title_hint=parsed.title_hint,
+        sections=[
+            ImportSectionOut(
+                title=section.title,
+                lines=[
+                    ImportLineOut(
+                        name=line.name,
+                        description=line.description,
+                        quantity=line.quantity,
+                        days=line.days,
+                        sale_total=line.sale_total,
+                        price_label=ClientPriceLabel(line.price_label)
+                        if line.price_label
+                        else None,
+                        cost_amount=line.cost_amount,
+                        cost_is_total=line.cost_is_total,
+                        notes=line.notes,
+                    )
+                    for line in section.lines
+                ],
+            )
+            for section in parsed.sections
+        ],
+        line_count=parsed.line_count,
+        subtotal=parsed.subtotal,
+        sheet_subtotal=parsed.sheet_subtotal,
+        management_fee_rate=parsed.management_fee_rate,
+        sheet_fee=parsed.sheet_fee,
+        notes=list(parsed.notes),
+        warnings=list(parsed.warnings),
+    )
+
+
+def _fill_from_sheet(
+    db: AppSession, ctx: TenantContext, budget: Budget, version: BudgetVersion, parsed: SheetBudget
+) -> None:
+    """Reemplaza la sección vacía del alta por los rubros de la planilla. Cada línea queda con
+    el precio de la planilla (modo precio, como lo arma la productora) y el costo de la META."""
+    db.execute(delete(BudgetSection).where(BudgetSection.version_id == version.id))
+    resolved = resolve_line_markup(
+        db, ctx, product=None, category_id=None, client_id=_client_id(db, budget)
+    )
+    for section_sort, sheet_section in enumerate(parsed.sections):
+        section = BudgetSection(
+            organization_id=ctx.organization_id,
+            version_id=version.id,
+            section_key=uuid4(),
+            title_client=sheet_section.title,
+            sort=section_sort,
+        )
+        db.add(section)
+        db.flush()
+        for sort, item in enumerate(sheet_section.lines):
+            per_day = item.days > 1
+            db.add(
+                BudgetLine(
+                    organization_id=ctx.organization_id,
+                    version_id=version.id,
+                    section_id=section.id,
+                    line_key=uuid4(),
+                    sort=sort,
+                    name_internal=item.name,
+                    description_client=item.description,
+                    notes_internal=item.notes,
+                    unit_code="u",
+                    charge_mode=(ChargeMode.PER_DAY if per_day else ChargeMode.FIXED).value,
+                    quantity=item.quantity,
+                    days=item.days,
+                    iva_rate=Decimal("0.21"),
+                    unit_cost_amount=item.cost_amount,
+                    unit_cost_currency="ARS",
+                    unit_cost_includes_iva=False,
+                    unit_cost_iva_rate=Decimal("0.21"),
+                    cost_is_total=item.cost_is_total,
+                    pricing_mode=LinePricingMode.PRICE.value,
+                    target_price=item.sale_total,
+                    discount_rate=Decimal(0),
+                    is_locked=False,
+                    show_on_proposal=True,
+                    client_price_label=item.price_label,
+                    rule_markup=resolved.value,
+                    rule_source=resolved.source.value,
+                    rule_source_id=resolved.source_id,
+                )
+            )
+    version.management_fee_rate = parsed.management_fee_rate
+    db.flush()
+
+
+def import_budget(db: AppSession, ctx: TenantContext, body: BudgetImportIn) -> BudgetOut:
+    """B-01 desde la planilla: crea el presupuesto (y el evento, si hace falta) con los rubros,
+    líneas, costos y fee de la hoja elegida."""
+    parsed, _ = pick_sheet(_xlsx_bytes(ctx, body.file_base64), body.sheet)
+    created = create_budget(
+        db,
+        ctx,
+        BudgetCreate(
+            event_id=body.event_id, event=body.event, title=body.title, currency=body.currency
+        ),
+    )
+    budget = _budget(db, ctx, created.id)
+    version = db.execute(
+        select(BudgetVersion).where(BudgetVersion.budget_id == budget.id)
+    ).scalar_one()
+    _fill_from_sheet(db, ctx, budget, version, parsed)
+    _recalculate(db, budget, version)
+    _audit(
+        db,
+        ctx,
+        "budget.imported",
+        budget.id,
+        after={
+            "sheet": parsed.sheet,
+            "sections": len(parsed.sections),
+            "lines": parsed.line_count,
+            "management_fee_rate": str(parsed.management_fee_rate),
+        },
     )
     return budget_out(db, ctx, budget, version)
 

@@ -309,6 +309,73 @@
         "title": "BudgetEvent",
         "type": "object"
       },
+      "BudgetImportIn": {
+        "description": "B-01 desde una planilla: el mismo alta (evento existente o nuevo) con las líneas.",
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/BudgetCurrency",
+            "default": "ARS"
+          },
+          "event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "file_base64": {
+            "maxLength": 7000000,
+            "minLength": 4,
+            "title": "File Base64",
+            "type": "string"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "file_base64"
+        ],
+        "title": "BudgetImportIn",
+        "type": "object"
+      },
       "BudgetOut": {
         "properties": {
           "currency": {
@@ -2602,6 +2669,196 @@
         ],
         "title": "HireStatus",
         "type": "string"
+      },
+      "ImportLineOut": {
+        "properties": {
+          "cost_amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost Amount",
+            "type": "string"
+          },
+          "cost_is_total": {
+            "title": "Cost Is Total",
+            "type": "boolean"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "price_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientPriceLabel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "sale_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "quantity",
+          "days",
+          "sale_total",
+          "price_label",
+          "cost_amount",
+          "cost_is_total",
+          "notes"
+        ],
+        "title": "ImportLineOut",
+        "type": "object"
+      },
+      "ImportPreviewOut": {
+        "properties": {
+          "line_count": {
+            "title": "Line Count",
+            "type": "integer"
+          },
+          "management_fee_rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Management Fee Rate",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/ImportSectionOut"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "sheet": {
+            "title": "Sheet",
+            "type": "string"
+          },
+          "sheet_fee": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet Fee"
+          },
+          "sheet_subtotal": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet Subtotal"
+          },
+          "sheets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sheets",
+            "type": "array"
+          },
+          "subtotal": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Subtotal",
+            "type": "string"
+          },
+          "title_hint": {
+            "title": "Title Hint",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sheets",
+          "sheet",
+          "title_hint",
+          "sections",
+          "line_count",
+          "subtotal",
+          "sheet_subtotal",
+          "management_fee_rate",
+          "sheet_fee",
+          "notes",
+          "warnings"
+        ],
+        "title": "ImportPreviewOut",
+        "type": "object"
+      },
+      "ImportSectionOut": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ImportLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "lines"
+        ],
+        "title": "ImportSectionOut",
+        "type": "object"
       },
       "InvitationAccept": {
         "properties": {
@@ -6684,6 +6941,34 @@
         "title": "SectionUpdate",
         "type": "object"
       },
+      "SheetImportIn": {
+        "description": "La planilla de presupuesto de la productora (.xlsx en base64) y, si tiene varias, la hoja.",
+        "properties": {
+          "file_base64": {
+            "maxLength": 7000000,
+            "minLength": 4,
+            "title": "File Base64",
+            "type": "string"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          }
+        },
+        "required": [
+          "file_base64"
+        ],
+        "title": "SheetImportIn",
+        "type": "object"
+      },
       "StatusChangeIn": {
         "properties": {
           "reason": {
@@ -8713,6 +8998,109 @@
           }
         },
         "summary": "Create Budget",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/api/v1/budgets/import": {
+      "post": {
+        "description": "Nuevo presupuesto con los rubros, líneas, costos y fee de una hoja de la planilla.",
+        "operationId": "import_budget_api_v1_budgets_import_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Budget",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/api/v1/budgets/import/preview": {
+      "post": {
+        "description": "Leer la planilla de presupuesto de la productora (.xlsx) sin guardar nada.",
+        "operationId": "preview_import_api_v1_budgets_import_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SheetImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Import",
         "tags": [
           "budgets"
         ]

@@ -31,6 +31,55 @@ class BudgetCreate(BaseModel):
         return self
 
 
+# Base64 de un .xlsx de hasta 5 MB (sheet_import.MAX_FILE_BYTES).
+_XLSX_BASE64_MAX = 7_000_000
+
+
+class SheetImportIn(BaseModel):
+    """La planilla de presupuesto de la productora (.xlsx en base64) y, si tiene varias, la hoja."""
+
+    file_base64: str = Field(min_length=4, max_length=_XLSX_BASE64_MAX)
+    sheet: str | None = Field(default=None, max_length=120)
+
+
+class BudgetImportIn(BudgetCreate):
+    """B-01 desde una planilla: el mismo alta (evento existente o nuevo) con las líneas."""
+
+    file_base64: str = Field(min_length=4, max_length=_XLSX_BASE64_MAX)
+    sheet: str | None = Field(default=None, max_length=120)
+
+
+class ImportLineOut(BaseModel):
+    name: str
+    description: str | None
+    quantity: Decimal
+    days: int
+    sale_total: Decimal
+    price_label: ClientPriceLabel | None
+    cost_amount: Decimal
+    cost_is_total: bool
+    notes: str | None
+
+
+class ImportSectionOut(BaseModel):
+    title: str
+    lines: list[ImportLineOut]
+
+
+class ImportPreviewOut(BaseModel):
+    sheets: list[str]  # las hojas con formato de presupuesto
+    sheet: str
+    title_hint: str
+    sections: list[ImportSectionOut]
+    line_count: int
+    subtotal: Decimal
+    sheet_subtotal: Decimal | None
+    management_fee_rate: Decimal
+    sheet_fee: Decimal | None
+    notes: list[str]
+    warnings: list[str]
+
+
 class VersionUpdate(BaseModel):
     """Modo de pricing de la versión (§5.5), descuento global y moneda."""
 
