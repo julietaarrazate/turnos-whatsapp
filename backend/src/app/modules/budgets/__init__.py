@@ -5,10 +5,12 @@ from app.modules.budgets.public import (
     DisplayMode,
     IvaDisplay,
     SendableVersion,
+    VersionTotals,
     baseline_lines,
     budget_event_id,
     public_snapshot,
     sendable_version,
+    version_totals,
 )
 from app.modules.budgets.router import router
 from app.modules.budgets.schemas import BudgetSummary
@@ -25,6 +27,7 @@ __all__ = [
     "DisplayMode",
     "IvaDisplay",
     "SendableVersion",
+    "VersionTotals",
     "baseline_lines",
     "budget_event_id",
     "ensure_budget",
@@ -34,4 +37,5 @@ __all__ = [
     "public_snapshot",
     "router",
     "sendable_version",
+    "version_totals",
 ]

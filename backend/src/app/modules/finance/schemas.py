@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.modules.events import EventStatus
 from app.modules.finance.models import ExpenseCurrency
 
 Money = Decimal
@@ -94,7 +95,30 @@ class ExpensesOut(BaseModel):
     has_baseline: bool
     items: list[ExpenseOut]
     lines: list[LineOption]
-    comparison: list[ComparisonRow]
+    comparison: list[ComparisonRow]  # por línea + no presupuestado
+    by_category: list[ComparisonRow]
+    by_supplier: list[ComparisonRow]
     budgeted_total: Money
     actual_total: Money
     delta_rate: Decimal | None
+
+
+class ResultOut(BaseModel):
+    sale_net: Money
+    cost: Money
+    sale_charges: Money
+    profit: Money
+    margin: Decimal | None
+
+
+class ProfitabilityOut(BaseModel):
+    """Rentabilidad del evento: estimada (versión aceptada) vs real (gastos cargados)."""
+
+    event_id: UUID
+    status: EventStatus
+    final: bool  # cerrado: ya no cambia; si no, lo real es parcial
+    estimated: ResultOut | None  # None: sin presupuesto aprobado
+    actual: ResultOut | None
+    cost_delta: Money | None
+    cost_delta_rate: Decimal | None
+    expenses_count: int

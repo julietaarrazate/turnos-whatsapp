@@ -113,6 +113,36 @@ class BaselineLine:
     section_title: str = ""  # el rubro, para elegir la línea al cargar un gasto
 
 
+@dataclass(frozen=True)
+class VersionTotals:
+    """Los totales de una versión congelada (la estimación con la que se vendió el evento)."""
+
+    sale_net: Decimal
+    cost_direct: Decimal
+    sale_charges: Decimal
+    profit: Decimal
+    margin_net: Decimal | None
+
+
+def version_totals(db: AppSession, organization_id: UUID, version_id: UUID) -> VersionTotals | None:
+    version = db.execute(
+        select(BudgetVersion).where(
+            BudgetVersion.id == version_id,
+            BudgetVersion.organization_id == organization_id,
+            BudgetVersion.status == VersionStatus.FROZEN,
+        )
+    ).scalar_one_or_none()
+    if version is None:
+        return None
+    return VersionTotals(
+        sale_net=version.sale_net,
+        cost_direct=version.cost_direct,
+        sale_charges=version.sale_charges,
+        profit=version.profit,
+        margin_net=version.margin_net,
+    )
+
+
 def baseline_lines(db: AppSession, organization_id: UUID, version_id: UUID) -> list[BaselineLine]:
     """Las líneas de una versión congelada, en el orden del presupuesto."""
     rows = db.execute(

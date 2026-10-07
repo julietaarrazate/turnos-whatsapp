@@ -2913,6 +2913,20 @@
             "title": "Budgeted Total",
             "type": "string"
           },
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonRow"
+            },
+            "title": "By Category",
+            "type": "array"
+          },
+          "by_supplier": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonRow"
+            },
+            "title": "By Supplier",
+            "type": "array"
+          },
           "comparison": {
             "items": {
               "$ref": "#/components/schemas/ComparisonRow"
@@ -2967,6 +2981,8 @@
           "items",
           "lines",
           "comparison",
+          "by_category",
+          "by_supplier",
           "budgeted_total",
           "actual_total",
           "delta_rate"
@@ -6345,6 +6361,83 @@
         "title": "ProductionOut",
         "type": "object"
       },
+      "ProfitabilityOut": {
+        "description": "Rentabilidad del evento: estimada (versión aceptada) vs real (gastos cargados).",
+        "properties": {
+          "actual": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResultOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost_delta": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Delta"
+          },
+          "cost_delta_rate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Delta Rate"
+          },
+          "estimated": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResultOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "expenses_count": {
+            "title": "Expenses Count",
+            "type": "integer"
+          },
+          "final": {
+            "title": "Final",
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          }
+        },
+        "required": [
+          "event_id",
+          "status",
+          "final",
+          "estimated",
+          "actual",
+          "cost_delta",
+          "cost_delta_rate",
+          "expenses_count"
+        ],
+        "title": "ProfitabilityOut",
+        "type": "object"
+      },
       "ProposalCreated": {
         "properties": {
           "emailed_to": {
@@ -7228,6 +7321,51 @@
           "reason"
         ],
         "title": "RejectIn",
+        "type": "object"
+      },
+      "ResultOut": {
+        "properties": {
+          "cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost",
+            "type": "string"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin"
+          },
+          "profit": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Profit",
+            "type": "string"
+          },
+          "sale_charges": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Charges",
+            "type": "string"
+          },
+          "sale_net": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Net",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sale_net",
+          "cost",
+          "sale_charges",
+          "profit",
+          "margin"
+        ],
+        "title": "ResultOut",
         "type": "object"
       },
       "Role": {
@@ -11928,6 +12066,50 @@
         "summary": "Get Production",
         "tags": [
           "production"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/profitability": {
+      "get": {
+        "description": "Rentabilidad estimada vs real (ganancia y margen: solo quien ve márgenes).",
+        "operationId": "get_profitability_api_v1_events__event_id__profitability_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfitabilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Profitability",
+        "tags": [
+          "finance"
         ]
       }
     },

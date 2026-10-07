@@ -23,6 +23,13 @@ export const expensesKey = (id: string) => [...EVENTS_KEY, "expenses", id] as co
 
 const UNBUDGETED = "";
 
+type Grouping = "line" | "category" | "supplier";
+const GROUPINGS: { value: Grouping; label: string }[] = [
+  { value: "line", label: "Línea" },
+  { value: "category", label: "Categoría" },
+  { value: "supplier", label: "Proveedor" },
+];
+
 function newKey(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 }
@@ -230,6 +237,7 @@ function ExpenseItem({ expense, id, editable }: { expense: Schemas["ExpenseOut"]
 export function EventExpenses({ id }: { id: string }) {
   const [adding, setAdding] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [grouping, setGrouping] = useState<Grouping>("line");
   const expenses = useQuery({
     queryKey: expensesKey(id),
     queryFn: async () => unwrap(await api.GET("/api/v1/events/{event_id}/expenses", { params: { path: { event_id: id } } })),
@@ -248,12 +256,31 @@ export function EventExpenses({ id }: { id: string }) {
             {data.delta_rate !== null ? ` · ${deviation(data.delta_rate)}` : ""}
           </span>
         </div>
-        {data.comparison.length ? (
-          <ul className="divide-y divide-line">
-            {data.comparison.map((row) => (
-              <RowLine key={row.key} row={row} />
-            ))}
-          </ul>
+        {data.comparison.length || data.by_category.length ? (
+          <>
+            <div role="radiogroup" aria-label="Ver por" className="flex gap-1 border-b border-line px-4 py-2 text-sm">
+              {GROUPINGS.map((g) => (
+                <button
+                  key={g.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={grouping === g.value}
+                  onClick={() => setGrouping(g.value)}
+                  className={cn(
+                    "rounded-md px-2.5 py-1",
+                    grouping === g.value ? "bg-accent/10 font-medium text-accent" : "text-ink-muted hover:text-ink",
+                  )}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+            <ul className="divide-y divide-line">
+              {(grouping === "line" ? data.comparison : grouping === "category" ? data.by_category : data.by_supplier).map((row) => (
+                <RowLine key={row.key} row={row} />
+              ))}
+            </ul>
+          </>
         ) : (
           <p className="px-4 py-3 text-sm text-ink-muted">
             {data.has_baseline ? "Todavía no hay gastos." : "El evento todavía no tiene un presupuesto aprobado."}
