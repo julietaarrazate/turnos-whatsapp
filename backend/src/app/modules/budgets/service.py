@@ -341,6 +341,7 @@ def _price(
         target_price=version.target_price,
         target_includes_iva=version.target_includes_iva,
         global_discount_rate=version.global_discount_rate,
+        management_fee_rate=version.management_fee_rate,
     )
     try:
         return version_input, pricing, price_version(version_input, pricing)
@@ -369,6 +370,7 @@ def _recalculate(db: AppSession, budget: Budget, version: BudgetVersion) -> None
     version.cost_direct = result.cost_direct
     version.sale_subtotal = result.sale_subtotal
     version.global_discount = result.global_discount
+    version.management_fee = result.management_fee
     version.sale_net = result.sale_net
     version.sale_charges = result.sale_charges_total
     version.sale_charges_detail = [
@@ -394,6 +396,7 @@ def _recalculate(db: AppSession, budget: Budget, version: BudgetVersion) -> None
             "fx_rate": str(shown.fx_rate),
             "subtotal": str(shown.subtotal),
             "global_discount": str(shown.global_discount),
+            "management_fee": str(shown.management_fee),
             "net": str(shown.net),
             "iva": str(shown.iva),
             "total": str(shown.total),
@@ -488,8 +491,10 @@ def _version_out(
         target_price=version.target_price,
         target_includes_iva=version.target_includes_iva,
         global_discount_rate=version.global_discount_rate,
+        management_fee_rate=version.management_fee_rate,
         sale_subtotal=version.sale_subtotal,
         global_discount=version.global_discount,
+        management_fee=version.management_fee,
         sale_net=version.sale_net,
         iva=version.iva,
         total=version.total,
@@ -780,7 +785,13 @@ def update_version(
     for field in fields:
         value = getattr(body, field)
         if (
-            field in {"pricing_mode", "target_includes_iva", "global_discount_rate"}
+            field
+            in {
+                "pricing_mode",
+                "target_includes_iva",
+                "global_discount_rate",
+                "management_fee_rate",
+            }
             and value is None
         ):
             continue
@@ -856,6 +867,7 @@ def new_version(db: AppSession, ctx: TenantContext, budget_id: UUID) -> BudgetOu
         target_price=source.target_price,
         target_includes_iva=source.target_includes_iva,
         global_discount_rate=source.global_discount_rate,
+        management_fee_rate=source.management_fee_rate,
         fx_snapshot=source.fx_snapshot,
         context_snapshot=source.context_snapshot,
         snapshot_schema_version=SNAPSHOT_SCHEMA_VERSION,
@@ -1490,6 +1502,7 @@ def duplicate(
         "target_price",
         "target_includes_iva",
         "global_discount_rate",
+        "management_fee_rate",
     ):
         setattr(version, field, getattr(source, field))
     db.execute(delete(BudgetSection).where(BudgetSection.version_id == version.id))

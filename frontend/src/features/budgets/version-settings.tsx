@@ -43,6 +43,7 @@ export function VersionSettings({
         <span>
           <span className="font-medium">Cálculo del precio:</span> {summary}
           {version.global_discount_rate !== "0.000000" ? " · con descuento" : ""}
+          {version.management_fee_rate !== "0.000000" ? " · con fee de gestión" : ""}
           {budget.currency === "USD" ? " · en dólares" : ""}
         </span>
         <span className="text-ink-muted">{open ? "Cerrar" : "Cambiar"}</span>
@@ -100,6 +101,20 @@ export function VersionSettings({
               onCommit={(global_discount_rate) => onUpdate({ global_discount_rate })}
             />
           )}
+          <div className="flex flex-col gap-1">
+            <CommitField
+              label="Fee de gestión"
+              hideLabel={false}
+              value={version.management_fee_rate}
+              {...percentField}
+              suffix="%"
+              onCommit={(management_fee_rate) => onUpdate({ management_fee_rate })}
+            />
+            <p className="text-xs text-ink-muted">
+              Sobre la venta de los ítems; el cliente lo ve como un renglón aparte.
+              {version.pricing_mode === "PRICE" ? " El precio objetivo ya lo incluye." : ""}
+            </p>
+          </div>
           <SelectField
             label="Moneda de la propuesta"
             value={budget.currency}

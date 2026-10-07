@@ -43,6 +43,14 @@ def format_quantity(value: str) -> str:
     return text.replace(".", ",")
 
 
+def format_percent(value: str | None) -> str:
+    """'0.05' → '5 %'; '0.125' → '12,5 %'."""
+    if value is None:
+        return ""
+    text = f"{(Decimal(value) * 100).normalize():f}"
+    return f"{text.replace('.', ',')} %"
+
+
 _env = Environment(
     loader=FileSystemLoader(_TEMPLATES),
     autoescape=select_autoescape(["html"]),
@@ -51,6 +59,7 @@ _env = Environment(
 )
 _env.filters["day"] = format_day
 _env.filters["qty"] = format_quantity
+_env.filters["pct"] = format_percent
 
 
 def render_html(snapshot: PublicSnapshot) -> str:

@@ -37,9 +37,10 @@ Una hoja por evento con dos mitades:
 - Línea: "El proveedor cotizó la línea entera" (el costo cargado es el total, no se multiplica
   por cantidad ni días) y "En la propuesta, en lugar del importe": **Bonificado** / **A definir**
   (la propuesta, el PDF y la página pública muestran la etiqueta y no el importe).
+- Versión: **fee de gestión %** sobre la venta de los ítems (paso V2b del motor). El cliente lo
+  ve como renglón aparte en la propuesta, el PDF y el Excel; paga IVA y cargos sobre la venta.
 
 ### Pendiente (próximos PR)
 
-1. Versión: **fee de gestión %** visible al cliente.
-2. **Importar un presupuesto** desde esta planilla (rubros → secciones, ítems → líneas, META →
+1. **Importar un presupuesto** desde esta planilla (rubros → secciones, ítems → líneas, META →
    costos y proveedores), para migrar los eventos que ya tiene.

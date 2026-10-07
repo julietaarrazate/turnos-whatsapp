@@ -190,6 +190,32 @@
       "context": {"org_markup": "0.30"},
       "version": {"lines": [{"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35", "discount_rate": "0.10"}]},
       "expected": {"lines": {"lona": {"sale_list_total": "270000.00", "sale_total": "243000.00", "margin": "0.176955", "markup_applied": "0.215000"}}}
+    },
+    {
+      "id": "V23", "description": "Fee de gestión 5% sobre 270.000 (planilla de la piloto); IIBB 3% sobre la venta con fee",
+      "context": {"org_markup": "0.30", "sale_charges": [["IIBB", "0.03"]]},
+      "version": {"management_fee_rate": "0.05", "lines": [{"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35"}]},
+      "expected": {"totals": {"sale_subtotal": "270000.00", "management_fee": "13500.00", "sale_net": "283500.00", "sale_charges_total": "8505.00", "profit": "74995.00", "iva": "59535.00", "total": "343035.00"}}
+    },
+    {
+      "id": "V24", "description": "Precio objetivo 150.000 con fee 5%: el objetivo incluye el fee y da exacto",
+      "context": {"org_markup": "0.30"},
+      "version": {"mode": "PRICE", "target_price": "150000", "management_fee_rate": "0.05", "lines": [{"key": "a", "quantity": "1", "unit_cost": "100000"}]},
+      "expected": {"lines": {"a": {"sale_total": "142857.14"}}, "totals": {"management_fee": "7142.86", "sale_net": "150000.00", "total": "181500.00"}}
+    },
+    {"id": "V25", "description": "Borde: fee de gestión 100%", "context": {"org_markup": "0.30"},
+     "version": {"management_fee_rate": "1", "lines": [{"key": "a", "quantity": "1", "unit_cost": "100"}]}, "error": "fee_out_of_range"},
+    {
+      "id": "V26", "description": "V16 con fee 5%: el fee se calcula en USD y lleva IVA",
+      "context": {"org_markup": "0.30"},
+      "version": {"management_fee_rate": "0.05", "lines": [
+        {"key": "lona", "quantity": "2", "unit_cost": "100000", "markup_manual": "0.35"},
+        {"key": "estructura", "quantity": "1", "unit_cost": "300000", "markup_manual": "0.40"},
+        {"key": "armado", "quantity": "1", "unit_cost": "80000", "markup_manual": "0.25"},
+        {"key": "transporte", "quantity": "2", "unit_cost": "60000", "markup_manual": "0.25"}
+      ]},
+      "present": {"currency": "USD", "fx_rate": "1450.50"},
+      "expected": {"presentation": {"lines": {"lona": "186.14", "estructura": "289.56", "armado": "68.94", "transporte": "103.41"}, "subtotal": "648.05", "iva": "142.89", "total": "823.34"}}
     }
   ]
 }

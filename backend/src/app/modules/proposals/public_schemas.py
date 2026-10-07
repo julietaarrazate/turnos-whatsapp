@@ -33,6 +33,8 @@ class PublicTotals(_Public):
     total: str
     subtotal: str | None = None
     global_discount: str | None = None
+    management_fee: str | None = None  # fee de gestión (con IVA si la propuesta lo incluye)
+    management_fee_rate: str | None = None  # fracción: "0.05" = 5 %
     net: str | None = None
     iva: str | None = None
     iva_included: str | None = None

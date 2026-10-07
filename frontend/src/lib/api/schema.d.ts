@@ -2753,6 +2753,11 @@ export interface components {
             lines: {
                 [key: string]: string;
             };
+            /**
+             * Management Fee
+             * @default 0
+             */
+            management_fee?: string;
             /** Net */
             net: string;
             /** Subtotal */
@@ -3169,6 +3174,10 @@ export interface components {
             iva?: string | null;
             /** Iva Included */
             iva_included?: string | null;
+            /** Management Fee */
+            management_fee?: string | null;
+            /** Management Fee Rate */
+            management_fee_rate?: string | null;
             /** Net */
             net?: string | null;
             /** Subtotal */
@@ -3643,6 +3652,10 @@ export interface components {
             iva: string;
             /** Lock Version */
             lock_version: number;
+            /** Management Fee */
+            management_fee: string;
+            /** Management Fee Rate */
+            management_fee_rate: string;
             margins: components["schemas"]["VersionMargins"] | null;
             presentation: components["schemas"]["PresentationOut"] | null;
             pricing_mode: components["schemas"]["VersionPricingMode"];
@@ -3713,6 +3726,8 @@ export interface components {
             currency?: components["schemas"]["BudgetCurrency"] | null;
             /** Global Discount Rate */
             global_discount_rate?: number | string | null;
+            /** Management Fee Rate */
+            management_fee_rate?: number | string | null;
             /** Markup Override */
             markup_override?: number | string | null;
             pricing_mode?: components["schemas"]["VersionPricingMode"] | null;

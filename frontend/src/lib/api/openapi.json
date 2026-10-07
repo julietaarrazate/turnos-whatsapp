@@ -4733,6 +4733,12 @@
             "title": "Lines",
             "type": "object"
           },
+          "management_fee": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Management Fee",
+            "type": "string"
+          },
           "net": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Net",
@@ -6176,6 +6182,28 @@
               }
             ],
             "title": "Iva Included"
+          },
+          "management_fee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Management Fee"
+          },
+          "management_fee_rate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Management Fee Rate"
           },
           "net": {
             "anyOf": [
@@ -7834,6 +7862,16 @@
             "title": "Lock Version",
             "type": "integer"
           },
+          "management_fee": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Management Fee",
+            "type": "string"
+          },
+          "management_fee_rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Management Fee Rate",
+            "type": "string"
+          },
           "margins": {
             "anyOf": [
               {
@@ -7929,8 +7967,10 @@
           "target_price",
           "target_includes_iva",
           "global_discount_rate",
+          "management_fee_rate",
           "sale_subtotal",
           "global_discount",
+          "management_fee",
           "sale_net",
           "iva",
           "total",
@@ -8061,6 +8101,23 @@
               }
             ],
             "title": "Global Discount Rate"
+          },
+          "management_fee_rate": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,15}0*$)\\d{0,8}\\.\\d{0,6}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Management Fee Rate"
           },
           "markup_override": {
             "anyOf": [

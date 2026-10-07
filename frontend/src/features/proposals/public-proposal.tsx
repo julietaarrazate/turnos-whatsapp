@@ -2,7 +2,7 @@ import { FileDown } from "lucide-react";
 
 import type { PublicProposal } from "@/lib/api/types";
 import { formatDateTime, formatDay } from "@/lib/format/date";
-import { formatMoney } from "@/lib/format/number";
+import { formatMoney, formatPercentCompact } from "@/lib/format/number";
 
 import { DecisionBox } from "./decision-box";
 
@@ -30,6 +30,12 @@ export function PublicProposalView({ data, token }: { data: PublicProposal; toke
   const detailed = p.display_mode === "DETAILED";
   const notice = data.decision ? decisionNotice(data.decision) : STATUS_NOTICE[data.status];
   const includesIva = p.iva_display === "IVA_INCLUDED";
+  const fee = t.management_fee ? (
+    <div className="flex justify-between py-0.5">
+      <span>Fee de gestión{t.management_fee_rate ? ` (${formatPercentCompact(t.management_fee_rate)})` : ""}</span>
+      <span className="tabular-nums">{money(t.management_fee, p.currency)}</span>
+    </div>
+  ) : null;
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-6 px-4 py-8 sm:py-12">
       <header className="flex flex-col gap-1 border-b border-line pb-6">
@@ -87,18 +93,19 @@ export function PublicProposalView({ data, token }: { data: PublicProposal; toke
       <section aria-label="Total" className="rounded-xl border border-line bg-surface px-4 py-3 text-sm">
         {!includesIva ? (
           <>
-            {t.global_discount ? (
-              <>
-                <div className="flex justify-between py-0.5">
-                  <span>Subtotal</span>
-                  <span className="tabular-nums">{money(t.subtotal, p.currency)}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span>Descuento</span>
-                  <span className="tabular-nums">−{money(t.global_discount, p.currency)}</span>
-                </div>
-              </>
+            {t.global_discount || t.management_fee ? (
+              <div className="flex justify-between py-0.5">
+                <span>Subtotal</span>
+                <span className="tabular-nums">{money(t.subtotal, p.currency)}</span>
+              </div>
             ) : null}
+            {t.global_discount ? (
+              <div className="flex justify-between py-0.5">
+                <span>Descuento</span>
+                <span className="tabular-nums">−{money(t.global_discount, p.currency)}</span>
+              </div>
+            ) : null}
+            {fee}
             <div className="flex justify-between py-0.5">
               <span>Neto</span>
               <span className="tabular-nums">{money(t.net, p.currency)}</span>
@@ -108,7 +115,9 @@ export function PublicProposalView({ data, token }: { data: PublicProposal; toke
               <span className="tabular-nums">{money(t.iva, p.currency)}</span>
             </div>
           </>
-        ) : null}
+        ) : (
+          fee
+        )}
         <div className="mt-1 flex justify-between border-t border-line pt-2 text-base font-semibold">
           <span>Total{includesIva ? " (IVA incluido)" : ""}</span>
           <span className="tabular-nums">{money(t.total, p.currency)}</span>

@@ -34,6 +34,12 @@ test("generar propuesta y verla como el cliente, sin datos internos", async ({ p
   await page.getByRole("combobox", { name: "Agregar ítem" }).fill(`Pantalla ${suffix}`);
   await page.getByRole("option", { name: new RegExp(`^Pantalla ${suffix}`) }).click();
   await expect(page.getByRole("region", { name: "Totales" })).toContainText("$ 16.049,37");
+  // Fee de gestión 5 % como en la planilla de la piloto: 802,47 sobre los ítems.
+  await page.getByRole("button", { name: /Cálculo del precio/ }).click();
+  await page.getByLabel("Fee de gestión").fill("5");
+  await page.getByLabel("Fee de gestión").press("Enter");
+  await expect(page.getByRole("region", { name: "Totales" })).toContainText("$ 16.851,84");
+  await expect(page.getByRole("region", { name: "Totales" })).toContainText("fee de gestión (5 %): $ 802,47");
 
   await page.getByRole("button", { name: "Generar propuesta" }).click();
   const dialog = page.getByRole("dialog", { name: "Generar propuesta" });
@@ -52,7 +58,10 @@ test("generar propuesta y verla como el cliente, sin datos internos", async ({ p
   await client.goto(link);
   await expect(client.getByRole("heading", { name: `Lanzamiento ${suffix}` })).toBeVisible();
   await expect(client.getByText("Pantalla LED 3×2 m con operador")).toBeVisible();
-  await expect(client.getByRole("region", { name: "Total" })).toContainText("$ 19.419,74");
+  const total = client.getByRole("region", { name: "Total" });
+  await expect(total).toContainText("Fee de gestión (5 %)");
+  await expect(total).toContainText("$ 802,47");
+  await expect(total).toContainText("$ 20.390,73");
   await expect(client.getByText("50 % al confirmar")).toBeVisible();
   const html = await client.content();
   expect(html).not.toContain(supplierName);

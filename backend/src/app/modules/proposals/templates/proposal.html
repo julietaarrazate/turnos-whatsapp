@@ -64,12 +64,20 @@
 
 <div class="totals">
   {% if p.iva_display != "IVA_INCLUDED" %}
-    {% if p.totals.global_discount %}
+    {% if p.totals.global_discount or p.totals.management_fee %}
     <div><span>Subtotal</span><span>{{ money(p.totals.subtotal) }}</span></div>
+    {% endif %}
+    {% if p.totals.global_discount %}
     <div><span>Descuento</span><span>−{{ money(p.totals.global_discount) }}</span></div>
+    {% endif %}
+    {% if p.totals.management_fee %}
+    <div><span>Fee de gestión ({{ p.totals.management_fee_rate | pct }})</span><span>{{ money(p.totals.management_fee) }}</span></div>
     {% endif %}
     <div><span>Neto</span><span>{{ money(p.totals.net) }}</span></div>
     <div><span>IVA</span><span>{{ money(p.totals.iva) }}</span></div>
+  {% endif %}
+  {% if p.iva_display == "IVA_INCLUDED" and p.totals.management_fee %}
+  <div><span>Fee de gestión ({{ p.totals.management_fee_rate | pct }})</span><span>{{ money(p.totals.management_fee) }}</span></div>
   {% endif %}
   <div class="grand"><span>Total{% if p.iva_display == "IVA_INCLUDED" %} (IVA incluido){% endif %}</span><span>{{ money(p.totals.total) }}</span></div>
 </div>
