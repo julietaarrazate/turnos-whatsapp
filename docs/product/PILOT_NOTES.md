@@ -37,10 +37,18 @@ Una hoja por evento con dos mitades:
 - Línea: "El proveedor cotizó la línea entera" (el costo cargado es el total, no se multiplica
   por cantidad ni días) y "En la propuesta, en lugar del importe": **Bonificado** / **A definir**
   (la propuesta, el PDF y la página pública muestran la etiqueta y no el importe).
+- **Importar un presupuesto desde esta planilla** (Nuevo presupuesto → "Importar desde una
+  planilla"): cada rubro es una sección; cada ítem, una línea con el precio de la planilla (modo
+  precio) y el costo de la META (costo total de la línea, o unitario si no hay total); "Bonificado"
+  y "TBD / a definir" pasan como etiquetas; proveedor / observaciones, Nº de factura y condición de
+  pago quedan en las notas internas; el FEE MANAGEMENT pasa al fee de gestión de la versión. Antes
+  de crear se ve una vista previa con avisos. En la planilla real, la fila SUBTOTAL deja afuera dos
+  ítems (lonas y fly banners): la vista previa lo avisa y se importan todos.
 - Versión: **fee de gestión %** sobre la venta de los ítems (paso V2b del motor). El cliente lo
   ve como renglón aparte en la propuesta, el PDF y el Excel; paga IVA y cargos sobre la venta.
 
 ### Pendiente (próximos PR)
 
-1. **Importar un presupuesto** desde esta planilla (rubros → secciones, ítems → líneas, META →
-   costos y proveedores), para migrar los eventos que ya tiene.
+1. Que la piloto pruebe la importación con sus otras planillas (puede haber variantes del
+   formato) y decidir si "Proveedor / observaciones" debería crear proveedores en el catálogo.
+2. Pasar las notas de la planilla (validez, condición de pago) a los campos de la propuesta.

@@ -13,6 +13,7 @@ import type { Schemas } from "@/lib/api/types";
 import { textValue } from "@/lib/form";
 
 import { budgetKey } from "./keys";
+import { type SheetChoice, SheetImport } from "./sheet-import";
 
 /** Una clave por intento de alta: si la red falla y se reintenta, no se duplica. */
 function newIdempotencyKey(): string {
@@ -59,6 +60,8 @@ export function NewBudget() {
   const eventId = params.get("event");
   const fromId = params.get("from"); // duplicar un presupuesto existente
   const [client, setClient] = useState("");
+  const [eventName, setEventName] = useState("");
+  const [sheet, setSheet] = useState<SheetChoice | null>(null);
   const [idempotencyKey] = useState(newIdempotencyKey);
   const event = useQuery({
     queryKey: ["events", "detail", eventId],
@@ -82,6 +85,14 @@ export function NewBudget() {
     onSuccess: (data) => {
       queryClient.setQueryData(budgetKey(data.budget.id), data.budget);
       router.replace(`/budgets/${data.budget.id}?costos=${data.costs_changed}&reglas=${data.rules_changed}`);
+    },
+  });
+  const importSheet = useMutation({
+    mutationFn: async (body: Schemas["BudgetImportIn"]) =>
+      unwrap(await api.POST("/api/v1/budgets/import", { body, headers: { "Idempotency-Key": idempotencyKey } })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(budgetKey(data.id), data);
+      router.replace(`/budgets/${data.id}`);
     },
   });
   const create = useMutation({
@@ -113,14 +124,17 @@ export function NewBudget() {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
           const currency = String(form.get("currency")) as Schemas["BudgetCreate"]["currency"];
+          const fromSheet = sheet ? { file_base64: sheet.file_base64, sheet: sheet.sheet } : null;
           if (eventId) {
-            create.mutate({ event_id: eventId, currency, title: textValue(form, "title") });
+            const body = { event_id: eventId, currency, title: textValue(form, "title") };
+            if (fromSheet) importSheet.mutate({ ...body, ...fromSheet });
+            else create.mutate(body);
             return;
           }
           const start = textValue(form, "start_date");
           const newEvent = {
             client_name: client.trim(),
-            name: String(form.get("event_name")).trim(),
+            name: eventName.trim(),
             start_date: start,
             end_date: null,
             event_days: Number(form.get("event_days") || 1),
@@ -132,20 +146,8 @@ export function NewBudget() {
             duplicate.mutate({ event: newEvent, title: null });
             return;
           }
-          create.mutate({
-            currency,
-            title: null,
-            event: {
-              client_name: client.trim(),
-              name: String(form.get("event_name")).trim(),
-              start_date: start,
-              end_date: null,
-              event_days: Number(form.get("event_days") || 1),
-              setup_days: 0,
-              teardown_days: 0,
-              city: textValue(form, "city"),
-            },
-          });
+          if (fromSheet) importSheet.mutate({ currency, title: null, event: newEvent, ...fromSheet });
+          else create.mutate({ currency, title: null, event: newEvent });
         }}
       >
         <section className="grid gap-4 rounded-xl border border-line bg-surface p-5 sm:grid-cols-2">
@@ -159,7 +161,15 @@ export function NewBudget() {
                 <ClientPicker value={client} onChange={setClient} />
               </div>
               <div className="sm:col-span-2">
-                <TextField label="Evento" name="event_name" required maxLength={200} placeholder="Ej.: Convención anual" />
+                <TextField
+                  label="Evento"
+                  name="event_name"
+                  required
+                  maxLength={200}
+                  placeholder="Ej.: Convención anual"
+                  value={eventName}
+                  onChange={(e) => setEventName(e.target.value)}
+                />
               </div>
               <TextField label="Fecha (opcional)" name="start_date" type="date" hint="Si todavía no está confirmada, dejala vacía." />
               <TextField
@@ -186,11 +196,21 @@ export function NewBudget() {
             />
           )}
         </section>
+        {fromId ? null : (
+          <SheetImport
+            value={sheet}
+            onChange={(choice) => {
+              setSheet(choice);
+              if (choice && !eventName.trim() && !eventId) setEventName(choice.title_hint);
+            }}
+          />
+        )}
         {create.isError ? <Notice tone="error">{errorMessage(create.error)}</Notice> : null}
+        {importSheet.isError ? <Notice tone="error">{errorMessage(importSheet.error)}</Notice> : null}
         {duplicate.isError ? <Notice tone="error">{errorMessage(duplicate.error)}</Notice> : null}
         <div>
-          <Button type="submit" size="lg" loading={create.isPending || duplicate.isPending}>
-            {fromId ? "Duplicar" : "Crear y armar el presupuesto"}
+          <Button type="submit" size="lg" loading={create.isPending || duplicate.isPending || importSheet.isPending}>
+            {fromId ? "Duplicar" : sheet ? "Crear con la planilla" : "Crear y armar el presupuesto"}
           </Button>
         </div>
       </form>

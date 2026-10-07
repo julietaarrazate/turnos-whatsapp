@@ -6,10 +6,12 @@ que se registre acá cómo obtener un ID válido (``PARAM_FACTORIES``) y un body
 """
 
 import re
+from base64 import b64encode
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
+from io import BytesIO
 from typing import Any
 from uuid import UUID
 
@@ -17,6 +19,7 @@ from fastapi import FastAPI
 from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from openpyxl import Workbook
 from sqlalchemy import select
 from starlette.routing import BaseRoute
 
@@ -211,6 +214,19 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
 
+
+def _sample_xlsx() -> str:
+    """Una planilla mínima con el formato de presupuesto de la piloto (base64)."""
+    workbook = Workbook()
+    workbook.active.append([None, "RUBRO", "DETALLE", "Q", "JORNADAS", "PRECIO UNITARIO"])
+    workbook.active.append([None, "Ítem", "Detalle", 1, 1, 100, 100])
+    out = BytesIO()
+    workbook.save(out)
+    return b64encode(out.getvalue()).decode()
+
+
+_XLSX = _sample_xlsx()
+
 SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/organization"): {"name": "Nuevo nombre"},
     ("PATCH", "/api/v1/organization/fiscal"): {"legal_name": "Productora SA"},
@@ -246,6 +262,11 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/events/{event_id}"): {"venue": "Costa Salguero"},
     ("POST", "/api/v1/events/{event_id}/status"): {"to_status": "LOST", "reason": "Otra opción"},
     ("POST", "/api/v1/budgets"): lambda w: {"event_id": str(w.ids["event_id"])},
+    ("POST", "/api/v1/budgets/import/preview"): {"file_base64": _XLSX},
+    ("POST", "/api/v1/budgets/import"): lambda w: {
+        "event_id": str(w.ids["event_id"]),
+        "file_base64": _XLSX,
+    },
     ("POST", "/api/v1/budgets/{budget_id}/versions"): {},
     ("PATCH", "/api/v1/budgets/{budget_id}/draft"): {"global_discount_rate": "0.05"},
     ("POST", "/api/v1/budgets/{budget_id}/draft/freeze"): {"change_note": "v1"},
