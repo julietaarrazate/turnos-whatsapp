@@ -62,6 +62,9 @@ class LineInput:
     quantity: Decimal
     unit_cost: Decimal  # tal como lo cotizó el proveedor
     days: int = 1
+    # El proveedor cotizó la línea entera (un flete, 18 vallas por un precio): ``unit_cost`` es
+    # el costo total de la línea y no se multiplica por cantidad ni días.
+    cost_is_total: bool = False
     charge_mode: ChargeMode = ChargeMode.FIXED
     cost_includes_iva: bool = False
     cost_iva_rate: Decimal = IVA_GENERAL  # 0 si el proveedor no discrimina IVA

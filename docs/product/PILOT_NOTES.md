@@ -34,10 +34,12 @@ Una hoja por evento con dos mitades:
 
 - 4.2: la lista de contratación sigue sus estados (cotizado → confirmado → factura cargada →
   pagado) con Nº de factura y condición de pago.
+- Línea: "El proveedor cotizó la línea entera" (el costo cargado es el total, no se multiplica
+  por cantidad ni días) y "En la propuesta, en lugar del importe": **Bonificado** / **A definir**
+  (la propuesta, el PDF y la página pública muestran la etiqueta y no el importe).
 
 ### Pendiente (próximos PR)
 
-1. Línea: modo **costo total**; etiqueta **Bonificado / A definir** en la propuesta.
-2. Versión: **fee de gestión %** visible al cliente.
-3. **Importar un presupuesto** desde esta planilla (rubros → secciones, ítems → líneas, META →
+1. Versión: **fee de gestión %** visible al cliente.
+2. **Importar un presupuesto** desde esta planilla (rubros → secciones, ítems → líneas, META →
    costos y proveedores), para migrar los eventos que ya tiene.

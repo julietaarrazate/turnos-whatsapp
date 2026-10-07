@@ -111,7 +111,11 @@ def price_line(
     _validate_line(line)
     unit_cost = effective_unit_cost(line, ctx.tax_condition)  # L1 (L2: moneda base, D-09)
     duration = line.days if line.charge_mode is ChargeMode.PER_DAY else 1  # L3
-    cost = r2(unit_cost * line.quantity * duration)  # L4
+    if line.cost_is_total:  # L4': cotizado por la línea entera
+        cost = r2(unit_cost)
+        unit_cost = rate(unit_cost / (line.quantity * duration))
+    else:
+        cost = r2(unit_cost * line.quantity * duration)  # L4
     source_id: str | None = None
 
     if line.pricing_mode is LinePricingMode.PRICE:

@@ -73,7 +73,11 @@ export function PublicProposalView({ data, token }: { data: PublicProposal; toke
                     {detailed && item.unit_price ? ` · ${money(item.unit_price, p.currency)} c/u` : ""}
                   </p>
                 </div>
-                {detailed && item.amount ? <span className="tabular-nums">{money(item.amount, p.currency)}</span> : null}
+                {item.price_label ? (
+                  <span className="text-ink-muted">{item.price_label === "BONIFICADO" ? "Bonificado" : "A definir"}</span>
+                ) : detailed && item.amount ? (
+                  <span className="tabular-nums">{money(item.amount, p.currency)}</span>
+                ) : null}
               </li>
             ))}
           </ul>

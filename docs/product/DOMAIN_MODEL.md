@@ -307,7 +307,7 @@ Esta sección es **normativa**: el código del motor y sus tests se escriben con
 | **L1** Costo unitario efectivo | Org **RI**: `u_eff = incluye_iva ? u / (1 + iva) : u` · Org **Monotributo / Exento**: `u_eff = incluye_iva ? u : u × (1 + iva)` | Para un RI, el IVA de la compra es crédito fiscal (no es costo). Para un monotributista, sí es costo. Un proveedor monotributista tiene `iva = 0`. |
 | **L2** Conversión | `u_base = u_eff × fx` | `fx` sale del `fx_snapshot` de la versión (1 si es la misma moneda) |
 | **L3** Duración | `D = (charge_mode == PER_DAY) ? días : 1` | Los días por defecto vienen del evento o de la regla del paquete. Se pueden editar por línea. |
-| **L4** Costo de línea | `C = R₂(u_base × cantidad × D)` | |
+| **L4** Costo de línea | `C = R₂(u_base × cantidad × D)` · si `cost_is_total` (el proveedor cotizó la línea entera): `C = R₂(u_base)` | Con `cost_is_total`, el unitario que se informa es `u_base / (cantidad × D)` a 6 decimales. |
 | **L5** Markup | **MARKUP**: `m` = primer valor no nulo de la cadena (§5.3) · **MARGIN**: `P_list = Rᵢ(C / (1 − g − c))`, o sea `m = (g + c) / (1 − g − c)`, si `margin_includes_sale_charges`; si no, `m = g / (1 − g)` *(corregido: la versión anterior decía `g / (1 − g − c)`, que no compensa los cargos)* · **PRICE**: no aplica (L6) | `c` = suma de las tasas de cargos sobre la venta activos. Se valida `g + c < 1`. |
 | **L6** Venta lista | MARKUP / MARGIN: `P_list = Rᵢ(C × (1 + m))` · PRICE: `P_list = R₂(precio_objetivo_línea)` | |
 | **L7** Descuento de línea | `P = Rᵢ(P_list × (1 − δ))` | `δ` = `discount_rate`. Por defecto el cliente ve solo `P`. |

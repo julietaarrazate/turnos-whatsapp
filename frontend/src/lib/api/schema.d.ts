@@ -1644,6 +1644,12 @@ export interface components {
             /** Next Cursor */
             next_cursor: string | null;
         };
+        /**
+         * ClientPriceLabel
+         * @description Lo que ve el cliente en lugar del importe de la línea (planilla de la piloto).
+         * @enum {string}
+         */
+        ClientPriceLabel: "BONIFICADO" | "A_DEFINIR";
         /** ClientSummary */
         ClientSummary: {
             /** City */
@@ -2215,6 +2221,8 @@ export interface components {
             cost_as_of: string | null;
             /** Cost Days Old */
             cost_days_old: number | null;
+            /** Cost Is Total */
+            cost_is_total: boolean;
             /** Cost Stale */
             cost_stale: boolean;
             /** Cost Total */
@@ -2259,6 +2267,11 @@ export interface components {
             /** Category Id */
             category_id?: string | null;
             charge_mode?: components["schemas"]["ChargeMode"] | null;
+            /**
+             * Cost Is Total
+             * @default false
+             */
+            cost_is_total?: boolean;
             /** Days */
             days?: number | null;
             /** Iva Rate */
@@ -2319,6 +2332,7 @@ export interface components {
             /** Category Name */
             category_name: string | null;
             charge_mode: components["schemas"]["ChargeMode"];
+            client_price_label: components["schemas"]["ClientPriceLabel"] | null;
             cost: components["schemas"]["LineCost"] | null;
             /** Days */
             days: number;
@@ -2383,6 +2397,9 @@ export interface components {
          */
         LineUpdate: {
             charge_mode?: components["schemas"]["ChargeMode"] | null;
+            client_price_label?: components["schemas"]["ClientPriceLabel"] | null;
+            /** Cost Is Total */
+            cost_is_total?: boolean | null;
             /** Days */
             days?: number | null;
             /** Description Client */
@@ -3068,6 +3085,8 @@ export interface components {
             days: number | null;
             /** Description */
             description: string;
+            /** Price Label */
+            price_label?: string | null;
             /** Quantity */
             quantity: string;
             /** Unit */

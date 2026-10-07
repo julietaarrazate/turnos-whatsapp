@@ -54,7 +54,8 @@
         <div class="desc">{{ item.description }}</div>
         <div class="detail">{{ item.quantity | qty }} {{ item.unit }}{% if item.days %} × {{ item.days }} {{ "día" if item.days == 1 else "días" }}{% endif %}{% if detailed and item.unit_price %} · {{ money(item.unit_price) }} c/u{% endif %}</div>
       </td>
-      {% if detailed and item.amount %}<td class="amount">{{ money(item.amount) }}</td>{% endif %}
+      {% if item.price_label %}<td class="amount">{{ "Bonificado" if item.price_label == "BONIFICADO" else "A definir" }}</td>
+      {% elif detailed and item.amount %}<td class="amount">{{ money(item.amount) }}</td>{% endif %}
     </tr>
     {% endfor %}
   </table>

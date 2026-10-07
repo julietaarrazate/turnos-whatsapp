@@ -28,6 +28,13 @@ UNIT = Numeric(18, 6)
 RATE = Numeric(14, 6)  # markups y márgenes pueden ser grandes o negativos
 
 
+class ClientPriceLabel(StrEnum):
+    """Lo que ve el cliente en lugar del importe de la línea (planilla de la piloto)."""
+
+    BONIFICADO = "BONIFICADO"  # incluido sin cargo
+    A_DEFINIR = "A_DEFINIR"  # todavía sin precio
+
+
 class VersionStatus(StrEnum):
     DRAFT = "DRAFT"
     FROZEN = "FROZEN"
@@ -192,6 +199,7 @@ class BudgetLine(IdMixin, Base):
     iva_rate: Mapped[Decimal] = mapped_column(Numeric(5, 4), default=Decimal("0.21"))
     notes_internal: Mapped[str | None] = mapped_column(Text)
     show_on_proposal: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    client_price_label: Mapped[str | None] = mapped_column(String(12))
 
     # Inputs
     quantity: Mapped[Decimal] = mapped_column(Numeric(14, 4))
@@ -200,6 +208,8 @@ class BudgetLine(IdMixin, Base):
     unit_cost_currency: Mapped[str] = mapped_column(String(3), default="ARS")
     unit_cost_includes_iva: Mapped[bool] = mapped_column(Boolean, default=False)
     unit_cost_iva_rate: Mapped[Decimal] = mapped_column(Numeric(5, 4), default=Decimal("0.21"))
+    # El proveedor cotizó la línea entera: unit_cost_amount es el total (no × cantidad × días).
+    cost_is_total: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     cost_as_of: Mapped[date | None]
     pricing_mode: Mapped[str] = mapped_column(String(10), default=LinePricingMode.MARKUP.value)
     markup_manual: Mapped[Decimal | None] = mapped_column(RATE)

@@ -1,11 +1,13 @@
 """Ramas y reglas del motor que no cubren los vectores."""
 
+from dataclasses import replace
 from decimal import Decimal
 
 import pytest
 
 from app.domain.pricing import (
     ENGINE_VERSION,
+    ChargeMode,
     LineInput,
     LinePricingMode,
     MarkupRule,
@@ -20,6 +22,7 @@ from app.domain.pricing import (
     Warning_,
     effective_unit_cost,
     present_in_currency,
+    price_line,
     price_version,
     resolve_markup,
 )
@@ -206,3 +209,23 @@ def test_zero_sale_has_no_margin_and_result_carries_engine_version() -> None:
     assert result.margin_net is None
     assert result.markup is None
     assert result.engine_version == ENGINE_VERSION
+
+
+def test_cost_quoted_for_the_whole_line() -> None:
+    """La piloto carga a veces lo que cobró el proveedor por todo (18 vallas, un flete)."""
+    ctx = PricingContext(tax_condition=TaxCondition.RI, org_rule=MarkupRule(Decimal("0.1")))
+    whole = LineInput(
+        key="vallas",
+        quantity=Decimal(18),
+        unit_cost=Decimal("500000"),
+        cost_is_total=True,
+        charge_mode=ChargeMode.PER_DAY,
+        days=2,
+    )
+    priced = price_line(whole, ctx)
+    assert priced.cost_total == Decimal("500000.00")  # ni × 18 ni × 2 días
+    assert priced.unit_cost_effective == Decimal("13888.888889")  # 500.000 / 36, informativo
+    assert priced.sale_total == Decimal("550000.00")
+
+    with_iva = price_line(replace(whole, cost_includes_iva=True, unit_cost=Decimal("121000")), ctx)
+    assert with_iva.cost_total == Decimal("100000.00")  # el RI descuenta el IVA del total

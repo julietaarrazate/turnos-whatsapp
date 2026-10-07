@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from app.domain.pricing import ChargeMode, LinePricingMode, MarkupSource, VersionPricingMode
-from app.modules.budgets.models import BudgetCurrency, VersionStatus
+from app.modules.budgets.models import BudgetCurrency, ClientPriceLabel, VersionStatus
 from app.modules.events import EventIn, EventStatus
 
 Fraction = Decimal  # fracción como string en JSON: "0.350000" = 35 %
@@ -78,6 +78,7 @@ class LineIn(BaseModel):
     unit_cost_iva_rate: Decimal | None = Field(
         default=None, ge=Decimal(0), lt=Decimal(1), max_digits=5, decimal_places=4
     )
+    cost_is_total: bool = False  # unit_cost_amount es el costo de toda la línea
     iva_rate: Decimal | None = Field(
         default=None, ge=Decimal(0), lt=Decimal(1), max_digits=5, decimal_places=4
     )
@@ -103,6 +104,8 @@ class LineUpdate(BaseModel):
     description_client: str | None = Field(default=None, max_length=5000)
     notes_internal: str | None = Field(default=None, max_length=5000)
     show_on_proposal: bool | None = None
+    # "Bonificado" o "A definir" en la propuesta en lugar del importe (null: el importe).
+    client_price_label: ClientPriceLabel | None = None
     quantity: Decimal | None = Field(default=None, gt=Decimal(0), max_digits=14, decimal_places=4)
     days: int | None = Field(default=None, ge=1, le=365)
     charge_mode: ChargeMode | None = None
@@ -117,6 +120,7 @@ class LineUpdate(BaseModel):
     unit_cost_iva_rate: Decimal | None = Field(
         default=None, ge=Decimal(0), lt=Decimal(1), max_digits=5, decimal_places=4
     )
+    cost_is_total: bool | None = None
     pricing_mode: LinePricingMode | None = None
     markup_manual: Fraction | None = Field(
         default=None, max_digits=14, decimal_places=6, gt=Decimal(-1), le=Decimal(100)
@@ -146,6 +150,7 @@ class LineCost(BaseModel):
     unit_cost_amount: Decimal
     unit_cost_includes_iva: bool
     unit_cost_iva_rate: Decimal
+    cost_is_total: bool
     unit_cost_effective: Decimal
     cost_total: Decimal
     cost_as_of: date | None
@@ -181,6 +186,7 @@ class LineOut(BaseModel):
     description_client: str | None
     notes_internal: str | None
     show_on_proposal: bool
+    client_price_label: ClientPriceLabel | None
     unit_code: str
     charge_mode: ChargeMode
     iva_rate: Decimal

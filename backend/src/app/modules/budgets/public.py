@@ -215,6 +215,9 @@ def public_snapshot(
             amount = amounts[line.id]
             unit_price = (amount / units) if units else None
             exact = unit_price is not None and unit_price == unit_price.quantize(CENT)
+            # "Bonificado" / "A definir": el cliente ve la etiqueta, no un importe.
+            label = line.client_price_label
+            priced = detailed and label is None
             items.append(
                 {
                     "description": line.description_client or line.name_internal,
@@ -222,9 +225,10 @@ def public_snapshot(
                     "unit": line.unit_code,
                     "days": line.days if line.charge_mode == ChargeMode.PER_DAY else None,
                     "unit_price": _money(unit_price)
-                    if detailed and exact and unit_price is not None
+                    if priced and exact and unit_price is not None
                     else None,
-                    "amount": _money(amount) if detailed else None,
+                    "amount": _money(amount) if priced else None,
+                    "price_label": label,
                 }
             )
         public_sections.append(
