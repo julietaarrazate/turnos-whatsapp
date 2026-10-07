@@ -21,7 +21,8 @@ def test_production_lifecycle_with_permissions_and_history() -> None:
     assert production.post(f"{base}/complete").status_code == 409  # todavía no arrancó
 
     started = _ok(production.post(f"{base}/start-production"))
-    assert started["status"] == "IN_PRODUCTION"
+    assert started["started"] is True
+    assert _ok(production.get(base))["status"] == "IN_PRODUCTION"
     done = _ok(production.post(f"{base}/complete"))
     assert done["status"] == "COMPLETED"
 

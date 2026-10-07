@@ -96,6 +96,52 @@ def budget_event_id(db: AppSession, organization_id: UUID, budget_id: UUID) -> U
     return event_id
 
 
+@dataclass(frozen=True)
+class BaselineLine:
+    """Una línea de la versión aceptada, para producción (lista de contratación y tareas)."""
+
+    line_key: UUID
+    name: str
+    supplier_id: UUID | None
+    supplier_name: str | None
+    category_id: UUID | None
+    category_name: str | None
+    quantity: Decimal
+    unit_code: str
+    days: int
+    cost_total: Decimal
+
+
+def baseline_lines(db: AppSession, organization_id: UUID, version_id: UUID) -> list[BaselineLine]:
+    """Las líneas de una versión congelada, en el orden del presupuesto."""
+    rows = db.execute(
+        select(BudgetLine)
+        .join(BudgetSection, BudgetSection.id == BudgetLine.section_id)
+        .join(BudgetVersion, BudgetVersion.id == BudgetLine.version_id)
+        .where(
+            BudgetLine.version_id == version_id,
+            BudgetLine.organization_id == organization_id,
+            BudgetVersion.status == VersionStatus.FROZEN,
+        )
+        .order_by(BudgetSection.sort, BudgetLine.sort)
+    ).scalars()
+    return [
+        BaselineLine(
+            line_key=line.line_key,
+            name=line.name_internal,
+            supplier_id=line.supplier_id,
+            supplier_name=line.supplier_name,
+            category_id=line.category_id,
+            category_name=line.category_name,
+            quantity=line.quantity,
+            unit_code=line.unit_code,
+            days=line.days,
+            cost_total=line.cost_total,
+        )
+        for line in rows
+    ]
+
+
 def _money(value: Decimal) -> str:
     return str(value.quantize(CENT))
 

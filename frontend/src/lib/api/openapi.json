@@ -2009,6 +2009,184 @@
         "title": "EventSummary",
         "type": "object"
       },
+      "EventSupplierOut": {
+        "properties": {
+          "budgeted_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgeted Cost"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HireItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "paid_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid At"
+          },
+          "payment_terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Terms"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HireStatus"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "supplier_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Name"
+          }
+        },
+        "required": [
+          "id",
+          "supplier_id",
+          "supplier_name",
+          "status",
+          "budgeted_cost",
+          "items",
+          "notes",
+          "invoice_number",
+          "payment_terms",
+          "confirmed_at",
+          "paid_at"
+        ],
+        "title": "EventSupplierOut",
+        "type": "object"
+      },
+      "EventSupplierUpdate": {
+        "properties": {
+          "invoice_number": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "payment_terms": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Terms"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HireStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "EventSupplierUpdate",
+        "type": "object"
+      },
       "EventUpdate": {
         "properties": {
           "city": {
@@ -2355,6 +2533,66 @@
         },
         "title": "HTTPValidationError",
         "type": "object"
+      },
+      "HireItem": {
+        "properties": {
+          "cost_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Total"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "line_key": {
+            "format": "uuid",
+            "title": "Line Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit_code": {
+            "title": "Unit Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line_key",
+          "name",
+          "quantity",
+          "unit_code",
+          "days",
+          "cost_total"
+        ],
+        "title": "HireItem",
+        "type": "object"
+      },
+      "HireStatus": {
+        "description": "Lista de contratación, como la sigue la piloto en su planilla: cotizado → confirmado →\nfactura cargada → pagado (siempre hacia adelante) · cancelado antes de facturar.",
+        "enum": [
+          "TO_HIRE",
+          "CONFIRMED",
+          "INVOICED",
+          "PAID",
+          "CANCELLED"
+        ],
+        "title": "HireStatus",
+        "type": "string"
       },
       "InvitationAccept": {
         "properties": {
@@ -5101,6 +5339,48 @@
         "title": "ProductUpdate",
         "type": "object"
       },
+      "ProductionOut": {
+        "properties": {
+          "budgeted_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgeted Cost"
+          },
+          "started": {
+            "title": "Started",
+            "type": "boolean"
+          },
+          "suppliers": {
+            "items": {
+              "$ref": "#/components/schemas/EventSupplierOut"
+            },
+            "title": "Suppliers",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskOut"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "started",
+          "suppliers",
+          "tasks",
+          "budgeted_cost"
+        ],
+        "title": "ProductionOut",
+        "type": "object"
+      },
       "ProposalCreated": {
         "properties": {
           "emailed_to": {
@@ -6965,6 +7245,168 @@
           "organization_id"
         ],
         "title": "SwitchOrganizationRequest",
+        "type": "object"
+      },
+      "TaskIn": {
+        "properties": {
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee User Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "TaskIn",
+        "type": "object"
+      },
+      "TaskOut": {
+        "properties": {
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name"
+          },
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee User Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "assignee_user_id",
+          "assignee_name",
+          "due_date"
+        ],
+        "title": "TaskOut",
+        "type": "object"
+      },
+      "TaskStatus": {
+        "enum": [
+          "TODO",
+          "IN_PROGRESS",
+          "DONE"
+        ],
+        "title": "TaskStatus",
+        "type": "string"
+      },
+      "TaskUpdate": {
+        "properties": {
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee User Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "TaskUpdate",
         "type": "object"
       },
       "TaxCondition": {
@@ -9786,6 +10228,60 @@
         ]
       }
     },
+    "/api/v1/event-suppliers/{event_supplier_id}": {
+      "patch": {
+        "description": "Marcar un proveedor como confirmado o cancelado, o anotar algo.",
+        "operationId": "update_supplier_api_v1_event_suppliers__event_supplier_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_supplier_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Supplier Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventSupplierUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Supplier",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/events": {
       "get": {
         "operationId": "list_events_api_v1_events_get",
@@ -10122,6 +10618,49 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/production": {
+      "get": {
+        "operationId": "get_production_api_v1_events__event_id__production_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Production",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/events/{event_id}/reopen": {
       "post": {
         "description": "Reabrir un evento cerrado (CLOSED → COMPLETED), con motivo.",
@@ -10178,7 +10717,7 @@
     },
     "/api/v1/events/{event_id}/start-production": {
       "post": {
-        "description": "Iniciar producción (APPROVED → IN_PRODUCTION) a partir de la versión aceptada.",
+        "description": "Iniciar producción (APPROVED → IN_PRODUCTION): arma la lista de contratación por\nproveedor desde la versión aceptada y las tareas sugeridas.",
         "operationId": "start_production_api_v1_events__event_id__start_production_post",
         "parameters": [
           {
@@ -10197,7 +10736,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventOut"
+                  "$ref": "#/components/schemas/ProductionOut"
                 }
               }
             },
@@ -10216,7 +10755,7 @@
         },
         "summary": "Start Production",
         "tags": [
-          "events"
+          "production"
         ]
       }
     },
@@ -10271,6 +10810,59 @@
         "summary": "Change Status",
         "tags": [
           "events"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/tasks": {
+      "post": {
+        "operationId": "add_task_api_v1_events__event_id__tasks_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Task",
+        "tags": [
+          "production"
         ]
       }
     },
@@ -12122,6 +12714,93 @@
         "summary": "Update Supplier",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "delete": {
+        "operationId": "delete_task_api_v1_tasks__task_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Task",
+        "tags": [
+          "production"
+        ]
+      },
+      "patch": {
+        "operationId": "update_task_api_v1_tasks__task_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Task",
+        "tags": [
+          "production"
         ]
       }
     },

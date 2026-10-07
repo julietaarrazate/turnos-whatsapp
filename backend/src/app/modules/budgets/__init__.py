@@ -1,9 +1,11 @@
 """Presupuestos: versiones, secciones y líneas con snapshot; el motor recalcula cada cambio."""
 
 from app.modules.budgets.public import (
+    BaselineLine,
     DisplayMode,
     IvaDisplay,
     SendableVersion,
+    baseline_lines,
     budget_event_id,
     public_snapshot,
     sendable_version,
@@ -18,10 +20,12 @@ from app.modules.budgets.service import (
 )
 
 __all__ = [
+    "BaselineLine",
     "BudgetSummary",
     "DisplayMode",
     "IvaDisplay",
     "SendableVersion",
+    "baseline_lines",
     "budget_event_id",
     "ensure_budget",
     "freeze_for_proposal",
