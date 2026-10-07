@@ -80,6 +80,8 @@ def test_send_freezes_draft_and_public_link_shows_whitelisted_snapshot() -> None
         "total": "1694.00",
         "subtotal": "1400.00",
         "global_discount": None,
+        "management_fee": None,
+        "management_fee_rate": None,
         "net": "1400.00",
         "iva": "294.00",
         "iva_included": None,

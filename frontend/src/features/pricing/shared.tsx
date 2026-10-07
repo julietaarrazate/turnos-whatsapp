@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api, unwrap } from "@/lib/api/client";
 import type { MarkupResolution, MarkupRule } from "@/lib/api/types";
-import { formatPercent } from "@/lib/format/number";
+import { formatPercentCompact } from "@/lib/format/number";
 
 export const PRICING_KEY = ["pricing"] as const;
 
@@ -25,8 +25,7 @@ export function ruleLabel(rule: Pick<MarkupRule, "mode" | "value" | "effective_m
 }
 
 export function pct(fraction: string): string {
-  // Sin ceros decimales de más: "30,00 %" → "30 %", "3,50 %" → "3,5 %".
-  return formatPercent(fraction, 2).replace(/,?0+ %$/, " %");
+  return formatPercentCompact(fraction);
 }
 
 const SOURCE_LABELS: Record<MarkupResolution["source"], string> = {

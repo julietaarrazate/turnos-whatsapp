@@ -32,7 +32,8 @@ class VersionPriced:
     cost_direct: Decimal
     sale_subtotal: Decimal
     global_discount: Decimal
-    sale_net: Decimal
+    management_fee: Decimal
+    sale_net: Decimal  # ítems − descuento + fee de gestión
     sale_charges: tuple[ChargeAmount, ...]
     sale_charges_total: Decimal
     cost_total: Decimal
@@ -55,6 +56,7 @@ class Presentation:
     lines: dict[str, Decimal]
     subtotal: Decimal
     global_discount: Decimal
+    management_fee: Decimal
     net: Decimal
     iva: Decimal
     total: Decimal

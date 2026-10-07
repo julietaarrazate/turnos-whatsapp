@@ -83,6 +83,9 @@ class BudgetVersion(IdMixin, TimestampMixin, Base):
         CheckConstraint(check_in("status", VersionStatus), name="status"),
         CheckConstraint(check_in("pricing_mode", VersionPricingMode), name="pricing_mode"),
         CheckConstraint("global_discount_rate >= 0 AND global_discount_rate < 1", name="discount"),
+        CheckConstraint(
+            "management_fee_rate >= 0 AND management_fee_rate < 1", name="management_fee"
+        ),
     )
 
     organization_id: Mapped[UUID] = _org_fk()
@@ -102,6 +105,10 @@ class BudgetVersion(IdMixin, TimestampMixin, Base):
     global_discount_rate: Mapped[Decimal] = mapped_column(
         Numeric(9, 6), default=Decimal(0), server_default="0"
     )
+    # V2b: fee de gestión sobre la venta de los ítems, visible al cliente (planilla de la piloto).
+    management_fee_rate: Mapped[Decimal] = mapped_column(
+        Numeric(9, 6), default=Decimal(0), server_default="0"
+    )
 
     # Snapshots: el contexto con el que se calcula (no cambia si cambian las reglas).
     fx_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
@@ -112,6 +119,7 @@ class BudgetVersion(IdMixin, TimestampMixin, Base):
     cost_direct: Mapped[Decimal] = mapped_column(MONEY, default=Decimal(0), server_default="0")
     sale_subtotal: Mapped[Decimal] = mapped_column(MONEY, default=Decimal(0), server_default="0")
     global_discount: Mapped[Decimal] = mapped_column(MONEY, default=Decimal(0), server_default="0")
+    management_fee: Mapped[Decimal] = mapped_column(MONEY, default=Decimal(0), server_default="0")
     sale_net: Mapped[Decimal] = mapped_column(MONEY, default=Decimal(0), server_default="0")
     sale_charges: Mapped[Decimal] = mapped_column(MONEY, default=Decimal(0), server_default="0")
     sale_charges_detail: Mapped[list[dict[str, str]]] = mapped_column(

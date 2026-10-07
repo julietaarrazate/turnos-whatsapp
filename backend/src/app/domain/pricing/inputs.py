@@ -91,4 +91,6 @@ class VersionInput:
     target_price: Decimal | None = None
     target_includes_iva: bool = False
     global_discount_rate: Decimal = ZERO
+    # V2b: fee de gestión sobre la venta neta de los ítems; el cliente lo ve como un renglón.
+    management_fee_rate: Decimal = ZERO
     meta: dict[str, str] = field(default_factory=dict)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDecimal, formatMoney, formatPercent, formatQuantity } from "./number";
+import { formatDecimal, formatMoney, formatPercent, formatPercentCompact, formatQuantity } from "./number";
 
 describe("formatMoney", () => {
   it.each([
@@ -35,6 +35,20 @@ describe("formatPercent", () => {
 
   it("con 2 decimales", () => {
     expect(formatPercent("0.230769", 2)).toBe("23,08 %");
+  });
+});
+
+describe("formatPercentCompact", () => {
+  it.each([
+    ["0.05", "5 %"],
+    ["0.050000", "5 %"],
+    ["0.035", "3,5 %"],
+    ["0.1", "10 %"],
+    ["1", "100 %"],
+    ["0", "0 %"],
+    ["0.230769", "23,08 %"],
+  ])("%s → %s", (input, expected) => {
+    expect(formatPercentCompact(input)).toBe(expected);
   });
 });
 

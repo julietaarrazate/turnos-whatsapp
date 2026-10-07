@@ -14,6 +14,7 @@ from app.domain.pricing import (
     TaxCondition,
     VersionInput,
     VersionPricingMode,
+    Warning_,
     present_in_currency,
     price_version,
 )
@@ -49,16 +50,17 @@ lines_strategy = st.lists(
 
 
 @settings(max_examples=300)
-@given(lines_strategy, rates, increments)
+@given(lines_strategy, rates, rates, increments)
 def test_visible_amounts_always_add_up(
-    lines: list[LineInput], discount: Decimal, increment: Decimal
+    lines: list[LineInput], discount: Decimal, fee: Decimal, increment: Decimal
 ) -> None:
-    result = price_version(
-        VersionInput(lines=tuple(lines), global_discount_rate=discount), ctx(increment)
+    version = VersionInput(
+        lines=tuple(lines), global_discount_rate=discount, management_fee_rate=fee
     )
+    result = price_version(version, ctx(increment))
     assert sum(line.sale_total for line in result.lines) == result.sale_subtotal
     assert sum(line.allocated_global_discount for line in result.lines) == result.global_discount
-    assert result.sale_net == result.sale_subtotal - result.global_discount
+    assert result.sale_net == result.sale_subtotal - result.global_discount + result.management_fee
     assert result.total == result.sale_net + result.iva
 
 
@@ -83,6 +85,25 @@ def test_target_price_is_hit_exactly(
     result = price_version(version, ctx(increment))
     assert result.sale_subtotal == target
     assert all(line.sale_total % increment == 0 for line in result.lines)
+
+
+@settings(max_examples=300)
+@given(lines_strategy, st.integers(min_value=1, max_value=10_000), rates, increments)
+def test_target_price_with_fee_lands_within_rounding(
+    lines: list[LineInput], target_units: int, fee: Decimal, increment: Decimal
+) -> None:
+    """El objetivo incluye el fee: los ítems son múltiplos del incremento y el fee va al
+    centavo, así que el neto queda a menos de medio incremento (más el centavo) del objetivo."""
+    target = Decimal(target_units) * Decimal(1000)
+    version = VersionInput(
+        lines=tuple(lines),
+        mode=VersionPricingMode.PRICE,
+        target_price=target,
+        management_fee_rate=fee,
+    )
+    result = price_version(version, ctx(increment))
+    assert abs(result.sale_net - target) <= increment * (1 + fee) / 2 + Decimal("0.005")
+    assert (result.sale_net != target) == (Warning_.TARGET_ROUNDED in result.warnings)
 
 
 @settings(max_examples=300)

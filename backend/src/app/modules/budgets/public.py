@@ -186,21 +186,24 @@ def public_snapshot(
         shown = version.presentation
         amounts = {line.id: Decimal(shown["lines"][str(line.id)]) for line in lines}
         subtotal, discount = Decimal(shown["subtotal"]), Decimal(shown["global_discount"])
+        fee = Decimal(shown.get("management_fee", "0"))
         net, iva, total = Decimal(shown["net"]), Decimal(shown["iva"]), Decimal(shown["total"])
     else:
         amounts = {line.id: line.sale_total for line in lines}
         subtotal, discount = version.sale_subtotal, version.global_discount
+        fee = version.management_fee
         net, iva, total = version.sale_net, version.iva, version.total
 
     if iva_display is IvaDisplay.IVA_INCLUDED:
-        # Cada línea con su parte del descuento y del IVA, repartido para que sume el total exacto.
+        # Cada línea (y el fee de gestión) con su parte del descuento y del IVA, repartido para
+        # que sume el total exacto.
         weights = [
             amounts[line.id] * (subtotal - discount) / subtotal if subtotal else Decimal(0)
             for line in lines
         ]
-        amounts = dict(
-            zip([line.id for line in lines], allocate(total, weights, CENT), strict=True)
-        )
+        shares = allocate(total, [*weights, fee] if fee else weights, CENT)
+        amounts = dict(zip([line.id for line in lines], shares[: len(lines)], strict=True))
+        fee = shares[-1] if fee else fee
 
     detailed = display_mode is DisplayMode.DETAILED
     by_section = display_mode is not DisplayMode.TOTAL_ONLY
@@ -244,6 +247,11 @@ def public_snapshot(
     event = db.get(Event, budget.event_id)
     client = db.get(Client, event.client_id) if event else None
     totals: dict[str, Any] = {"total": _money(total)}
+    if fee:
+        totals |= {
+            "management_fee": _money(fee),
+            "management_fee_rate": f"{version.management_fee_rate.normalize():f}",
+        }
     if iva_display is IvaDisplay.PLUS_IVA:
         totals |= {
             "subtotal": _money(subtotal),

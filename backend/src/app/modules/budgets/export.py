@@ -92,6 +92,7 @@ def version_xlsx(budget: BudgetOut) -> bytes:
     totals: list[tuple[str, Decimal | None, str]] = [
         ("Subtotal", version.sale_subtotal, MONEY),
         ("Descuento global", -version.global_discount if version.global_discount else None, MONEY),
+        ("Fee de gestión", version.management_fee or None, MONEY),
         ("Neto", version.sale_net, MONEY),
         ("IVA", version.iva, MONEY),
         ("Total", version.total, MONEY),

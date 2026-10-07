@@ -337,7 +337,8 @@ Esta sección es **normativa**: el código del motor y sus tests se escriben con
 |---|---|---|
 | **V1** Subtotal | `S = Σ Pᵢ` | Todas las líneas, incluidas las no visibles en la propuesta (se suman en su sección) |
 | **V2** Descuento global | `G = R₂(S × γ)` · `N = S − G` | `N` = **venta neta**. `G` se reparte por línea con **mayor resto** proporcional a `Pᵢ` (`allocated_global_discount`) para los reportes por categoría. Σ repartido = `G` exacto. |
-| **V3** Cargos sobre la venta | `K = Σⱼ R₂(N × cⱼ)` | IIBB, impuesto al cheque, comisiones |
+| **V2b** Fee de gestión | `F = R₂((S − G) × f)` · `N = S − G + F` | `f` = `management_fee_rate` de la versión (0 por defecto). Es venta sin costo: el cliente lo ve como un renglón aparte ("Fee de gestión 5 %"). Lleva la alícuota de IVA general. En modo `PRICE` el objetivo **incluye** el fee: los ítems buscan `X` con `X + R₂(X × f)` lo más cerca posible del objetivo (aviso `target_rounded` si no da exacto). |
+| **V3** Cargos sobre la venta | `K = Σⱼ R₂(N × cⱼ)` | IIBB, impuesto al cheque, comisiones (sobre la venta neta, fee incluido) |
 | **V4** Costo | `CD = Σ Cᵢ` (directo) · `CT = CD + K` | |
 | **V5** Resultado | `Π = N − CT` · `markup = (N − CD) / CD` · `margin_gross = (N − CD) / N` · `margin_net = Π / N` | La UI muestra "Margen" = `margin_net` (con la etiqueta "después de IIBB…") cuando hay cargos activos |
 | **V6** IVA | Org RI: `IVA = Σ_alícuota R₂(N_alícuota × alícuota)` (con `N_alícuota` neto de su parte del descuento global) · Org Monotributo: `IVA = 0` | |
@@ -371,7 +372,7 @@ Entrada: `T` (venta neta objetivo; si `target_includes_iva`, `T = T_con_iva / (1
 
 ### 5.8 Vectores de prueba (verificados con `Decimal`)
 
-Estos casos son los **primeros vectores dorados** del motor. Los marcados ⚠ difieren del brief original. **La fuente de verdad ejecutable es `backend/tests/pricing/vectors.json`** (22 vectores, incluidos los de presentación en USD y los bordes). V12 (costo en USD) se reemplazó por cobro por día en ARS (D-09: costos en ARS en el MVP). V13 y V14 son de presupuestado vs real (módulo de finanzas, Fase 4).
+Estos casos son los **primeros vectores dorados** del motor. Los marcados ⚠ difieren del brief original. **La fuente de verdad ejecutable es `backend/tests/pricing/vectors.json`** (incluidos los de presentación en USD, el fee de gestión y los bordes). V12 (costo en USD) se reemplazó por cobro por día en ARS (D-09: costos en ARS en el MVP). V13 y V14 son de presupuestado vs real (módulo de finanzas, Fase 4).
 
 | # | Caso | Entrada | Resultado esperado |
 |---|---|---|---|

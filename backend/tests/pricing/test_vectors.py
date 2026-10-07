@@ -48,6 +48,7 @@ def test_vector(vector: dict[str, Any]) -> None:
     assert sum(line.sale_total for line in result.lines) == result.sale_subtotal
     assert sum(line.allocated_global_discount for line in result.lines) == result.global_discount
     assert result.total == result.sale_net + result.iva
+    assert result.sale_net == result.sale_subtotal - result.global_discount + result.management_fee
 
     if "present" in vector:
         present = vector["present"]

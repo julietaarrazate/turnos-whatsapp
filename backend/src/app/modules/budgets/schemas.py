@@ -48,6 +48,9 @@ class VersionUpdate(BaseModel):
     global_discount_rate: Fraction | None = Field(
         default=None, max_digits=14, decimal_places=6, ge=Decimal(0), lt=Decimal(1)
     )
+    management_fee_rate: Fraction | None = Field(
+        default=None, max_digits=14, decimal_places=6, ge=Decimal(0), lt=Decimal(1)
+    )
     currency: BudgetCurrency | None = None
     refresh_fx: bool = False  # tomar el último tipo de cambio cargado
 
@@ -245,6 +248,7 @@ class PresentationOut(BaseModel):
     fx_rate: Decimal
     subtotal: Decimal
     global_discount: Decimal
+    management_fee: Decimal = Decimal(0)  # las versiones anteriores al fee no lo guardaban
     net: Decimal
     iva: Decimal
     total: Decimal
@@ -260,8 +264,10 @@ class VersionOut(BaseModel):
     target_price: Decimal | None
     target_includes_iva: bool
     global_discount_rate: Decimal
+    management_fee_rate: Decimal
     sale_subtotal: Decimal
     global_discount: Decimal
+    management_fee: Decimal
     sale_net: Decimal
     iva: Decimal
     total: Decimal

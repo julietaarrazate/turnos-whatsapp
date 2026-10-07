@@ -77,4 +77,5 @@ def version(data: dict[str, Any]) -> VersionInput:
         target_price=dec("target_price"),
         target_includes_iva=data.get("target_includes_iva", False),
         global_discount_rate=dec("global_discount_rate") or Decimal(0),
+        management_fee_rate=dec("management_fee_rate") or Decimal(0),
     )

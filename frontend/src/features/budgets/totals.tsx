@@ -10,7 +10,7 @@ import { formatMoney } from "@/lib/format/number";
 const WARNINGS: Record<string, string> = {
   below_cost: "Hay ítems (o el total) por debajo del costo.",
   below_min_margin: "El margen quedó por debajo del mínimo de la organización.",
-  target_rounded: "El precio objetivo se redondeó al incremento comercial.",
+  target_rounded: "El precio objetivo no dio exacto: se redondeó al incremento comercial (o al centavo del fee).",
 };
 
 function Figure({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: string }) {
@@ -45,6 +45,11 @@ export function TotalsFooter({ version, pending }: { version: BudgetVersion; pen
         <Figure label="IVA" value={formatMoney(version.iva)} />
         <Figure label="Total" value={formatMoney(version.total)} strong />
       </div>
+      {version.management_fee !== "0.00" ? (
+        <p className="mt-1 text-xs text-ink-muted">
+          La venta neta incluye el fee de gestión ({pct(version.management_fee_rate)}): {formatMoney(version.management_fee)}
+        </p>
+      ) : null}
       {version.presentation ? (
         <p className="mt-1 text-xs text-ink-muted">
           En dólares (US$ 1 = {formatMoney(version.presentation.fx_rate)}): neto{" "}

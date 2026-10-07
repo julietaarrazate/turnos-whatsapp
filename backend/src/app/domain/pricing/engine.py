@@ -24,7 +24,7 @@ from app.domain.pricing.types import (
     Warning_,
 )
 
-ENGINE_VERSION = "1.0.0"
+ENGINE_VERSION = "1.1.0"
 
 
 # --- Validación ---------------------------------------------------------------------------
@@ -160,6 +160,27 @@ def _with_mode(line: LineInput, mode: LinePricingMode, **values: object) -> Line
     return replace(line, pricing_mode=mode, discount_rate=ZERO, **values)  # type: ignore[arg-type]
 
 
+def _target_net(target: Decimal, version: VersionInput, ctx: PricingContext) -> Decimal:
+    """La venta neta que se busca (sin IVA). Incluye el fee de gestión."""
+    if version.target_includes_iva and ctx.tax_condition is TaxCondition.RI:
+        return target / (ONE + ctx.default_iva_rate)
+    return target
+
+
+def _fee(items_net: Decimal, fee_rate: Decimal) -> Decimal:
+    return r2(items_net * fee_rate)  # V2b
+
+
+def _items_for(goal: Decimal, fee_rate: Decimal, inc: Decimal) -> Decimal:
+    """Los ítems ``X`` (múltiplo del incremento) con ``X + fee(X)`` lo más cerca posible del
+    objetivo. Con fee el cociente casi nunca da redondo: se prueba el incremento de al lado."""
+    base = r_inc(goal / (ONE + fee_rate), inc)
+    if not fee_rate:
+        return base
+    candidates = (base, base - inc, base + inc)
+    return min(candidates, key=lambda x: abs(x + _fee(x, fee_rate) - goal))
+
+
 def _price_target(
     version: VersionInput, ctx: PricingContext, warnings: list[Warning_]
 ) -> list[LinePriced]:
@@ -172,13 +193,10 @@ def _price_target(
             "target_with_discount", "El precio objetivo no se combina con un descuento global"
         )
     inc = ctx.rounding_increment
-    target = version.target_price
-    if version.target_includes_iva and ctx.tax_condition is TaxCondition.RI:
-        target = target / (ONE + ctx.default_iva_rate)
-    rounded = r_inc(target, inc)
-    if rounded != target:
+    goal = _target_net(version.target_price, version, ctx)
+    target = _items_for(goal, version.management_fee_rate, inc)
+    if target + _fee(target, version.management_fee_rate) != goal:
         warnings.append(Warning_.TARGET_ROUNDED)
-    target = rounded
 
     priced: dict[int, LinePriced] = {}
     for i, line in enumerate(version.lines):
@@ -248,6 +266,8 @@ def _iva(nets: list[Decimal], iva_rates: list[Decimal], tax_condition: TaxCondit
 def price_version(version: VersionInput, ctx: PricingContext) -> VersionPriced:
     if not ZERO <= version.global_discount_rate < ONE:
         raise PricingError("discount_out_of_range", "El descuento global va entre 0 y 100 %")
+    if not ZERO <= version.management_fee_rate < ONE:
+        raise PricingError("fee_out_of_range", "El fee de gestión va entre 0 y 100 %")
     if ctx.rounding_increment <= ZERO:
         raise PricingError("invalid_increment", "El incremento de redondeo debe ser positivo")
     warnings: list[Warning_] = []
@@ -260,7 +280,8 @@ def price_version(version: VersionInput, ctx: PricingContext) -> VersionPriced:
         replace(line, allocated_global_discount=share)
         for line, share in zip(lines, allocated, strict=True)
     ]
-    net = subtotal - discount
+    fee = _fee(subtotal - discount, version.management_fee_rate)  # V2b
+    net = subtotal - discount + fee
     charges = tuple(  # V3
         ChargeAmount(c.name, c.rate, r2(net * c.rate)) for c in ctx.sale_charges
     )
@@ -269,9 +290,9 @@ def price_version(version: VersionInput, ctx: PricingContext) -> VersionPriced:
     profit = net - cost_direct - charges_total  # V5
     markup, margin_gross = _ratios(cost_direct, net)
     margin_net = rate(profit / net) if net > ZERO else None
-    iva = _iva(  # V6
-        [line.sale_total - line.allocated_global_discount for line in lines],
-        [line.iva_rate for line in version.lines],
+    iva = _iva(  # V6 (el fee lleva la alícuota general)
+        [line.sale_total - line.allocated_global_discount for line in lines] + [fee],
+        [line.iva_rate for line in version.lines] + [ctx.default_iva_rate],
         ctx.tax_condition,
     )
 
@@ -285,6 +306,7 @@ def price_version(version: VersionInput, ctx: PricingContext) -> VersionPriced:
         cost_direct=cost_direct,
         sale_subtotal=subtotal,
         global_discount=discount,
+        management_fee=fee,
         sale_net=net,
         sale_charges=charges,
         sale_charges_total=charges_total,
@@ -321,10 +343,11 @@ def present_in_currency(
     line_amounts = allocate(subtotal, [line.sale_total for line in result.lines], CENT)
     discount = r2(subtotal * version.global_discount_rate)
     allocated = allocate(discount, line_amounts, CENT)
-    net = subtotal - discount
+    fee = _fee(subtotal - discount, version.management_fee_rate)
+    net = subtotal - discount + fee
     iva = _iva(
-        [amount - share for amount, share in zip(line_amounts, allocated, strict=True)],
-        [line.iva_rate for line in version.lines],
+        [amount - share for amount, share in zip(line_amounts, allocated, strict=True)] + [fee],
+        [line.iva_rate for line in version.lines] + [ctx.default_iva_rate],
         ctx.tax_condition,
     )
     return Presentation(
@@ -333,6 +356,7 @@ def present_in_currency(
         lines={line.key: amount for line, amount in zip(result.lines, line_amounts, strict=True)},
         subtotal=subtotal,
         global_discount=discount,
+        management_fee=fee,
         net=net,
         iva=iva,
         total=net + iva,
