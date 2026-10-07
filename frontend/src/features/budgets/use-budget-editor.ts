@@ -110,6 +110,15 @@ export function useBudgetEditor(budgetId: string) {
         ),
       );
     },
+    addPackage: (body: Schemas["PackageInsertIn"]) =>
+      run(async (lock) =>
+        unwrap(
+          await api.POST("/api/v1/budgets/{budget_id}/draft/packages", {
+            params: { path, header: ifMatch(lock) },
+            body,
+          }),
+        ),
+      ),
     updateLine: (lineId: string, body: LineUpdate) =>
       run(async (lock) =>
         unwrap(

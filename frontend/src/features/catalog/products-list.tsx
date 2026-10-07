@@ -54,6 +54,9 @@ export function ProductsList() {
         actions={
           can("catalog.edit") ? (
             <div className="flex flex-wrap gap-2">
+              <Link href="/catalog/packages" className={buttonClasses("secondary")}>
+                Paquetes
+              </Link>
               {can("costs.edit") ? (
                 <>
                   <Link href="/catalog/import" className={buttonClasses("secondary")}>

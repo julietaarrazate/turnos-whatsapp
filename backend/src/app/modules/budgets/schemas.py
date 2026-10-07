@@ -104,6 +104,14 @@ class VersionUpdate(BaseModel):
     refresh_fx: bool = False  # tomar el último tipo de cambio cargado
 
 
+class PackageInsertIn(BaseModel):
+    """B-06: insertar un paquete del catálogo. Sin sección, va a la primera (los ítems que
+    traen su propia sección van a esa)."""
+
+    package_id: UUID
+    section_id: UUID | None = None
+
+
 class SectionIn(BaseModel):
     title_client: str = Field(min_length=1, max_length=200)
 

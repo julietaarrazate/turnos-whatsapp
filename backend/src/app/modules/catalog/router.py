@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.catalog import bulk, importer, service
+from app.modules.catalog import bulk, importer, packages, service
 from app.modules.catalog.schemas import (
     BulkIncreaseIn,
     BulkPreviewOut,
@@ -18,6 +18,9 @@ from app.modules.catalog.schemas import (
     OfferIn,
     OfferOut,
     OfferUpdate,
+    PackageIn,
+    PackageOut,
+    PackageSummary,
     PriceIn,
     PriceOut,
     ProductIn,
@@ -194,3 +197,33 @@ def preview_catalog_import(body: CatalogImportIn, ctx: Edit, db: DbSession) -> C
 def catalog_import(body: CatalogImportIn, ctx: Edit, db: DbSession) -> CatalogImportOut:
     """Importa las filas sin errores: categorías, proveedores, productos, ofertas y costos."""
     return importer.apply_import(db, ctx, body)
+
+
+# --- Paquetes (B-06) -----------------------------------------------------------------------
+
+
+@router.get("/packages")
+def list_packages(
+    ctx: View, db: DbSession, q: Annotated[str | None, Query(max_length=100)] = None
+) -> list[PackageSummary]:
+    return packages.list_packages(db, ctx, q)
+
+
+@router.post("/packages", status_code=status.HTTP_201_CREATED)
+def create_package(body: PackageIn, ctx: Edit, db: DbSession) -> PackageOut:
+    return packages.create_package(db, ctx, body)
+
+
+@router.get("/packages/{package_id}")
+def get_package(package_id: UUID, ctx: View, db: DbSession) -> PackageOut:
+    return packages.get_package(db, ctx, package_id)
+
+
+@router.put("/packages/{package_id}")
+def update_package(package_id: UUID, body: PackageIn, ctx: Edit, db: DbSession) -> PackageOut:
+    return packages.update_package(db, ctx, package_id, body)
+
+
+@router.delete("/packages/{package_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_package(package_id: UUID, ctx: Edit, db: DbSession) -> None:
+    packages.delete_package(db, ctx, package_id)

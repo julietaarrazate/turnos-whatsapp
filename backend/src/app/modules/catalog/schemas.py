@@ -351,3 +351,57 @@ class CatalogImportOut(BaseModel):
     rows: list[ImportRowOut]  # las primeras 300
     summary: ImportSummary
     applied: bool
+
+
+# --- Paquetes (B-06) -----------------------------------------------------------------------
+
+
+class PackageItemIn(BaseModel):
+    product_id: UUID
+    quantity: Decimal = Field(default=Decimal(1), gt=Decimal(0), max_digits=14, decimal_places=4)
+    days_rule: str = Field(default="EVENT_DAYS", pattern="^(EVENT_DAYS|SETUP_DAYS|FIXED)$")
+    fixed_days: int | None = Field(default=None, ge=1, le=365)
+    section_title: str | None = Field(default=None, max_length=200)
+    description_client_override: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def _fixed(self) -> "PackageItemIn":
+        if self.days_rule == "FIXED" and self.fixed_days is None:
+            raise ValueError("Indicá cuántos días")
+        return self
+
+
+class PackageIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    is_active: bool = True
+    items: list[PackageItemIn] = Field(min_length=1, max_length=100)
+
+
+class PackageItemOut(BaseModel):
+    id: UUID
+    product_id: UUID
+    product_name: str
+    unit_code: str
+    charge_mode: ChargeMode
+    quantity: Decimal
+    days_rule: str
+    fixed_days: int | None
+    section_title: str | None
+    description_client_override: str | None
+
+
+class PackageOut(BaseModel):
+    id: UUID
+    name: str
+    description: str | None
+    is_active: bool
+    items: list[PackageItemOut]
+
+
+class PackageSummary(BaseModel):
+    id: UUID
+    name: str
+    description: str | None
+    is_active: bool
+    item_count: int

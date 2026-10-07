@@ -31,3 +31,44 @@ test("importar catálogo desde CSV y aplicar un aumento masivo", async ({ page }
   await simulation.getByRole("button", { name: "Aplicar aumento" }).click();
   await expect(page.getByText(/Listo: 1 costos nuevos/)).toBeVisible();
 });
+
+const H = { "X-Requested-With": "fetch" };
+
+test("armar un paquete e insertarlo en un presupuesto", async ({ page }, testInfo) => {
+  const suffix = `${testInfo.project.name}-${Date.now()}`;
+  await login(page);
+  const categories = await (await page.request.get("/api/v1/categories", { headers: H })).json();
+  const units = await (await page.request.get("/api/v1/units", { headers: H })).json();
+  const product = await (
+    await page.request.post("/api/v1/products", {
+      headers: H,
+      data: {
+        name: `Tarima ${suffix}`,
+        category_id: categories[0].id,
+        unit_id: units.find((u: { code: string }) => u.code === "u").id,
+      },
+    })
+  ).json();
+
+  await page.goto("/catalog/packages");
+  await page.getByRole("button", { name: "Nuevo paquete" }).click();
+  const form = page.getByRole("form", { name: "Nuevo paquete" });
+  await form.getByLabel("Nombre").fill(`Stand ${suffix}`);
+  await form.getByRole("combobox", { name: "Agregar ítem" }).fill(`Tarima ${suffix}`);
+  await page.getByRole("option", { name: new RegExp(`^Tarima ${suffix}`) }).click();
+  await form.getByLabel(`Cantidad de Tarima ${suffix}`).fill("4");
+  await form.getByLabel("Sección (opcional)").fill("Escenario");
+  await form.getByRole("button", { name: "Guardar paquete" }).click();
+  await expect(page.getByRole("region", { name: "Lista de paquetes" })).toContainText(`Stand ${suffix}`);
+
+  await page.goto("/budgets/new");
+  await page.getByLabel("Cliente").fill(`Cliente ${suffix}`);
+  await page.getByLabel("Evento", { exact: true }).fill(`Feria ${suffix}`);
+  await page.getByRole("button", { name: "Crear y armar el presupuesto" }).click();
+  await page.getByRole("combobox", { name: "Agregar ítem" }).fill(`Stand ${suffix}`);
+  await page.getByRole("option", { name: new RegExp(`Paquete: Stand ${suffix}`) }).click();
+  const stage = page.getByRole("region", { name: "Sección Escenario" });
+  await expect(stage.getByRole("button", { name: `Abrir Tarima ${suffix}` })).toBeVisible();
+  await expect(stage.getByLabel(`Cantidad de Tarima ${suffix}`)).toHaveValue("4");
+  expect(product.id).toBeTruthy();
+});

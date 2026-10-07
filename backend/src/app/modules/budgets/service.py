@@ -81,6 +81,7 @@ from app.modules.budgets.schemas import (
     LineMargin,
     LineOut,
     LineUpdate,
+    PackageInsertIn,
     PresentationOut,
     RefreshCostsIn,
     RuleChange,
@@ -97,7 +98,14 @@ from app.modules.budgets.schemas import (
     VersionUpdate,
 )
 from app.modules.budgets.sheet_import import SheetBudget, pick_sheet
-from app.modules.catalog import Product, category_info, current_prices, line_source, today_ar
+from app.modules.catalog import (
+    Product,
+    category_info,
+    current_prices,
+    line_source,
+    package_spec,
+    today_ar,
+)
 from app.modules.clients import Client
 from app.modules.events import (
     Event,
@@ -1149,6 +1157,26 @@ def add_line(
     db: AppSession, ctx: TenantContext, budget_id: UUID, if_match: int, body: LineIn
 ) -> BudgetOut:
     budget, version = _draft(db, ctx, budget_id, if_match)
+    line = _insert_line(db, ctx, budget, version, body)
+    _recalculate(db, budget, version)
+    _audit(
+        db,
+        ctx,
+        "budget.line_added",
+        budget.id,
+        after={
+            "line_key": str(line.line_key),
+            "name": line.name_internal,
+            "quantity": str(line.quantity),
+        },
+    )
+    return budget_out(db, ctx, budget, version)
+
+
+def _insert_line(
+    db: AppSession, ctx: TenantContext, budget: Budget, version: BudgetVersion, body: LineIn
+) -> BudgetLine:
+    """Agrega la línea al borrador sin recalcular (quien llama recalcula una vez al final)."""
     section = _section(db, version, body.section_id)
     custom_cost = (
         body.unit_cost_amount is not None
@@ -1248,17 +1276,61 @@ def add_line(
     )
     _renumber([*siblings, line], line, body.position)
     db.flush()
+    return line
+
+
+def add_package(
+    db: AppSession, ctx: TenantContext, budget_id: UUID, if_match: int, body: PackageInsertIn
+) -> BudgetOut:
+    """B-06: inserta un paquete como líneas editables. Los ítems con sección van a la sección
+    de ese nombre (se crea si no existe); los demás, a la sección elegida."""
+    budget, version = _draft(db, ctx, budget_id, if_match)
+    event = db.execute(select(Event).where(Event.id == budget.event_id)).scalar_one()
+    name, items = package_spec(
+        db, ctx, body.package_id, event_days=event.event_days, setup_days=event.setup_days
+    )
+    sections = _sections(db, version.id)
+    default = _section(db, version, body.section_id) if body.section_id else sections[0]
+    by_title = {s.title_client.strip().lower(): s for s in sections}
+    for item in items:
+        section = default
+        if item.section_title:
+            key = item.section_title.strip().lower()
+            if key not in by_title:
+                created = BudgetSection(
+                    organization_id=ctx.organization_id,
+                    version_id=version.id,
+                    section_key=uuid4(),
+                    title_client=item.section_title.strip(),
+                    sort=len(by_title),
+                )
+                db.add(created)
+                db.flush()
+                by_title[key] = created
+            section = by_title[key]
+        line = _insert_line(
+            db,
+            ctx,
+            budget,
+            version,
+            LineIn(
+                section_id=section.id,
+                product_id=item.product_id,
+                quantity=item.quantity,
+                days=item.days,
+                position=None,
+            ),
+        )
+        if item.description_client:
+            line.description_client = item.description_client
+    db.flush()
     _recalculate(db, budget, version)
     _audit(
         db,
         ctx,
-        "budget.line_added",
+        "budget.package_added",
         budget.id,
-        after={
-            "line_key": str(line.line_key),
-            "name": line.name_internal,
-            "quantity": str(line.quantity),
-        },
+        after={"package": name, "lines": len(items)},
     )
     return budget_out(db, ctx, budget, version)
 

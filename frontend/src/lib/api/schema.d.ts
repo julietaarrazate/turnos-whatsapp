@@ -354,6 +354,26 @@ export interface paths {
         patch: operations["update_line_api_v1_budgets__budget_id__draft_lines__line_id__patch"];
         trace?: never;
     };
+    "/api/v1/budgets/{budget_id}/draft/packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Package
+         * @description Insertar un paquete del catálogo: crea sus líneas (editables) en el borrador.
+         */
+        post: operations["add_package_api_v1_budgets__budget_id__draft_packages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets/{budget_id}/draft/reapply-rules": {
         parameters: {
             query?: never;
@@ -1122,6 +1142,43 @@ export interface paths {
         head?: never;
         /** Update Fiscal */
         patch: operations["update_fiscal_api_v1_organization_fiscal_patch"];
+        trace?: never;
+    };
+    "/api/v1/packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Packages */
+        get: operations["list_packages_api_v1_packages_get"];
+        put?: never;
+        /** Create Package */
+        post: operations["create_package_api_v1_packages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/packages/{package_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Package */
+        get: operations["get_package_api_v1_packages__package_id__get"];
+        /** Update Package */
+        put: operations["update_package_api_v1_packages__package_id__put"];
+        post?: never;
+        /** Delete Package */
+        delete: operations["delete_package_api_v1_packages__package_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/pipeline": {
@@ -3367,6 +3424,118 @@ export interface components {
             /** Viewer Sees Financials */
             viewer_sees_financials?: boolean | null;
         };
+        /** PackageIn */
+        PackageIn: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active?: boolean;
+            /** Items */
+            items: components["schemas"]["PackageItemIn"][];
+            /** Name */
+            name: string;
+        };
+        /**
+         * PackageInsertIn
+         * @description B-06: insertar un paquete del catálogo. Sin sección, va a la primera (los ítems que
+         *     traen su propia sección van a esa).
+         */
+        PackageInsertIn: {
+            /**
+             * Package Id
+             * Format: uuid
+             */
+            package_id: string;
+            /** Section Id */
+            section_id?: string | null;
+        };
+        /** PackageItemIn */
+        PackageItemIn: {
+            /**
+             * Days Rule
+             * @default EVENT_DAYS
+             */
+            days_rule?: string;
+            /** Description Client Override */
+            description_client_override?: string | null;
+            /** Fixed Days */
+            fixed_days?: number | null;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /**
+             * Quantity
+             * @default 1
+             */
+            quantity?: number | string;
+            /** Section Title */
+            section_title?: string | null;
+        };
+        /** PackageItemOut */
+        PackageItemOut: {
+            charge_mode: components["schemas"]["ChargeMode"];
+            /** Days Rule */
+            days_rule: string;
+            /** Description Client Override */
+            description_client_override: string | null;
+            /** Fixed Days */
+            fixed_days: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
+            /** Quantity */
+            quantity: string;
+            /** Section Title */
+            section_title: string | null;
+            /** Unit Code */
+            unit_code: string;
+        };
+        /** PackageOut */
+        PackageOut: {
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Items */
+            items: components["schemas"]["PackageItemOut"][];
+            /** Name */
+            name: string;
+        };
+        /** PackageSummary */
+        PackageSummary: {
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Item Count */
+            item_count: number;
+            /** Name */
+            name: string;
+        };
         /** PasswordResetConfirm */
         PasswordResetConfirm: {
             /** Password */
@@ -5298,6 +5467,43 @@ export interface operations {
             };
         };
     };
+    add_package_api_v1_budgets__budget_id__draft_packages_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageInsertIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     preview_reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_get: {
         parameters: {
             query?: never;
@@ -7086,6 +7292,165 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrganizationOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_packages_api_v1_packages_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_package_api_v1_packages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_package_api_v1_packages__package_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                package_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_package_api_v1_packages__package_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                package_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_package_api_v1_packages__package_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                package_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

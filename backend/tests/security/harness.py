@@ -36,6 +36,8 @@ from app.modules.budgets.models import BudgetVersion
 from app.modules.budgets.schemas import BudgetCreate, LineIn
 from app.modules.catalog.models import (
     Category,
+    Package,
+    PackageItem,
     PriceHistory,
     Product,
     Supplier,
@@ -179,9 +181,20 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         expense_date=date(2026, 10, 1),
         created_by=owner.user_id,
     )
-    s.add_all([hire, task, expense])
+    package = Package(organization_id=owner.organization_id, name="Paquete ejemplo")
+    s.add_all([hire, task, expense, package])
+    s.flush()
+    s.add(
+        PackageItem(
+            organization_id=owner.organization_id,
+            package_id=package.id,
+            product_id=ids["product_id"],
+            quantity=Decimal(2),
+        )
+    )
     s.flush()
     return {
+        "package_id": package.id,
         "expense_id": expense.id,
         "event_supplier_id": hire.id,
         "task_id": task.id,
@@ -224,6 +237,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "event_supplier_id": lambda w: w.ids["event_supplier_id"],
     "task_id": lambda w: w.ids["task_id"],
     "expense_id": lambda w: w.ids["expense_id"],
+    "package_id": lambda w: w.ids["package_id"],
 }
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
@@ -319,6 +333,17 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
         "category_id": str(w.ids["category_id"]),
     },
     ("PATCH", "/api/v1/expenses/{expense_id}"): {"description": "Flete"},
+    ("POST", "/api/v1/packages"): lambda w: {
+        "name": "Stand chico",
+        "items": [{"product_id": str(w.ids["product_id"])}],
+    },
+    ("PUT", "/api/v1/packages/{package_id}"): lambda w: {
+        "name": "Paquete ejemplo",
+        "items": [{"product_id": str(w.ids["product_id"]), "quantity": "3"}],
+    },
+    ("POST", "/api/v1/budgets/{budget_id}/draft/packages"): lambda w: {
+        "package_id": str(w.ids["package_id"]),
+    },
     ("POST", "/api/v1/events/{event_id}/complete"): {},
     ("POST", "/api/v1/events/{event_id}/close"): {},
     ("POST", "/api/v1/events/{event_id}/reopen"): {"reason": "Faltaba una factura"},
