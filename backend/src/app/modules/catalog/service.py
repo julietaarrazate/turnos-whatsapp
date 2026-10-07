@@ -850,6 +850,11 @@ def line_source(
     )
 
 
+def supplier_name(db: AppSession, ctx: TenantContext, supplier_id: UUID) -> str:
+    """Nombre de un proveedor de la organización (404 si no existe o es de otra)."""
+    return _supplier(db, ctx, supplier_id).name
+
+
 def category_info(
     db: AppSession, ctx: TenantContext, category_id: UUID
 ) -> tuple[Category, Decimal]:

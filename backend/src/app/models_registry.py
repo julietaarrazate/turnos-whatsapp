@@ -9,6 +9,7 @@ from app.modules.budgets import models as _budgets  # noqa: F401
 from app.modules.catalog import models as _catalog  # noqa: F401
 from app.modules.clients import models as _clients  # noqa: F401
 from app.modules.events import models as _events  # noqa: F401
+from app.modules.finance import models as _finance  # noqa: F401
 from app.modules.identity import organization as _organization  # noqa: F401
 from app.modules.identity import user as _user  # noqa: F401
 from app.modules.notifications import models as _notifications  # noqa: F401

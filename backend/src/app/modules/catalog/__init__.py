@@ -4,7 +4,13 @@ from app.modules.catalog.costs import DEFAULT_STALENESS_DAYS, STALENESS_SETTING,
 from app.modules.catalog.defaults import seed_catalog_defaults
 from app.modules.catalog.models import Category, Product
 from app.modules.catalog.router import router
-from app.modules.catalog.service import LineSource, category_info, current_prices, line_source
+from app.modules.catalog.service import (
+    LineSource,
+    category_info,
+    current_prices,
+    line_source,
+    supplier_name,
+)
 
 __all__ = [
     "DEFAULT_STALENESS_DAYS",
@@ -17,5 +23,6 @@ __all__ = [
     "line_source",
     "router",
     "seed_catalog_defaults",
+    "supplier_name",
     "today_ar",
 ]

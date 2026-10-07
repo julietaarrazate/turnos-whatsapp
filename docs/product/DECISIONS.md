@@ -153,6 +153,7 @@ Next.js App Router · TypeScript strict · Tailwind · componentes propios estil
 - Un gasto **siempre** tiene evento y categoría. El proveedor y la línea presupuestada (`line_key`) son opcionales y se sugieren automáticamente.
 - La comparación por categoría y por proveedor está siempre disponible. Por línea, cuando el gasto está vinculado. Lo que no tiene vínculo aparece como "No presupuestado".
 - **Alternativa descartada:** exigir vínculo por línea. Es preciso, pero en campo nadie lo completaría (RP8).
+- *Actualización (4.3):* el gasto pide **la línea o la categoría** (al menos una). Las líneas libres e importadas de la planilla de la piloto no siempre tienen categoría, y vincular a la línea ya alcanza para compararlo. Proveedor y categoría se toman de la línea si no se indican.
 
 ## D-22 · Aprobación manual con OC en el MVP — 🟡 (Q8)
 

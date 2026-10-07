@@ -110,12 +110,13 @@ class BaselineLine:
     unit_code: str
     days: int
     cost_total: Decimal
+    section_title: str = ""  # el rubro, para elegir la línea al cargar un gasto
 
 
 def baseline_lines(db: AppSession, organization_id: UUID, version_id: UUID) -> list[BaselineLine]:
     """Las líneas de una versión congelada, en el orden del presupuesto."""
     rows = db.execute(
-        select(BudgetLine)
+        select(BudgetLine, BudgetSection.title_client)
         .join(BudgetSection, BudgetSection.id == BudgetLine.section_id)
         .join(BudgetVersion, BudgetVersion.id == BudgetLine.version_id)
         .where(
@@ -124,7 +125,7 @@ def baseline_lines(db: AppSession, organization_id: UUID, version_id: UUID) -> l
             BudgetVersion.status == VersionStatus.FROZEN,
         )
         .order_by(BudgetSection.sort, BudgetLine.sort)
-    ).scalars()
+    ).all()
     return [
         BaselineLine(
             line_key=line.line_key,
@@ -137,8 +138,9 @@ def baseline_lines(db: AppSession, organization_id: UUID, version_id: UUID) -> l
             unit_code=line.unit_code,
             days=line.days,
             cost_total=line.cost_total,
+            section_title=section_title,
         )
-        for line in rows
+        for line, section_title in rows
     ]
 
 

@@ -44,6 +44,7 @@ from app.modules.catalog.models import (
 )
 from app.modules.clients import Client
 from app.modules.events import EventIn
+from app.modules.finance.models import Expense
 from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
 from app.modules.production.models import EventSupplier, ProductionTask
 from app.modules.proposals import service as proposals
@@ -167,9 +168,21 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
     task = ProductionTask(
         organization_id=owner.organization_id, event_id=budget.event.id, title="Tarea ejemplo"
     )
-    s.add_all([hire, task])
+    # Un gasto real (fila directa por lo mismo).
+    expense = Expense(
+        organization_id=owner.organization_id,
+        event_id=budget.event.id,
+        category_id=ids["category_id"],
+        description="Gasto ejemplo",
+        amount=Decimal("1000"),
+        amount_base=Decimal("1000"),
+        expense_date=date(2026, 10, 1),
+        created_by=owner.user_id,
+    )
+    s.add_all([hire, task, expense])
     s.flush()
     return {
+        "expense_id": expense.id,
         "event_supplier_id": hire.id,
         "task_id": task.id,
         "proposal_id": created.proposal.id,
@@ -210,6 +223,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "proposal_id": lambda w: w.ids["proposal_id"],
     "event_supplier_id": lambda w: w.ids["event_supplier_id"],
     "task_id": lambda w: w.ids["task_id"],
+    "expense_id": lambda w: w.ids["expense_id"],
 }
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
@@ -288,6 +302,12 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/event-suppliers/{event_supplier_id}"): {"notes": "Llamar el lunes"},
     ("POST", "/api/v1/events/{event_id}/tasks"): {"title": "Pedir planos"},
     ("PATCH", "/api/v1/tasks/{task_id}"): {"status": "DONE"},
+    ("POST", "/api/v1/events/{event_id}/expenses"): lambda w: {
+        "description": "Flete extra",
+        "amount": "15000",
+        "category_id": str(w.ids["category_id"]),
+    },
+    ("PATCH", "/api/v1/expenses/{expense_id}"): {"description": "Flete"},
     ("POST", "/api/v1/events/{event_id}/complete"): {},
     ("POST", "/api/v1/events/{event_id}/close"): {},
     ("POST", "/api/v1/events/{event_id}/reopen"): {"reason": "Faltaba una factura"},
