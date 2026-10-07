@@ -43,6 +43,25 @@
         "title": "AcceptIn",
         "type": "object"
       },
+      "AmountOut": {
+        "properties": {
+          "amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count",
+          "amount"
+        ],
+        "title": "AmountOut",
+        "type": "object"
+      },
       "ApprovalMethod": {
         "enum": [
           "ONLINE",
@@ -732,6 +751,111 @@
           "rate"
         ],
         "title": "ChargeRate",
+        "type": "object"
+      },
+      "ClientHistoryOut": {
+        "description": "Historial comercial calculado del cliente (PRODUCT_SPEC §4.2).",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "actual_margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Margin"
+          },
+          "billed": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Billed",
+            "type": "string"
+          },
+          "budgets": {
+            "title": "Budgets",
+            "type": "integer"
+          },
+          "client_id": {
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "conversion": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversion"
+          },
+          "estimated_margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Margin"
+          },
+          "events": {
+            "title": "Events",
+            "type": "integer"
+          },
+          "lost": {
+            "title": "Lost",
+            "type": "integer"
+          },
+          "preferential_markup": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferential Markup"
+          },
+          "preferential_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferential Mode"
+          }
+        },
+        "required": [
+          "client_id",
+          "budgets",
+          "events",
+          "accepted",
+          "lost",
+          "conversion",
+          "billed",
+          "estimated_margin",
+          "actual_margin",
+          "preferential_markup",
+          "preferential_mode"
+        ],
+        "title": "ClientHistoryOut",
         "type": "object"
       },
       "ClientIn": {
@@ -1487,6 +1611,49 @@
         "title": "ContactOut",
         "type": "object"
       },
+      "ConversionOut": {
+        "description": "Decisiones de los últimos 90 días: aceptadas / (aceptadas + rechazadas + vencidas).",
+        "properties": {
+          "by_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By Amount"
+          },
+          "by_count": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By Count"
+          },
+          "lost": {
+            "$ref": "#/components/schemas/AmountOut"
+          },
+          "won": {
+            "$ref": "#/components/schemas/AmountOut"
+          }
+        },
+        "required": [
+          "won",
+          "lost",
+          "by_count",
+          "by_amount"
+        ],
+        "title": "ConversionOut",
+        "type": "object"
+      },
       "CostChange": {
         "properties": {
           "amount_changed": {
@@ -1618,6 +1785,65 @@
           "totals"
         ],
         "title": "CostsPreview",
+        "type": "object"
+      },
+      "DashboardOut": {
+        "properties": {
+          "accepted": {
+            "$ref": "#/components/schemas/AmountOut"
+          },
+          "avg_margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Margin"
+          },
+          "conversion": {
+            "$ref": "#/components/schemas/ConversionOut"
+          },
+          "in_negotiation": {
+            "$ref": "#/components/schemas/AmountOut"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "own_only": {
+            "title": "Own Only",
+            "type": "boolean"
+          },
+          "sent": {
+            "$ref": "#/components/schemas/AmountOut"
+          },
+          "todo": {
+            "$ref": "#/components/schemas/TodoOut"
+          },
+          "upcoming": {
+            "items": {
+              "$ref": "#/components/schemas/UpcomingEvent"
+            },
+            "title": "Upcoming",
+            "type": "array"
+          }
+        },
+        "required": [
+          "month",
+          "own_only",
+          "sent",
+          "accepted",
+          "in_negotiation",
+          "avg_margin",
+          "conversion",
+          "todo",
+          "upcoming"
+        ],
+        "title": "DashboardOut",
         "type": "object"
       },
       "DiffKind": {
@@ -7323,6 +7549,173 @@
         "title": "RejectIn",
         "type": "object"
       },
+      "ReportGroup": {
+        "enum": [
+          "event",
+          "client",
+          "month"
+        ],
+        "title": "ReportGroup",
+        "type": "string"
+      },
+      "ReportOut": {
+        "properties": {
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ReportRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "$ref": "#/components/schemas/ReportRow"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to",
+          "group",
+          "rows",
+          "total",
+          "truncated"
+        ],
+        "title": "ReportOut",
+        "type": "object"
+      },
+      "ReportRow": {
+        "properties": {
+          "actual_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Cost"
+          },
+          "actual_margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Margin"
+          },
+          "actual_profit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Profit"
+          },
+          "cost_delta_rate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Delta Rate"
+          },
+          "estimated_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Estimated Cost",
+            "type": "string"
+          },
+          "estimated_margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Margin"
+          },
+          "estimated_profit": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Estimated Profit",
+            "type": "string"
+          },
+          "events": {
+            "title": "Events",
+            "type": "integer"
+          },
+          "events_with_costs": {
+            "title": "Events With Costs",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "partial": {
+            "title": "Partial",
+            "type": "boolean"
+          },
+          "sale_net": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Sale Net",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "events",
+          "sale_net",
+          "estimated_cost",
+          "estimated_profit",
+          "estimated_margin",
+          "events_with_costs",
+          "actual_cost",
+          "actual_profit",
+          "actual_margin",
+          "cost_delta_rate",
+          "partial"
+        ],
+        "title": "ReportRow",
+        "type": "object"
+      },
       "ResultOut": {
         "properties": {
           "cost": {
@@ -8581,6 +8974,39 @@
         "title": "TaxCondition",
         "type": "string"
       },
+      "TodoOut": {
+        "properties": {
+          "expiring": {
+            "title": "Expiring",
+            "type": "integer"
+          },
+          "follow_up_days": {
+            "title": "Follow Up Days",
+            "type": "integer"
+          },
+          "no_response": {
+            "title": "No Response",
+            "type": "integer"
+          },
+          "stale_costs": {
+            "title": "Stale Costs",
+            "type": "integer"
+          },
+          "viewed_no_answer": {
+            "title": "Viewed No Answer",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "no_response",
+          "viewed_no_answer",
+          "expiring",
+          "stale_costs",
+          "follow_up_days"
+        ],
+        "title": "TodoOut",
+        "type": "object"
+      },
       "TotalsDelta": {
         "properties": {
           "margin_net_after": {
@@ -8680,6 +9106,58 @@
           "allows_decimals"
         ],
         "title": "UnitOut",
+        "type": "object"
+      },
+      "UpcomingEvent": {
+        "properties": {
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "name",
+          "client_name",
+          "start_date",
+          "status",
+          "margin"
+        ],
+        "title": "UpcomingEvent",
         "type": "object"
       },
       "UserOut": {
@@ -11523,6 +12001,101 @@
         ]
       }
     },
+    "/api/v1/clients/{client_id}/history": {
+      "get": {
+        "description": "Historial comercial del cliente: presupuestos, aceptados, perdidos, facturado y margen.",
+        "operationId": "client_history_api_v1_clients__client_id__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientHistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Client History",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard": {
+      "get": {
+        "description": "Enviado, aceptado, en negociación, margen y conversión; para hacer hoy; próximos eventos.",
+        "operationId": "get_dashboard_api_v1_dashboard_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dashboard",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
     "/api/v1/event-suppliers/{event_supplier_id}": {
       "patch": {
         "description": "Marcar un proveedor como confirmado o cancelado, o anotar algo.",
@@ -14039,6 +14612,128 @@
         "summary": "Public Reject",
         "tags": [
           "public"
+        ]
+      }
+    },
+    "/api/v1/reports/profitability": {
+      "get": {
+        "description": "A-02: rentabilidad estimada y real por evento, cliente o mes (eventos con fecha en el\nrango y presupuesto aceptado).",
+        "operationId": "profitability_report_api_v1_reports_profitability_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportGroup",
+              "default": "event"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Profitability Report",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v1/reports/profitability.csv": {
+      "get": {
+        "description": "El mismo reporte en CSV (separador \";\" y coma decimal, para Excel en español).",
+        "operationId": "profitability_csv_api_v1_reports_profitability_csv_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportGroup",
+              "default": "event"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {}
+            },
+            "description": "CSV"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Profitability Csv",
+        "tags": [
+          "dashboard"
         ]
       }
     },

@@ -25,7 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/catalog", label: "Catálogo", icon: Package },
   { href: "/clients", label: "Clientes", icon: Building2 },
   { href: "/suppliers", label: "Proveedores", icon: Truck },
-  { href: "/reports", label: "Reportes", icon: BarChart3, phase: 5 },
+  { href: "/reports", label: "Reportes", icon: BarChart3 },
   { href: "/settings", label: "Configuración", icon: Settings },
 ];
 

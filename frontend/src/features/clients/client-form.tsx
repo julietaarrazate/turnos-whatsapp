@@ -18,6 +18,7 @@ import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Client, TaxCondition } from "@/lib/api/types";
 import { textValue } from "@/lib/form";
 
+import { ClientHistory } from "./client-history";
 import { CLIENTS_KEY } from "./clients-list";
 
 function BackLink() {
@@ -158,6 +159,7 @@ export function ClientDetail({ id }: { id: string }) {
       {client.data ? (
         <>
           <PageHeader title={client.data.name} description={client.data.legal_name ?? undefined} />
+          <ClientHistory id={client.data.id} />
           <ScopedMarkup scope="CLIENT" scopeId={client.data.id} />
           <ClientEditor key={client.data.id} client={client.data} />
         </>

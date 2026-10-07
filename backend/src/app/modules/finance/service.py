@@ -10,7 +10,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.db import AppSession
 from app.core.errors import AppError, not_found
@@ -480,3 +480,17 @@ def delete_expense(db: AppSession, ctx: TenantContext, expense_id: UUID) -> Expe
     db.delete(expense)
     db.flush()
     return list_expenses(db, ctx, event.id)
+
+
+def actual_costs(
+    db: AppSession, organization_id: UUID, event_ids: list[UUID]
+) -> dict[UUID, tuple[Decimal, int]]:
+    """Costo real (Σ monto efectivo) y cantidad de gastos por evento (reportes)."""
+    if not event_ids:
+        return {}
+    rows = db.execute(
+        select(Expense.event_id, func.sum(Expense.amount_base), func.count())
+        .where(Expense.organization_id == organization_id, Expense.event_id.in_(event_ids))
+        .group_by(Expense.event_id)
+    ).all()
+    return {event_id: (total, count) for event_id, total, count in rows}

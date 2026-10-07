@@ -295,6 +295,11 @@ def _rule_for(
     ).scalar_one_or_none()
 
 
+def client_rule(db: AppSession, ctx: TenantContext, client_id: UUID) -> MarkupRule | None:
+    """La regla de markup propia de un cliente ("markup preferencial"), si tiene."""
+    return _domain_rule(_rule_for(db, ctx, MarkupScope.CLIENT, client_id))
+
+
 def active_sale_charges(db: AppSession, ctx: TenantContext) -> tuple[SaleCharge, ...]:
     rows = db.execute(
         select(SaleChargeRow)
