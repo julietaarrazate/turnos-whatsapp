@@ -18,10 +18,11 @@ from app.core.permissions import Permission
 from app.domain.pricing import LineInput, effective_unit_cost
 from app.modules.audit import record
 from app.modules.auth import TenantContext
-from app.modules.budgets import BaselineLine, baseline_lines
+from app.modules.budgets import BaselineLine, baseline_lines, version_totals
 from app.modules.catalog import category_info, supplier_name, today_ar
 from app.modules.events import Event, EventStatus, get_event
 from app.modules.finance.models import Expense, ExpenseCurrency
+from app.modules.finance.profitability import Result, deviation, result
 from app.modules.finance.schemas import (
     ComparisonRow,
     ExpenseIn,
@@ -29,14 +30,22 @@ from app.modules.finance.schemas import (
     ExpensesOut,
     ExpenseUpdate,
     LineOption,
+    ProfitabilityOut,
+    ResultOut,
 )
 from app.modules.identity import User
 from app.modules.pricing import latest_fx_rate, pricing_context
 
 CENT = Decimal("0.01")
 RATE = Decimal("0.000001")
-# Se cargan gastos desde que el evento está aprobado hasta que se cierra.
-_OPEN = {EventStatus.APPROVED, EventStatus.IN_PRODUCTION, EventStatus.COMPLETED}
+# Se cargan gastos desde que el evento está aprobado hasta que se cierra; también si se canceló
+# (los costos de la cancelación). Cerrado, son de solo lectura (DOMAIN_MODEL §3.1).
+_OPEN = {
+    EventStatus.APPROVED,
+    EventStatus.IN_PRODUCTION,
+    EventStatus.COMPLETED,
+    EventStatus.CANCELLED,
+}
 _FIELDS = (
     "description",
     "amount",
@@ -87,7 +96,7 @@ def _baseline(db: AppSession, ctx: TenantContext, event: Event) -> list[Baseline
 def _editable_event(db: AppSession, ctx: TenantContext, event_id: UUID) -> Event:
     event = get_event(db, ctx, event_id)
     status = EventStatus(event.status)
-    if status in {EventStatus.CLOSED, EventStatus.CANCELLED}:
+    if status is EventStatus.CLOSED:
         raise AppError(409, "event_locked", "El evento está cerrado: no se cargan más gastos")
     if status not in _OPEN:
         raise AppError(
@@ -171,9 +180,28 @@ def _expense(db: AppSession, ctx: TenantContext, expense_id: UUID) -> Expense:
     return expense
 
 
-def _comparison(
+def _row(
+    key: str, label: str, section: str | None, budgeted: Decimal | None, actual: Decimal
+) -> ComparisonRow:
+    if budgeted is None:
+        delta, delta_rate = None, None
+    else:
+        delta, delta_rate = deviation(budgeted, actual)
+    return ComparisonRow(
+        key=key,
+        label=label,
+        section=section,
+        budgeted=budgeted,
+        actual=actual,
+        delta=delta,
+        delta_rate=delta_rate,
+    )
+
+
+def _by_line(
     lines: list[BaselineLine], expenses: list[Expense], categories: dict[UUID, str]
 ) -> list[ComparisonRow]:
+    """Por línea cuando el gasto está vinculado; lo demás, "No presupuestado" por categoría."""
     actual_by_line: dict[UUID, Decimal] = {}
     unbudgeted: OrderedDict[UUID | None, Decimal] = OrderedDict()
     for expense in expenses:
@@ -190,59 +218,122 @@ def _comparison(
         actual = actual_by_line.get(line.line_key, Decimal(0))
         if line.cost_total == 0 and actual == 0:
             continue
-        delta = actual - line.cost_total
         rows.append(
-            ComparisonRow(
-                key=str(line.line_key),
-                label=line.name,
-                section=line.section_title or None,
-                budgeted=line.cost_total,
-                actual=actual,
-                delta=delta,
-                delta_rate=(delta / line.cost_total).quantize(RATE) if line.cost_total else None,
-            )
+            _row(str(line.line_key), line.name, line.section_title or None, line.cost_total, actual)
         )
     for category_id, actual in unbudgeted.items():
-        name = categories.get(category_id, "Sin categoría") if category_id else "Sin categoría"
+        name = categories.get(category_id, _NO_CATEGORY) if category_id else _NO_CATEGORY
         rows.append(
-            ComparisonRow(
-                key=f"unbudgeted:{category_id}",
-                label=f"No presupuestado · {name}",
-                section=None,
-                budgeted=None,
-                actual=actual,
-                delta=None,
-                delta_rate=None,
-            )
+            _row(f"unbudgeted:{category_id}", f"No presupuestado · {name}", None, None, actual)
         )
     return rows
 
 
+_NO_CATEGORY = "Sin categoría"
+_ZERO = Decimal("0.00")
+_NO_SUPPLIER = "Sin proveedor"
+
+
+def _grouped(
+    budgeted: list[tuple[UUID | None, str | None, Decimal]],
+    actual: list[tuple[UUID | None, str | None, Decimal]],
+    empty_label: str,
+) -> list[ComparisonRow]:
+    """Presupuestado vs real agrupado (por categoría o por proveedor). Un grupo sin nada
+    presupuestado aparece con presupuesto 0: todo su real es desvío."""
+    labels: OrderedDict[UUID | None, str] = OrderedDict()
+    planned: dict[UUID | None, Decimal] = {}
+    real: dict[UUID | None, Decimal] = {}
+    for key, label, amount in budgeted:
+        labels.setdefault(key, label or empty_label)
+        planned[key] = planned.get(key, _ZERO) + amount
+    for key, label, amount in actual:
+        labels.setdefault(key, label or empty_label)
+        real[key] = real.get(key, _ZERO) + amount
+    rows = [
+        _row(
+            str(key) if key else "none",
+            label,
+            None,
+            planned.get(key, _ZERO),
+            real.get(key, _ZERO),
+        )
+        for key, label in labels.items()
+        if planned.get(key) or real.get(key)
+    ]
+    return sorted(rows, key=lambda r: r.key == "none")  # "Sin …" al final
+
+
+class _Loaded:
+    """Lo que hace falta para comparar: baseline, gastos y nombres."""
+
+    def __init__(self, db: AppSession, ctx: TenantContext, event: Event) -> None:
+        self.event = event
+        self.lines = _baseline(db, ctx, event)
+        self.expenses = list(
+            db.execute(
+                select(Expense)
+                .where(Expense.event_id == event.id, Expense.organization_id == ctx.organization_id)
+                .order_by(Expense.expense_date.desc(), Expense.created_at.desc())
+            ).scalars()
+        )
+        self.categories = {
+            cid: category_info(db, ctx, cid)[0].name
+            for cid in {e.category_id for e in self.expenses if e.category_id}
+        }
+        self.suppliers = {
+            sid: supplier_name(db, ctx, sid)
+            for sid in {e.supplier_id for e in self.expenses if e.supplier_id}
+        }
+
+    @property
+    def budgeted_total(self) -> Decimal:
+        return sum((line.cost_total for line in self.lines), Decimal(0))
+
+    @property
+    def actual_total(self) -> Decimal:
+        return sum((e.amount_base for e in self.expenses), Decimal(0))
+
+    def by_category(self) -> list[ComparisonRow]:
+        return _grouped(
+            [(ln.category_id, ln.category_name, ln.cost_total) for ln in self.lines],
+            [
+                (
+                    e.category_id,
+                    self.categories.get(e.category_id) if e.category_id else None,
+                    e.amount_base,
+                )
+                for e in self.expenses
+            ],
+            _NO_CATEGORY,
+        )
+
+    def by_supplier(self) -> list[ComparisonRow]:
+        return _grouped(
+            [(ln.supplier_id, ln.supplier_name, ln.cost_total) for ln in self.lines],
+            [
+                (
+                    e.supplier_id,
+                    self.suppliers.get(e.supplier_id) if e.supplier_id else None,
+                    e.amount_base,
+                )
+                for e in self.expenses
+            ],
+            _NO_SUPPLIER,
+        )
+
+
 def list_expenses(db: AppSession, ctx: TenantContext, event_id: UUID) -> ExpensesOut:
-    event = get_event(db, ctx, event_id)
-    lines = _baseline(db, ctx, event)
-    expenses = list(
-        db.execute(
-            select(Expense)
-            .where(Expense.event_id == event.id, Expense.organization_id == ctx.organization_id)
-            .order_by(Expense.expense_date.desc(), Expense.created_at.desc())
-        ).scalars()
-    )
+    data = _Loaded(db, ctx, get_event(db, ctx, event_id))
+    event, lines, expenses = data.event, data.lines, data.expenses
     by_key = {line.line_key: line for line in lines}
-    category_ids = {e.category_id for e in expenses if e.category_id}
-    categories = {cid: category_info(db, ctx, cid)[0].name for cid in category_ids}
-    suppliers = {
-        sid: supplier_name(db, ctx, sid)
-        for sid in {e.supplier_id for e in expenses if e.supplier_id}
-    }
     users = {
         user.id: user.name
         for user in db.execute(
             select(User).where(User.id.in_({e.created_by for e in expenses}))
         ).scalars()
     }
-    budgeted_total = sum((line.cost_total for line in lines), Decimal(0))
-    actual_total = sum((e.amount_base for e in expenses), Decimal(0))
+    _, delta_rate = deviation(data.budgeted_total, data.actual_total)
     status = EventStatus(event.status)
     return ExpensesOut(
         event_id=event.id,
@@ -263,9 +354,9 @@ def list_expenses(db: AppSession, ctx: TenantContext, event_id: UUID) -> Expense
                 line_key=e.line_key,
                 line_name=by_key[e.line_key].name if e.line_key in by_key else None,
                 supplier_id=e.supplier_id,
-                supplier_name=suppliers.get(e.supplier_id) if e.supplier_id else None,
+                supplier_name=data.suppliers.get(e.supplier_id) if e.supplier_id else None,
                 category_id=e.category_id,
-                category_name=categories.get(e.category_id) if e.category_id else None,
+                category_name=data.categories.get(e.category_id) if e.category_id else None,
                 created_by_name=users.get(e.created_by),
                 created_at=e.created_at,
             )
@@ -284,12 +375,59 @@ def list_expenses(db: AppSession, ctx: TenantContext, event_id: UUID) -> Expense
             )
             for line in lines
         ],
-        comparison=_comparison(lines, expenses, categories),
-        budgeted_total=budgeted_total,
-        actual_total=actual_total,
-        delta_rate=((actual_total - budgeted_total) / budgeted_total).quantize(RATE)
-        if budgeted_total
-        else None,
+        comparison=_by_line(lines, expenses, data.categories),
+        by_category=data.by_category(),
+        by_supplier=data.by_supplier(),
+        budgeted_total=data.budgeted_total,
+        actual_total=data.actual_total,
+        delta_rate=delta_rate,
+    )
+
+
+def _result_out(value: Result) -> ResultOut:
+    return ResultOut(
+        sale_net=value.sale_net,
+        cost=value.cost,
+        sale_charges=value.sale_charges,
+        profit=value.profit,
+        margin=value.margin,
+    )
+
+
+def get_profitability(db: AppSession, ctx: TenantContext, event_id: UUID) -> ProfitabilityOut:
+    """O-06: estimado (la versión aceptada) vs real (los gastos). Hasta que el evento se cierra,
+    lo real es parcial; cerrado, no cambia más (versión congelada y gastos de solo lectura)."""
+    event = get_event(db, ctx, event_id)
+    totals = (
+        version_totals(db, ctx.organization_id, event.accepted_budget_version_id)
+        if event.accepted_budget_version_id
+        else None
+    )
+    status = EventStatus(event.status)
+    if totals is None:
+        return ProfitabilityOut(
+            event_id=event.id,
+            status=status,
+            final=False,
+            estimated=None,
+            actual=None,
+            cost_delta=None,
+            cost_delta_rate=None,
+            expenses_count=0,
+        )
+    data = _Loaded(db, ctx, event)
+    estimated = result(totals.sale_net, totals.cost_direct, totals.sale_charges)
+    actual = result(totals.sale_net, data.actual_total, totals.sale_charges)
+    delta, delta_rate = deviation(totals.cost_direct, data.actual_total)
+    return ProfitabilityOut(
+        event_id=event.id,
+        status=status,
+        final=status is EventStatus.CLOSED,
+        estimated=_result_out(estimated),
+        actual=_result_out(actual),
+        cost_delta=delta,
+        cost_delta_rate=delta_rate,
+        expenses_count=len(data.expenses),
     )
 
 

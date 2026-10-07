@@ -8,13 +8,14 @@ from app.core.idempotency import run_idempotent
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
 from app.modules.finance import service
-from app.modules.finance.schemas import ExpenseIn, ExpensesOut, ExpenseUpdate
+from app.modules.finance.schemas import ExpenseIn, ExpensesOut, ExpenseUpdate, ProfitabilityOut
 
 router = APIRouter(prefix="/api/v1", tags=["finance"])
 
 # Los gastos son costos: los ve quien ve costos y los carga quien tiene expenses.edit.
 CostView = Annotated[TenantContext, Depends(require(Permission.COST_VIEW))]
 Edit = Annotated[TenantContext, Depends(require(Permission.EXPENSES_EDIT))]
+Margins = Annotated[TenantContext, Depends(require(Permission.MARGIN_VIEW))]
 IdempotencyKey = Annotated[str | None, Header(alias="Idempotency-Key", max_length=100)]
 
 
@@ -53,3 +54,9 @@ def update_expense(expense_id: UUID, body: ExpenseUpdate, ctx: Edit, db: DbSessi
 @router.delete("/expenses/{expense_id}")
 def delete_expense(expense_id: UUID, ctx: Edit, db: DbSession) -> ExpensesOut:
     return service.delete_expense(db, ctx, expense_id)
+
+
+@router.get("/events/{event_id}/profitability")
+def get_profitability(event_id: UUID, ctx: Margins, db: DbSession) -> ProfitabilityOut:
+    """Rentabilidad estimada vs real (ganancia y margen: solo quien ve márgenes)."""
+    return service.get_profitability(db, ctx, event_id)

@@ -743,6 +743,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/profitability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Profitability
+         * @description Rentabilidad estimada vs real (ganancia y margen: solo quien ve márgenes).
+         */
+        get: operations["get_profitability_api_v1_events__event_id__profitability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/reopen": {
         parameters: {
             query?: never;
@@ -2269,6 +2289,10 @@ export interface components {
             actual_total: string;
             /** Budgeted Total */
             budgeted_total: string;
+            /** By Category */
+            by_category: components["schemas"]["ComparisonRow"][];
+            /** By Supplier */
+            by_supplier: components["schemas"]["ComparisonRow"][];
             /** Comparison */
             comparison: components["schemas"]["ComparisonRow"][];
             /** Delta Rate */
@@ -3294,6 +3318,28 @@ export interface components {
             /** Tasks */
             tasks: components["schemas"]["TaskOut"][];
         };
+        /**
+         * ProfitabilityOut
+         * @description Rentabilidad del evento: estimada (versión aceptada) vs real (gastos cargados).
+         */
+        ProfitabilityOut: {
+            actual: components["schemas"]["ResultOut"] | null;
+            /** Cost Delta */
+            cost_delta: string | null;
+            /** Cost Delta Rate */
+            cost_delta_rate: string | null;
+            estimated: components["schemas"]["ResultOut"] | null;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Expenses Count */
+            expenses_count: number;
+            /** Final */
+            final: boolean;
+            status: components["schemas"]["EventStatus"];
+        };
         /** ProposalCreated */
         ProposalCreated: {
             /** Emailed To */
@@ -3535,6 +3581,19 @@ export interface components {
             name?: string | null;
             /** Reason */
             reason: string;
+        };
+        /** ResultOut */
+        ResultOut: {
+            /** Cost */
+            cost: string;
+            /** Margin */
+            margin: string | null;
+            /** Profit */
+            profit: string;
+            /** Sale Charges */
+            sale_charges: string;
+            /** Sale Net */
+            sale_net: string;
         };
         /**
          * Role
@@ -5831,6 +5890,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profitability_api_v1_events__event_id__profitability_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfitabilityOut"];
                 };
             };
             /** @description Validation Error */

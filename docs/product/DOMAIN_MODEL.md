@@ -179,7 +179,7 @@ stateDiagram-v2
 - **Cambios respecto del brief:** se elimina `DRAFT` (es idéntico a `QUOTING`) y se agrega `LOST` (el cliente eligió otra opción). Sin `LOST`, la conversión no se puede medir (D-11).
 - **Un rechazo no pasa el evento a `LOST` automáticamente**: el cliente puede rechazar v2 y pedir v3. El sistema *sugiere* "¿Marcar como perdido?".
 - Las transiciones automáticas las dispara el módulo de presupuestos y propuestas mediante eventos de dominio (§6). Las manuales validan el rol. Todas escriben en `event_status_history` y en `audit_logs`.
-- Los costos reales se pueden cargar en `IN_PRODUCTION`, `COMPLETED` y `CANCELLED`. En `CLOSED` son de solo lectura.
+- Los costos reales se pueden cargar en `APPROVED` (señas antes de producción), `IN_PRODUCTION`, `COMPLETED` y `CANCELLED`. En `CLOSED` son de solo lectura: con la versión aceptada congelada y los gastos sin cambios, la rentabilidad real queda fija sin guardar otra copia (O-06).
 
 ### 3.2 Versión de presupuesto
 

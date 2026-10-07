@@ -156,13 +156,19 @@ function ProductionActions({ event }: { event: EventDetail }) {
     );
   } else if (event.status === "COMPLETED" && can("event.close")) {
     action = (
-      <Button
-        size="sm"
-        loading={step.isPending}
-        onClick={() => window.confirm("¿Cerrar el evento? Los costos reales quedan de solo lectura.") && step.mutate("close")}
-      >
-        Cerrar evento
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          loading={step.isPending}
+          onClick={() => window.confirm("¿Cerrar el evento? Los costos reales quedan de solo lectura.") && step.mutate("close")}
+        >
+          Cerrar evento
+        </Button>
+        {/* RP8: sin costos reales no hay rentabilidad; se recuerda antes de cerrar. */}
+        <Link href={`/events/${event.id}/expenses`} className="text-sm text-accent underline">
+          Cargá los últimos gastos antes de cerrar
+        </Link>
+      </div>
     );
   } else if (event.status === "CLOSED" && can("event.close")) {
     action = reopening ? (
@@ -206,6 +212,7 @@ const TABS: { segment: string; label: string; permission?: Permission }[] = [
   { segment: "/budgets", label: "Presupuestos" },
   { segment: "/production", label: "Producción" },
   { segment: "/expenses", label: "Gastos", permission: "cost.view" }, // los gastos son costos
+  { segment: "/profitability", label: "Rentabilidad", permission: "margin.view" },
 ];
 
 /** Encabezado y pestañas de la ficha del evento (O-01). */

@@ -101,14 +101,26 @@ test("el cliente acepta online y el evento queda aprobado", async ({ page, brows
   await expense.getByRole("button", { name: "Guardar gasto" }).click();
   await expect(bva).toContainText("No presupuestado ·");
   await expect(page.getByRole("region", { name: "Gastos" })).toContainText("Hielo");
+  await bva.getByRole("radio", { name: "Proveedor" }).click();
+  await expect(bva).toContainText("Sin proveedor");
+
+  // O-06: rentabilidad estimada vs real, parcial hasta cerrar.
+  await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Rentabilidad" }).click();
+  await expect(page.getByText(/^Parcial: el evento no está cerrado/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Rentabilidad" })).toContainText("Margen");
+  await expect(page.getByText(/Desvío de costo: \+/)).toBeVisible();
 
   await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Resumen" }).click();
   await expect(page.getByRole("heading", { name: "Estado: En producción" })).toBeVisible();
   await page.getByRole("button", { name: "Marcar como realizado" }).click();
   await expect(page.getByRole("heading", { name: "Estado: Realizado" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Cargá los últimos gastos antes de cerrar" })).toBeVisible();
   page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Cerrar evento" }).click();
   await expect(page.getByRole("heading", { name: "Estado: Cerrado" })).toBeVisible();
+  await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Rentabilidad" }).click();
+  await expect(page.getByText("Evento cerrado: la rentabilidad real es final.")).toBeVisible();
+  await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Resumen" }).click();
   await page.getByRole("button", { name: "Reabrir evento" }).click();
   await page.getByLabel("¿Por qué se reabre?").fill("Faltaba una factura");
   await page.getByRole("button", { name: "Reabrir", exact: true }).click();
