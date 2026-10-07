@@ -6,12 +6,13 @@ interno "sacando" campos. Un test recorre el JSON y falla si aparece una clave p
 """
 
 from dataclasses import dataclass
+from datetime import timedelta
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.db import AppSession
 from app.core.errors import AppError, not_found
@@ -25,8 +26,11 @@ from app.modules.budgets.models import (
     BudgetVersion,
     VersionStatus,
 )
+from app.modules.catalog import today_ar
 from app.modules.clients import Client
 from app.modules.events import Event
+from app.modules.identity import Organization
+from app.modules.pricing import settings_from
 
 CENT = Decimal("0.01")
 PUBLIC_SCHEMA_VERSION = 1
@@ -141,6 +145,31 @@ def version_totals(db: AppSession, organization_id: UUID, version_id: UUID) -> V
         profit=version.profit,
         margin_net=version.margin_net,
     )
+
+
+def versions_totals(
+    db: AppSession, organization_id: UUID, version_ids: list[UUID]
+) -> dict[UUID, VersionTotals]:
+    """Lo mismo que `version_totals` para varias versiones congeladas (reportes)."""
+    if not version_ids:
+        return {}
+    rows = db.execute(
+        select(BudgetVersion).where(
+            BudgetVersion.id.in_(version_ids),
+            BudgetVersion.organization_id == organization_id,
+            BudgetVersion.status == VersionStatus.FROZEN,
+        )
+    ).scalars()
+    return {
+        v.id: VersionTotals(
+            sale_net=v.sale_net,
+            cost_direct=v.cost_direct,
+            sale_charges=v.sale_charges,
+            profit=v.profit,
+            margin_net=v.margin_net,
+        )
+        for v in rows
+    }
 
 
 def baseline_lines(db: AppSession, organization_id: UUID, version_id: UUID) -> list[BaselineLine]:
@@ -312,3 +341,25 @@ def public_snapshot(
         "sections": public_sections,
         "totals": totals,
     }
+
+
+def stale_cost_count(db: AppSession, ctx: TenantContext, *, own_only: bool) -> int:
+    """Líneas de borradores abiertos con un costo del catálogo más viejo que el umbral de la
+    organización ("costos desactualizados", PRODUCT_SPEC §4.1)."""
+    org = db.get(Organization, ctx.organization_id)
+    stale_after = settings_from(org.settings if org else {}).price_staleness_days
+    query = (
+        select(func.count())
+        .select_from(BudgetLine)
+        .join(BudgetVersion, BudgetVersion.id == BudgetLine.version_id)
+        .join(Budget, Budget.id == BudgetVersion.budget_id)
+        .where(
+            BudgetLine.organization_id == ctx.organization_id,
+            BudgetVersion.status == VersionStatus.DRAFT,
+            BudgetLine.supplier_product_id.is_not(None),
+            BudgetLine.cost_as_of < today_ar() - timedelta(days=stale_after),
+        )
+    )
+    if own_only:
+        query = query.where(Budget.created_by == ctx.user_id)
+    return db.execute(query).scalar_one()

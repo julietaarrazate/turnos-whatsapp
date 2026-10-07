@@ -606,6 +606,46 @@ export interface paths {
         patch: operations["update_client_api_v1_clients__client_id__patch"];
         trace?: never;
     };
+    "/api/v1/clients/{client_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Client History
+         * @description Historial comercial del cliente: presupuestos, aceptados, perdidos, facturado y margen.
+         */
+        get: operations["client_history_api_v1_clients__client_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dashboard
+         * @description Enviado, aceptado, en negociación, margen y conversión; para hacer hoy; próximos eventos.
+         */
+        get: operations["get_dashboard_api_v1_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-suppliers/{event_supplier_id}": {
         parameters: {
             query?: never;
@@ -1348,6 +1388,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/profitability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Profitability Report
+         * @description A-02: rentabilidad estimada y real por evento, cliente o mes (eventos con fecha en el
+         *     rango y presupuesto aceptado).
+         */
+        get: operations["profitability_report_api_v1_reports_profitability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/profitability.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Profitability Csv
+         * @description El mismo reporte en CSV (separador ";" y coma decimal, para Excel en español).
+         */
+        get: operations["profitability_csv_api_v1_reports_profitability_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/suppliers": {
         parameters: {
             query?: never;
@@ -1477,6 +1558,13 @@ export interface components {
             email: string;
             /** Name */
             name: string;
+        };
+        /** AmountOut */
+        AmountOut: {
+            /** Amount */
+            amount: string;
+            /** Count */
+            count: number;
         };
         /**
          * ApprovalMethod
@@ -1715,6 +1803,37 @@ export interface components {
             /** Rate */
             rate: string;
         };
+        /**
+         * ClientHistoryOut
+         * @description Historial comercial calculado del cliente (PRODUCT_SPEC §4.2).
+         */
+        ClientHistoryOut: {
+            /** Accepted */
+            accepted: number;
+            /** Actual Margin */
+            actual_margin: string | null;
+            /** Billed */
+            billed: string;
+            /** Budgets */
+            budgets: number;
+            /**
+             * Client Id
+             * Format: uuid
+             */
+            client_id: string;
+            /** Conversion */
+            conversion: string | null;
+            /** Estimated Margin */
+            estimated_margin: string | null;
+            /** Events */
+            events: number;
+            /** Lost */
+            lost: number;
+            /** Preferential Markup */
+            preferential_markup: string | null;
+            /** Preferential Mode */
+            preferential_mode: string | null;
+        };
         /** ClientIn */
         ClientIn: {
             /** Address */
@@ -1901,6 +2020,18 @@ export interface components {
             /** Position */
             position: string | null;
         };
+        /**
+         * ConversionOut
+         * @description Decisiones de los últimos 90 días: aceptadas / (aceptadas + rechazadas + vencidas).
+         */
+        ConversionOut: {
+            /** By Amount */
+            by_amount: string | null;
+            /** By Count */
+            by_count: string | null;
+            lost: components["schemas"]["AmountOut"];
+            won: components["schemas"]["AmountOut"];
+        };
         /** CostChange */
         CostChange: {
             /** Amount Changed */
@@ -1951,6 +2082,22 @@ export interface components {
             /** Changes */
             changes: components["schemas"]["CostChange"][];
             totals: components["schemas"]["TotalsDelta"];
+        };
+        /** DashboardOut */
+        DashboardOut: {
+            accepted: components["schemas"]["AmountOut"];
+            /** Avg Margin */
+            avg_margin: string | null;
+            conversion: components["schemas"]["ConversionOut"];
+            in_negotiation: components["schemas"]["AmountOut"];
+            /** Month */
+            month: string;
+            /** Own Only */
+            own_only: boolean;
+            sent: components["schemas"]["AmountOut"];
+            todo: components["schemas"]["TodoOut"];
+            /** Upcoming */
+            upcoming: components["schemas"]["UpcomingEvent"][];
         };
         /**
          * DiffKind
@@ -3582,6 +3729,60 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /**
+         * ReportGroup
+         * @enum {string}
+         */
+        ReportGroup: "event" | "client" | "month";
+        /** ReportOut */
+        ReportOut: {
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /** Group */
+            group: string;
+            /** Rows */
+            rows: components["schemas"]["ReportRow"][];
+            total: components["schemas"]["ReportRow"];
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** ReportRow */
+        ReportRow: {
+            /** Actual Cost */
+            actual_cost: string | null;
+            /** Actual Margin */
+            actual_margin: string | null;
+            /** Actual Profit */
+            actual_profit: string | null;
+            /** Cost Delta Rate */
+            cost_delta_rate: string | null;
+            /** Estimated Cost */
+            estimated_cost: string;
+            /** Estimated Margin */
+            estimated_margin: string | null;
+            /** Estimated Profit */
+            estimated_profit: string;
+            /** Events */
+            events: number;
+            /** Events With Costs */
+            events_with_costs: number;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Partial */
+            partial: boolean;
+            /** Sale Net */
+            sale_net: string;
+        };
         /** ResultOut */
         ResultOut: {
             /** Cost */
@@ -3950,6 +4151,19 @@ export interface components {
          * @enum {string}
          */
         TaxCondition: "RI" | "MONOTRIBUTO" | "EXENTO";
+        /** TodoOut */
+        TodoOut: {
+            /** Expiring */
+            expiring: number;
+            /** Follow Up Days */
+            follow_up_days: number;
+            /** No Response */
+            no_response: number;
+            /** Stale Costs */
+            stale_costs: number;
+            /** Viewed No Answer */
+            viewed_no_answer: number;
+        };
         /** TotalsDelta */
         TotalsDelta: {
             /** Margin Net After */
@@ -3978,6 +4192,28 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** UpcomingEvent */
+        UpcomingEvent: {
+            /** Client Name */
+            client_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Margin */
+            margin: string | null;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            status: components["schemas"]["EventStatus"];
         };
         /** UserOut */
         UserOut: {
@@ -5560,6 +5796,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClientOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    client_history_api_v1_clients__client_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientHistoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_api_v1_dashboard_get: {
+        parameters: {
+            query?: {
+                month?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOut"];
                 };
             };
             /** @description Validation Error */
@@ -7255,6 +7553,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicProposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    profitability_report_api_v1_reports_profitability_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                group?: components["schemas"]["ReportGroup"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    profitability_csv_api_v1_reports_profitability_csv_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                group?: components["schemas"]["ReportGroup"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
                 };
             };
             /** @description Validation Error */

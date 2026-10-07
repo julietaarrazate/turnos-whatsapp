@@ -2,6 +2,7 @@
 
 from app.modules.pricing.router import router
 from app.modules.pricing.service import (
+    client_rule,
     latest_fx_rate,
     line_rules,
     pricing_context,
@@ -11,6 +12,7 @@ from app.modules.pricing.service import (
 )
 
 __all__ = [
+    "client_rule",
     "latest_fx_rate",
     "line_rules",
     "pricing_context",

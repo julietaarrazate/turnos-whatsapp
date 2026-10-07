@@ -15,7 +15,7 @@ const QUICK_ACTIONS: { label: string; href?: string; phase?: number }[] = [
   { label: "Nuevo presupuesto", href: "/budgets/new" },
   { label: "Nuevo cliente", href: "/clients/new" },
   { label: "Nuevo producto", href: "/catalog/new" },
-  { label: "Nuevo gasto", phase: 4 },
+  { label: "Nuevo gasto", href: "/events" }, // se carga desde la pestaña Gastos del evento
 ];
 
 function OrganizationSwitcher() {

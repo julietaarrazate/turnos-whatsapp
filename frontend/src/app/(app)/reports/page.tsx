@@ -1,7 +1,13 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { PageHeader } from "@/components/ui/page-header";
+import { ProfitabilityReport } from "@/features/dashboard/reports";
 
 export const metadata = { title: "Reportes" };
 
 export default function Page() {
-  return <ComingSoon title="Reportes" phase={5} description="Rentabilidad por evento, cliente y período." />;
+  return (
+    <>
+      <PageHeader title="Rentabilidad" description="Estimada vs real, por evento, cliente o mes." />
+      <ProfitabilityReport />
+    </>
+  );
 }
