@@ -886,6 +886,15 @@
         "title": "ClientPage",
         "type": "object"
       },
+      "ClientPriceLabel": {
+        "description": "Lo que ve el cliente en lugar del importe de la línea (planilla de la piloto).",
+        "enum": [
+          "BONIFICADO",
+          "A_DEFINIR"
+        ],
+        "title": "ClientPriceLabel",
+        "type": "string"
+      },
       "ClientSummary": {
         "properties": {
           "city": {
@@ -2794,6 +2803,10 @@
             ],
             "title": "Cost Days Old"
           },
+          "cost_is_total": {
+            "title": "Cost Is Total",
+            "type": "boolean"
+          },
           "cost_stale": {
             "title": "Cost Stale",
             "type": "boolean"
@@ -2839,6 +2852,7 @@
           "unit_cost_amount",
           "unit_cost_includes_iva",
           "unit_cost_iva_rate",
+          "cost_is_total",
           "unit_cost_effective",
           "cost_total",
           "cost_as_of",
@@ -2954,6 +2968,11 @@
                 "type": "null"
               }
             ]
+          },
+          "cost_is_total": {
+            "default": false,
+            "title": "Cost Is Total",
+            "type": "boolean"
           },
           "days": {
             "anyOf": [
@@ -3239,6 +3258,16 @@
           "charge_mode": {
             "$ref": "#/components/schemas/ChargeMode"
           },
+          "client_price_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientPriceLabel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "cost": {
             "anyOf": [
               {
@@ -3410,6 +3439,7 @@
           "description_client",
           "notes_internal",
           "show_on_proposal",
+          "client_price_label",
           "unit_code",
           "charge_mode",
           "iva_rate",
@@ -3449,6 +3479,27 @@
                 "type": "null"
               }
             ]
+          },
+          "client_price_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClientPriceLabel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost_is_total": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Is Total"
           },
           "days": {
             "anyOf": [
@@ -5810,6 +5861,17 @@
           "description": {
             "title": "Description",
             "type": "string"
+          },
+          "price_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Label"
           },
           "quantity": {
             "title": "Quantity",

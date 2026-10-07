@@ -20,6 +20,7 @@ class PublicItem(_Public):
     days: int | None
     unit_price: str | None
     amount: str | None
+    price_label: str | None = None  # BONIFICADO / A_DEFINIR en lugar del importe
 
 
 class PublicSection(_Public):

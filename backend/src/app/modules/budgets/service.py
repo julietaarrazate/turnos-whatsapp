@@ -50,6 +50,7 @@ from app.modules.budgets.models import (
     BudgetLine,
     BudgetSection,
     BudgetVersion,
+    ClientPriceLabel,
     VersionStatus,
 )
 from app.modules.budgets.schemas import (
@@ -302,6 +303,7 @@ def _line_input(line: BudgetLine) -> LineInput:
         charge_mode=ChargeMode(line.charge_mode),
         cost_includes_iva=line.unit_cost_includes_iva,
         cost_iva_rate=line.unit_cost_iva_rate,
+        cost_is_total=line.cost_is_total,
         iva_rate=line.iva_rate,
         pricing_mode=LinePricingMode(line.pricing_mode),
         markup_manual=line.markup_manual,
@@ -420,6 +422,9 @@ def _line_out(line: BudgetLine, ctx: TenantContext, today: Any, stale_after: int
         description_client=line.description_client,
         notes_internal=line.notes_internal,
         show_on_proposal=line.show_on_proposal,
+        client_price_label=ClientPriceLabel(line.client_price_label)
+        if line.client_price_label
+        else None,
         unit_code=line.unit_code,
         charge_mode=ChargeMode(line.charge_mode),
         iva_rate=line.iva_rate,
@@ -436,6 +441,7 @@ def _line_out(line: BudgetLine, ctx: TenantContext, today: Any, stale_after: int
             unit_cost_amount=line.unit_cost_amount,
             unit_cost_includes_iva=line.unit_cost_includes_iva,
             unit_cost_iva_rate=line.unit_cost_iva_rate,
+            cost_is_total=line.cost_is_total,
             unit_cost_effective=line.unit_cost_effective,
             cost_total=line.cost_total,
             cost_as_of=line.cost_as_of,
@@ -985,7 +991,11 @@ def add_line(
 ) -> BudgetOut:
     budget, version = _draft(db, ctx, budget_id, if_match)
     section = _section(db, version, body.section_id)
-    custom_cost = body.unit_cost_amount is not None or body.unit_cost_includes_iva is not None
+    custom_cost = (
+        body.unit_cost_amount is not None
+        or body.unit_cost_includes_iva is not None
+        or body.cost_is_total
+    )
     if custom_cost and not ctx.can(Permission.COST_VIEW):
         raise AppError(403, "permission_denied", "No tenés permiso para ver ni cargar costos")
     client_id = _client_id(db, budget)
@@ -1059,6 +1069,7 @@ def add_line(
     line.quantity = quantity
     line.days = body.days or (_event_days(db, budget) if charge_mode is ChargeMode.PER_DAY else 1)
     line.unit_cost_currency = "ARS"
+    line.cost_is_total = body.cost_is_total
     line.pricing_mode = LinePricingMode.MARKUP.value
     line.discount_rate = Decimal(0)
     line.is_locked = False
@@ -1093,7 +1104,13 @@ def add_line(
     return budget_out(db, ctx, budget, version)
 
 
-_COST_FIELDS = {"unit_cost_amount", "unit_cost_includes_iva", "unit_cost_iva_rate", "offer_id"}
+_COST_FIELDS = {
+    "unit_cost_amount",
+    "unit_cost_includes_iva",
+    "unit_cost_iva_rate",
+    "cost_is_total",
+    "offer_id",
+}
 _MARGIN_FIELDS = {"markup_manual", "target_margin"}
 _NOT_NULL = {
     "name_internal",
@@ -1105,6 +1122,7 @@ _NOT_NULL = {
     "unit_cost_amount",
     "unit_cost_includes_iva",
     "unit_cost_iva_rate",
+    "cost_is_total",
     "pricing_mode",
     "discount_rate",
     "is_locked",
@@ -1117,7 +1135,9 @@ _AUDITED = (
     "days",
     "unit_cost_amount",
     "unit_cost_includes_iva",
+    "cost_is_total",
     "supplier_name",
+    "client_price_label",
     "pricing_mode",
     "markup_manual",
     "target_margin",
@@ -1154,6 +1174,7 @@ def _switch_offer(db: AppSession, ctx: TenantContext, line: BudgetLine, offer_id
     line.unit_cost_amount = price.amount if price else Decimal(0)
     line.unit_cost_includes_iva = price.amount_includes_iva if price else False
     line.unit_cost_iva_rate = price.iva_rate if price else Decimal("0.21")
+    line.cost_is_total = False  # el catálogo guarda costos unitarios
     line.cost_as_of = price.valid_from if price else None
 
 
@@ -1198,12 +1219,12 @@ def update_line(
     simple = fields - {"offer_id", "position", "section_id"}
     for field in simple:
         value = getattr(body, field)
-        if isinstance(value, ChargeMode | LinePricingMode):
+        if isinstance(value, ChargeMode | LinePricingMode | ClientPriceLabel):
             value = value.value
         if field == "name_internal" and isinstance(value, str):
             value = value.strip()
         setattr(line, field, value)
-    if fields & {"unit_cost_amount", "unit_cost_includes_iva", "unit_cost_iva_rate"}:
+    if fields & (_COST_FIELDS - {"offer_id"}):
         line.cost_as_of = None  # costo cargado a mano: ya no es el del catálogo
         line.price_history_id = None
 
@@ -1331,6 +1352,7 @@ def _apply_costs(changes: list[tuple[BudgetLine, Any]]) -> None:
         line.unit_cost_amount = price.amount
         line.unit_cost_includes_iva = price.amount_includes_iva
         line.unit_cost_iva_rate = price.iva_rate
+        line.cost_is_total = False
         line.cost_as_of = price.valid_from
         line.price_history_id = price.id
 

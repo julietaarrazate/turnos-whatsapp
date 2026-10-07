@@ -79,6 +79,18 @@ test("J2: nuevo presupuesto, ítems del catálogo y libres, precio objetivo y gu
   await detail.getByLabel("Costo unitario").fill("50.000");
   await detail.getByLabel("Costo unitario").press("Enter");
   await expect(detail).toContainText("$ 65.000,00");
+  // Como en la planilla de la piloto: el flete se cotizó por el total, no por unidad.
+  await detail.getByLabel("Cantidad").fill("2");
+  await detail.getByLabel("Cantidad").press("Enter");
+  await expect(detail).toContainText("Costo de la línea: $ 100.000,00");
+  // El tilde lo confirma el servidor (como "El costo ya incluye IVA").
+  const wholeLine = detail.getByLabel("El proveedor cotizó la línea entera (no por unidad)");
+  await wholeLine.click();
+  await expect(wholeLine).toBeChecked();
+  await expect(detail).toContainText("Costo de la línea: $ 50.000,00");
+  await expect(detail.getByLabel("Costo de toda la línea")).toBeVisible();
+  await detail.getByLabel("En la propuesta, en lugar del importe").selectOption("A_DEFINIR");
+  await expect(detail.getByLabel("En la propuesta, en lugar del importe")).toHaveValue("A_DEFINIR");
   await detail.getByRole("button", { name: "Cerrar" }).click();
   await expect(footer).toContainText("$ 143.000,00");
 

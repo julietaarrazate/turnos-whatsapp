@@ -127,7 +127,7 @@ export function LineDetail({
             ) : null}
             <div className="grid grid-cols-2 gap-3">
               <CommitField
-                label="Costo unitario"
+                label={cost.cost_is_total ? "Costo de toda la línea" : "Costo unitario"}
                 hideLabel={false}
                 value={cost.unit_cost_amount}
                 {...moneyField}
@@ -144,6 +144,11 @@ export function LineDetail({
               label="El costo ya incluye IVA"
               checked={cost.unit_cost_includes_iva}
               onChange={(e) => onUpdate({ unit_cost_includes_iva: e.target.checked })}
+            />
+            <CheckboxField
+              label="El proveedor cotizó la línea entera (no por unidad)"
+              checked={cost.cost_is_total}
+              onChange={(e) => onUpdate({ cost_is_total: e.target.checked })}
             />
             <p className="text-xs text-ink-muted">
               Costo de la línea: <span className="font-medium text-ink">{formatMoney(cost.cost_total)}</span>
@@ -268,6 +273,18 @@ export function LineDetail({
             label="Se ve en la propuesta"
             checked={line.show_on_proposal}
             onChange={(e) => onUpdate({ show_on_proposal: e.target.checked })}
+          />
+          <SelectField
+            label="En la propuesta, en lugar del importe"
+            value={line.client_price_label ?? ""}
+            onChange={(e) =>
+              onUpdate({ client_price_label: (e.target.value || null) as BudgetLine["client_price_label"] })
+            }
+            options={[
+              { value: "", label: "Mostrar el importe" },
+              { value: "BONIFICADO", label: "Bonificado" },
+              { value: "A_DEFINIR", label: "A definir" },
+            ]}
           />
         </section>
         {line.product_id && cost && offers.data ? (
