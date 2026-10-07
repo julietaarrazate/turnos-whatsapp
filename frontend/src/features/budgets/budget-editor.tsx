@@ -181,6 +181,7 @@ function SectionBlock({
         <div className="border-t border-line px-4 py-3">
           <ProductSearch
             onPick={(product) => void editor.addLine({ section_id: section.id, product_id: product.id })}
+            onPackage={(pkg) => void editor.addPackage({ package_id: pkg.id, section_id: section.id })}
             onFree={(name) => void editor.addLine({ section_id: section.id, name })}
           />
         </div>

@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import (
@@ -208,3 +209,57 @@ class PriceHistory(IdMixin, Base):
     source_ref: Mapped[str | None] = mapped_column(String(200))
     created_by: Mapped[UUID | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class DaysRule(StrEnum):
+    """Cuántos días toma cada ítem de un paquete al insertarlo (solo importa si cobra por día)."""
+
+    EVENT_DAYS = "EVENT_DAYS"  # los días del evento
+    SETUP_DAYS = "SETUP_DAYS"  # los días de armado
+    FIXED = "FIXED"  # un número fijo
+
+
+class Package(IdMixin, TimestampMixin, SoftDeleteMixin, Base):
+    """Paquete / plantilla (B-06): "Stand corporativo 6×3" = productos con cantidades."""
+
+    __tablename__ = "packages"
+    __table_args__ = (
+        tenant_unique(),
+        Index(
+            "uq_packages_org_name",
+            "organization_id",
+            text("lower(name)"),
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+
+
+class PackageItem(IdMixin, Base):
+    __tablename__ = "package_items"
+    __table_args__ = (
+        tenant_unique(),
+        tenant_fk("package_id", "packages", ondelete="CASCADE"),
+        tenant_fk("product_id", "products"),
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint(check_in("days_rule", DaysRule), name="days_rule"),
+        CheckConstraint(
+            "days_rule <> 'FIXED' OR (fixed_days IS NOT NULL AND fixed_days >= 1)",
+            name="fixed_days",
+        ),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    package_id: Mapped[UUID] = mapped_column(index=True)
+    product_id: Mapped[UUID]
+    quantity: Mapped[Decimal] = mapped_column(Numeric(14, 4))
+    days_rule: Mapped[str] = mapped_column(String(12), default=DaysRule.EVENT_DAYS.value)
+    fixed_days: Mapped[int | None] = mapped_column(SmallInteger)
+    section_title: Mapped[str | None] = mapped_column(String(200))  # vacío: la sección elegida
+    description_client_override: Mapped[str | None] = mapped_column(Text)
+    sort: Mapped[int] = mapped_column(default=0)

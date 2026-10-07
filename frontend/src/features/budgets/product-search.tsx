@@ -1,21 +1,26 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Search } from "lucide-react";
+import { Boxes, Plus, Search } from "lucide-react";
 import { useDeferredValue, useId, useState } from "react";
 
 import { api, unwrap } from "@/lib/api/client";
-import type { ProductSummary } from "@/lib/api/types";
+import type { ProductSummary, Schemas } from "@/lib/api/types";
 import { formatMoney } from "@/lib/format/number";
 
-/** Buscador del catálogo para agregar una línea. Teclado primero: ↑ ↓ Enter, Esc limpia. */
+type PackageSummary = Schemas["PackageSummary"];
+
+/** Buscador del catálogo para agregar una línea o un paquete. Teclado primero: ↑ ↓ Enter, Esc limpia. */
 export function ProductSearch({
   onPick,
+  onPackage,
   onFree,
   disabled,
 }: {
   onPick: (product: ProductSummary) => void;
-  onFree: (name: string) => void;
+  onPackage?: (pkg: PackageSummary) => void;
+  /** Sin esto, solo se eligen productos del catálogo (no hay "ítem libre"). */
+  onFree?: (name: string) => void;
   disabled?: boolean;
 }) {
   const listId = useId();
@@ -27,14 +32,25 @@ export function ProductSearch({
     queryFn: async () => unwrap(await api.GET("/api/v1/products", { params: { query: { q, limit: 8 } } })),
     enabled: q.length >= 2,
   });
+  const packages = useQuery({
+    queryKey: ["packages", "search", q],
+    queryFn: async () => unwrap(await api.GET("/api/v1/packages", { params: { query: { q } } })),
+    enabled: Boolean(onPackage) && q.length >= 2,
+  });
   const items = q.length >= 2 ? (results.data?.items ?? []) : [];
-  const options = [...items.map((p) => ({ kind: "product" as const, product: p })), ...(q ? [{ kind: "free" as const }] : [])];
+  const packs = q.length >= 2 && onPackage ? (packages.data ?? []).filter((p) => p.is_active).slice(0, 4) : [];
+  const options = [
+    ...packs.map((p) => ({ kind: "package" as const, pkg: p })),
+    ...items.map((p) => ({ kind: "product" as const, product: p })),
+    ...(q && onFree ? [{ kind: "free" as const }] : []),
+  ];
 
   function choose(index: number) {
     const option = options[index];
     if (!option) return;
     if (option.kind === "product") onPick(option.product);
-    else onFree(text.trim());
+    else if (option.kind === "package") onPackage?.(option.pkg);
+    else onFree?.(text.trim());
     setText("");
     setCursor(0);
   }
@@ -80,7 +96,7 @@ export function ProductSearch({
         >
           {options.map((option, index) => (
             <li
-              key={option.kind === "product" ? option.product.id : "free"}
+              key={option.kind === "product" ? option.product.id : option.kind === "package" ? `pkg-${option.pkg.id}` : "free"}
               role="option"
               aria-selected={index === cursor}
               onMouseDown={(e) => {
@@ -90,7 +106,15 @@ export function ProductSearch({
               onMouseEnter={() => setCursor(index)}
               className={`flex cursor-pointer items-center gap-3 px-3 py-2 text-sm ${index === cursor ? "bg-subtle" : ""}`}
             >
-              {option.kind === "product" ? (
+              {option.kind === "package" ? (
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <Boxes className="size-4 shrink-0 text-accent" aria-hidden />
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">Paquete: {option.pkg.name}</span>
+                    <span className="block truncate text-xs text-ink-muted">{option.pkg.item_count} ítems</span>
+                  </span>
+                </span>
+              ) : option.kind === "product" ? (
                 <>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{option.product.name}</span>

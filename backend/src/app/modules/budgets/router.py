@@ -22,6 +22,7 @@ from app.modules.budgets.schemas import (
     ImportPreviewOut,
     LineIn,
     LineUpdate,
+    PackageInsertIn,
     RefreshCostsIn,
     RulesPreview,
     SectionIn,
@@ -291,3 +292,11 @@ def duplicate(
         model=DuplicateOut,
         run=lambda: service.duplicate(db, ctx, budget_id, body),
     )
+
+
+@router.post("/{budget_id}/draft/packages", status_code=status.HTTP_201_CREATED)
+def add_package(
+    budget_id: UUID, body: PackageInsertIn, if_match: IfMatch, ctx: Edit, db: DbSession
+) -> BudgetOut:
+    """Insertar un paquete del catálogo: crea sus líneas (editables) en el borrador."""
+    return service.add_package(db, ctx, budget_id, service.parse_if_match(if_match), body)

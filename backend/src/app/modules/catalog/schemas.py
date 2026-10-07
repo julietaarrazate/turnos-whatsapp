@@ -1,8 +1,9 @@
 from datetime import date
 from decimal import Decimal
+from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from app.core.enums import TaxCondition
 from app.domain.pricing import ChargeMode
@@ -256,3 +257,151 @@ class ProductOut(BaseModel):
 class ProductPage(BaseModel):
     items: list[ProductSummary]
     next_cursor: str | None
+
+
+# --- Aumento masivo (C-10) -----------------------------------------------------------------
+
+
+class BulkIncreaseIn(BaseModel):
+    """Por proveedor, por categoría (con sus subcategorías) o por ambos."""
+
+    supplier_id: UUID | None = None
+    category_id: UUID | None = None
+    rate: Decimal = Field(gt=Decimal(-1), le=Decimal(10), max_digits=8, decimal_places=6)
+    valid_from: date | None = None  # por defecto, hoy
+    note: str | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def _scope(self) -> "BulkIncreaseIn":
+        if self.supplier_id is None and self.category_id is None:
+            raise ValueError("Elegí un proveedor o una categoría")
+        return self
+
+
+class BulkItem(BaseModel):
+    offer_id: UUID
+    product_name: str
+    supplier_name: str
+    current: Decimal
+    new: Decimal
+    includes_iva: bool
+    iva_rate: Decimal
+
+
+class BulkPreviewOut(BaseModel):
+    scope: str
+    valid_from: date
+    items: list[BulkItem]
+    skipped_without_cost: int
+
+
+# --- Importar catálogo (C-09) --------------------------------------------------------------
+
+
+class ImportField(StrEnum):
+    NAME = "name"
+    CATEGORY = "category"
+    SUPPLIER = "supplier"
+    UNIT = "unit"
+    COST = "cost"
+    INCLUDES_IVA = "includes_iva"
+    IVA_RATE = "iva_rate"
+    CHARGE_MODE = "charge_mode"
+    DESCRIPTION_CLIENT = "description_client"
+    SUPPLIER_SKU = "supplier_sku"
+
+
+class CatalogImportIn(BaseModel):
+    """La planilla (.xlsx o .csv en base64) y, opcional, qué columna es cada campo (índice
+    desde 0). Lo que no se indica se sugiere por el encabezado."""
+
+    file_base64: str = Field(min_length=4, max_length=7_000_000)
+    filename: str = Field(min_length=1, max_length=200)
+    sheet: str | None = Field(default=None, max_length=120)
+    mapping: dict[ImportField, int | None] | None = None
+    valid_from: date | None = None  # vigencia de los costos importados (por defecto, hoy)
+
+
+class ImportRowOut(BaseModel):
+    row: int
+    name: str | None
+    category: str | None
+    supplier: str | None
+    unit: str | None
+    cost: Decimal | None
+    action: str  # CREATE (producto nuevo) · UPDATE (ya existe) · ERROR (no se importa)
+    errors: list[str]
+
+
+class ImportSummary(BaseModel):
+    rows: int
+    valid: int
+    errors: int
+    products_new: int
+    suppliers_new: int
+    categories_new: int
+    costs: int  # en la vista previa: filas con costo; aplicado: costos cargados
+
+
+class CatalogImportOut(BaseModel):
+    sheets: list[str]
+    sheet: str
+    headers: list[str]
+    mapping: dict[ImportField, int | None]
+    rows: list[ImportRowOut]  # las primeras 300
+    summary: ImportSummary
+    applied: bool
+
+
+# --- Paquetes (B-06) -----------------------------------------------------------------------
+
+
+class PackageItemIn(BaseModel):
+    product_id: UUID
+    quantity: Decimal = Field(default=Decimal(1), gt=Decimal(0), max_digits=14, decimal_places=4)
+    days_rule: str = Field(default="EVENT_DAYS", pattern="^(EVENT_DAYS|SETUP_DAYS|FIXED)$")
+    fixed_days: int | None = Field(default=None, ge=1, le=365)
+    section_title: str | None = Field(default=None, max_length=200)
+    description_client_override: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def _fixed(self) -> "PackageItemIn":
+        if self.days_rule == "FIXED" and self.fixed_days is None:
+            raise ValueError("Indicá cuántos días")
+        return self
+
+
+class PackageIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    is_active: bool = True
+    items: list[PackageItemIn] = Field(min_length=1, max_length=100)
+
+
+class PackageItemOut(BaseModel):
+    id: UUID
+    product_id: UUID
+    product_name: str
+    unit_code: str
+    charge_mode: ChargeMode
+    quantity: Decimal
+    days_rule: str
+    fixed_days: int | None
+    section_title: str | None
+    description_client_override: str | None
+
+
+class PackageOut(BaseModel):
+    id: UUID
+    name: str
+    description: str | None
+    is_active: bool
+    items: list[PackageItemOut]
+
+
+class PackageSummary(BaseModel):
+    id: UUID
+    name: str
+    description: str | None
+    is_active: bool
+    item_count: int

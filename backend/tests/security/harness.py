@@ -36,6 +36,8 @@ from app.modules.budgets.models import BudgetVersion
 from app.modules.budgets.schemas import BudgetCreate, LineIn
 from app.modules.catalog.models import (
     Category,
+    Package,
+    PackageItem,
     PriceHistory,
     Product,
     Supplier,
@@ -179,9 +181,20 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         expense_date=date(2026, 10, 1),
         created_by=owner.user_id,
     )
-    s.add_all([hire, task, expense])
+    package = Package(organization_id=owner.organization_id, name="Paquete ejemplo")
+    s.add_all([hire, task, expense, package])
+    s.flush()
+    s.add(
+        PackageItem(
+            organization_id=owner.organization_id,
+            package_id=package.id,
+            product_id=ids["product_id"],
+            quantity=Decimal(2),
+        )
+    )
     s.flush()
     return {
+        "package_id": package.id,
         "expense_id": expense.id,
         "event_supplier_id": hire.id,
         "task_id": task.id,
@@ -224,6 +237,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "event_supplier_id": lambda w: w.ids["event_supplier_id"],
     "task_id": lambda w: w.ids["task_id"],
     "expense_id": lambda w: w.ids["expense_id"],
+    "package_id": lambda w: w.ids["package_id"],
 }
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
@@ -240,6 +254,7 @@ def _sample_xlsx() -> str:
 
 
 _XLSX = _sample_xlsx()
+_CATALOG_CSV = b64encode(b"Producto;Proveedor;Costo\nItem importado;Otro proveedor;10\n").decode()
 
 SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/organization"): {"name": "Nuevo nombre"},
@@ -277,6 +292,16 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("POST", "/api/v1/events/{event_id}/status"): {"to_status": "LOST", "reason": "Otra opción"},
     ("POST", "/api/v1/budgets"): lambda w: {"event_id": str(w.ids["event_id"])},
     ("POST", "/api/v1/budgets/import/preview"): {"file_base64": _XLSX},
+    ("POST", "/api/v1/catalog/bulk-increase/preview"): lambda w: {
+        "supplier_id": str(w.ids["supplier_id"]),
+        "rate": "0.05",
+    },
+    ("POST", "/api/v1/catalog/bulk-increase"): lambda w: {
+        "supplier_id": str(w.ids["supplier_id"]),
+        "rate": "0.05",
+    },
+    ("POST", "/api/v1/catalog/import/preview"): {"file_base64": _CATALOG_CSV, "filename": "l.csv"},
+    ("POST", "/api/v1/catalog/import"): {"file_base64": _CATALOG_CSV, "filename": "l.csv"},
     ("POST", "/api/v1/budgets/import"): lambda w: {
         "event_id": str(w.ids["event_id"]),
         "file_base64": _XLSX,
@@ -308,6 +333,17 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
         "category_id": str(w.ids["category_id"]),
     },
     ("PATCH", "/api/v1/expenses/{expense_id}"): {"description": "Flete"},
+    ("POST", "/api/v1/packages"): lambda w: {
+        "name": "Stand chico",
+        "items": [{"product_id": str(w.ids["product_id"])}],
+    },
+    ("PUT", "/api/v1/packages/{package_id}"): lambda w: {
+        "name": "Paquete ejemplo",
+        "items": [{"product_id": str(w.ids["product_id"]), "quantity": "3"}],
+    },
+    ("POST", "/api/v1/budgets/{budget_id}/draft/packages"): lambda w: {
+        "package_id": str(w.ids["package_id"]),
+    },
     ("POST", "/api/v1/events/{event_id}/complete"): {},
     ("POST", "/api/v1/events/{event_id}/close"): {},
     ("POST", "/api/v1/events/{event_id}/reopen"): {"reason": "Faltaba una factura"},

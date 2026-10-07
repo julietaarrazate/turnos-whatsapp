@@ -53,9 +53,24 @@ export function ProductsList() {
         description="Productos y servicios, quién te los ofrece y a qué costo."
         actions={
           can("catalog.edit") ? (
-            <Link href="/catalog/new" className={buttonClasses()}>
-              <Plus className="size-4" aria-hidden /> Nuevo producto
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/catalog/packages" className={buttonClasses("secondary")}>
+                Paquetes
+              </Link>
+              {can("costs.edit") ? (
+                <>
+                  <Link href="/catalog/import" className={buttonClasses("secondary")}>
+                    Importar
+                  </Link>
+                  <Link href="/catalog/bulk-increase" className={buttonClasses("secondary")}>
+                    Aumento masivo
+                  </Link>
+                </>
+              ) : null}
+              <Link href="/catalog/new" className={buttonClasses()}>
+                <Plus className="size-4" aria-hidden /> Nuevo producto
+              </Link>
+            </div>
           ) : null
         }
       />

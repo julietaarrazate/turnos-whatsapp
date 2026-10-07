@@ -354,6 +354,26 @@ export interface paths {
         patch: operations["update_line_api_v1_budgets__budget_id__draft_lines__line_id__patch"];
         trace?: never;
     };
+    "/api/v1/budgets/{budget_id}/draft/packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Package
+         * @description Insertar un paquete del catálogo: crea sus líneas (editables) en el borrador.
+         */
+        post: operations["add_package_api_v1_budgets__budget_id__draft_packages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets/{budget_id}/draft/reapply-rules": {
         parameters: {
             query?: never;
@@ -527,6 +547,86 @@ export interface paths {
         get: operations["export_version_api_v1_budgets__budget_id__versions__version_no__export_xlsx_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/bulk-increase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Increase
+         * @description Aplica el aumento: un costo nuevo por oferta (origen BULK_UPDATE).
+         */
+        post: operations["bulk_increase_api_v1_catalog_bulk_increase_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/bulk-increase/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Bulk Increase
+         * @description Simula el aumento: qué ofertas cambian y a cuánto, sin guardar nada.
+         */
+        post: operations["preview_bulk_increase_api_v1_catalog_bulk_increase_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Catalog Import
+         * @description Importa las filas sin errores: categorías, proveedores, productos, ofertas y costos.
+         */
+        post: operations["catalog_import_api_v1_catalog_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Catalog Import
+         * @description Lee la planilla, sugiere el mapeo y muestra qué se importaría (con errores por fila).
+         */
+        post: operations["preview_catalog_import_api_v1_catalog_import_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1042,6 +1142,43 @@ export interface paths {
         head?: never;
         /** Update Fiscal */
         patch: operations["update_fiscal_api_v1_organization_fiscal_patch"];
+        trace?: never;
+    };
+    "/api/v1/packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Packages */
+        get: operations["list_packages_api_v1_packages_get"];
+        put?: never;
+        /** Create Package */
+        post: operations["create_package_api_v1_packages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/packages/{package_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Package */
+        get: operations["get_package_api_v1_packages__package_id__get"];
+        /** Update Package */
+        put: operations["update_package_api_v1_packages__package_id__put"];
+        post?: never;
+        /** Delete Package */
+        delete: operations["delete_package_api_v1_packages__package_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/pipeline": {
@@ -1737,6 +1874,93 @@ export interface components {
             /** Version No */
             version_no: number;
             version_status: components["schemas"]["VersionStatus"];
+        };
+        /**
+         * BulkIncreaseIn
+         * @description Por proveedor, por categoría (con sus subcategorías) o por ambos.
+         */
+        BulkIncreaseIn: {
+            /** Category Id */
+            category_id?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Rate */
+            rate: number | string;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+        };
+        /** BulkItem */
+        BulkItem: {
+            /** Current */
+            current: string;
+            /** Includes Iva */
+            includes_iva: boolean;
+            /** Iva Rate */
+            iva_rate: string;
+            /** New */
+            new: string;
+            /**
+             * Offer Id
+             * Format: uuid
+             */
+            offer_id: string;
+            /** Product Name */
+            product_name: string;
+            /** Supplier Name */
+            supplier_name: string;
+        };
+        /** BulkPreviewOut */
+        BulkPreviewOut: {
+            /** Items */
+            items: components["schemas"]["BulkItem"][];
+            /** Scope */
+            scope: string;
+            /** Skipped Without Cost */
+            skipped_without_cost: number;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+        };
+        /**
+         * CatalogImportIn
+         * @description La planilla (.xlsx o .csv en base64) y, opcional, qué columna es cada campo (índice
+         *     desde 0). Lo que no se indica se sugiere por el encabezado.
+         */
+        CatalogImportIn: {
+            /** File Base64 */
+            file_base64: string;
+            /** Filename */
+            filename: string;
+            /** Mapping */
+            mapping?: {
+                [key: string]: number | null;
+            } | null;
+            /** Sheet */
+            sheet?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+        };
+        /** CatalogImportOut */
+        CatalogImportOut: {
+            /** Applied */
+            applied: boolean;
+            /** Headers */
+            headers: string[];
+            /** Mapping */
+            mapping: {
+                [key: string]: number | null;
+            };
+            /** Rows */
+            rows: components["schemas"]["ImportRowOut"][];
+            /** Sheet */
+            sheet: string;
+            /** Sheets */
+            sheets: string[];
+            summary: components["schemas"]["ImportSummary"];
         };
         /** CategoryIn */
         CategoryIn: {
@@ -2560,6 +2784,11 @@ export interface components {
          * @enum {string}
          */
         HireStatus: "TO_HIRE" | "CONFIRMED" | "INVOICED" | "PAID" | "CANCELLED";
+        /**
+         * ImportField
+         * @enum {string}
+         */
+        ImportField: "name" | "category" | "supplier" | "unit" | "cost" | "includes_iva" | "iva_rate" | "charge_mode" | "description_client" | "supplier_sku";
         /** ImportLineOut */
         ImportLineOut: {
             /** Cost Amount */
@@ -2605,12 +2834,48 @@ export interface components {
             /** Warnings */
             warnings: string[];
         };
+        /** ImportRowOut */
+        ImportRowOut: {
+            /** Action */
+            action: string;
+            /** Category */
+            category: string | null;
+            /** Cost */
+            cost: string | null;
+            /** Errors */
+            errors: string[];
+            /** Name */
+            name: string | null;
+            /** Row */
+            row: number;
+            /** Supplier */
+            supplier: string | null;
+            /** Unit */
+            unit: string | null;
+        };
         /** ImportSectionOut */
         ImportSectionOut: {
             /** Lines */
             lines: components["schemas"]["ImportLineOut"][];
             /** Title */
             title: string;
+        };
+        /** ImportSummary */
+        ImportSummary: {
+            /** Categories New */
+            categories_new: number;
+            /** Costs */
+            costs: number;
+            /** Errors */
+            errors: number;
+            /** Products New */
+            products_new: number;
+            /** Rows */
+            rows: number;
+            /** Suppliers New */
+            suppliers_new: number;
+            /** Valid */
+            valid: number;
         };
         /** InvitationAccept */
         InvitationAccept: {
@@ -3158,6 +3423,118 @@ export interface components {
             name?: string | null;
             /** Viewer Sees Financials */
             viewer_sees_financials?: boolean | null;
+        };
+        /** PackageIn */
+        PackageIn: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active?: boolean;
+            /** Items */
+            items: components["schemas"]["PackageItemIn"][];
+            /** Name */
+            name: string;
+        };
+        /**
+         * PackageInsertIn
+         * @description B-06: insertar un paquete del catálogo. Sin sección, va a la primera (los ítems que
+         *     traen su propia sección van a esa).
+         */
+        PackageInsertIn: {
+            /**
+             * Package Id
+             * Format: uuid
+             */
+            package_id: string;
+            /** Section Id */
+            section_id?: string | null;
+        };
+        /** PackageItemIn */
+        PackageItemIn: {
+            /**
+             * Days Rule
+             * @default EVENT_DAYS
+             */
+            days_rule?: string;
+            /** Description Client Override */
+            description_client_override?: string | null;
+            /** Fixed Days */
+            fixed_days?: number | null;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /**
+             * Quantity
+             * @default 1
+             */
+            quantity?: number | string;
+            /** Section Title */
+            section_title?: string | null;
+        };
+        /** PackageItemOut */
+        PackageItemOut: {
+            charge_mode: components["schemas"]["ChargeMode"];
+            /** Days Rule */
+            days_rule: string;
+            /** Description Client Override */
+            description_client_override: string | null;
+            /** Fixed Days */
+            fixed_days: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
+            /** Quantity */
+            quantity: string;
+            /** Section Title */
+            section_title: string | null;
+            /** Unit Code */
+            unit_code: string;
+        };
+        /** PackageOut */
+        PackageOut: {
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Items */
+            items: components["schemas"]["PackageItemOut"][];
+            /** Name */
+            name: string;
+        };
+        /** PackageSummary */
+        PackageSummary: {
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Item Count */
+            item_count: number;
+            /** Name */
+            name: string;
         };
         /** PasswordResetConfirm */
         PasswordResetConfirm: {
@@ -5090,6 +5467,43 @@ export interface operations {
             };
         };
     };
+    add_package_api_v1_budgets__budget_id__draft_packages_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "If-Match": string;
+            };
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageInsertIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     preview_reapply_rules_api_v1_budgets__budget_id__draft_reapply_rules_get: {
         parameters: {
             query?: never;
@@ -5518,6 +5932,138 @@ export interface operations {
                 };
                 content: {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_increase_api_v1_catalog_bulk_increase_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIncreaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_bulk_increase_api_v1_catalog_bulk_increase_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIncreaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    catalog_import_api_v1_catalog_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogImportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_catalog_import_api_v1_catalog_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogImportOut"];
                 };
             };
             /** @description Validation Error */
@@ -6746,6 +7292,165 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OrganizationOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_packages_api_v1_packages_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_package_api_v1_packages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_package_api_v1_packages__package_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                package_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_package_api_v1_packages__package_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                package_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_package_api_v1_packages__package_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                package_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

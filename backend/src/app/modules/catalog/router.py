@@ -6,14 +6,21 @@ from fastapi import APIRouter, Depends, Query, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.catalog import service
+from app.modules.catalog import bulk, importer, packages, service
 from app.modules.catalog.schemas import (
+    BulkIncreaseIn,
+    BulkPreviewOut,
+    CatalogImportIn,
+    CatalogImportOut,
     CategoryIn,
     CategoryOut,
     CategoryUpdate,
     OfferIn,
     OfferOut,
     OfferUpdate,
+    PackageIn,
+    PackageOut,
+    PackageSummary,
     PriceIn,
     PriceOut,
     ProductIn,
@@ -163,3 +170,60 @@ def list_prices(offer_id: UUID, ctx: CostView, db: DbSession) -> list[PriceOut]:
 def record_price(offer_id: UUID, body: PriceIn, ctx: CostEdit, db: DbSession) -> OfferOut:
     """Registra un costo nuevo. El historial no se edita: un error se corrige con otro registro."""
     return service.record_price(db, ctx, offer_id, body)
+
+
+# --- Aumento masivo e importación (C-09, C-10) ----------------------------------------------
+
+
+@router.post("/catalog/bulk-increase/preview")
+def preview_bulk_increase(body: BulkIncreaseIn, ctx: CostEdit, db: DbSession) -> BulkPreviewOut:
+    """Simula el aumento: qué ofertas cambian y a cuánto, sin guardar nada."""
+    return bulk.preview_bulk(db, ctx, body)
+
+
+@router.post("/catalog/bulk-increase")
+def bulk_increase(body: BulkIncreaseIn, ctx: CostEdit, db: DbSession) -> BulkPreviewOut:
+    """Aplica el aumento: un costo nuevo por oferta (origen BULK_UPDATE)."""
+    return bulk.apply_bulk(db, ctx, body)
+
+
+@router.post("/catalog/import/preview")
+def preview_catalog_import(body: CatalogImportIn, ctx: Edit, db: DbSession) -> CatalogImportOut:
+    """Lee la planilla, sugiere el mapeo y muestra qué se importaría (con errores por fila)."""
+    return importer.preview_import(db, ctx, body)
+
+
+@router.post("/catalog/import")
+def catalog_import(body: CatalogImportIn, ctx: Edit, db: DbSession) -> CatalogImportOut:
+    """Importa las filas sin errores: categorías, proveedores, productos, ofertas y costos."""
+    return importer.apply_import(db, ctx, body)
+
+
+# --- Paquetes (B-06) -----------------------------------------------------------------------
+
+
+@router.get("/packages")
+def list_packages(
+    ctx: View, db: DbSession, q: Annotated[str | None, Query(max_length=100)] = None
+) -> list[PackageSummary]:
+    return packages.list_packages(db, ctx, q)
+
+
+@router.post("/packages", status_code=status.HTTP_201_CREATED)
+def create_package(body: PackageIn, ctx: Edit, db: DbSession) -> PackageOut:
+    return packages.create_package(db, ctx, body)
+
+
+@router.get("/packages/{package_id}")
+def get_package(package_id: UUID, ctx: View, db: DbSession) -> PackageOut:
+    return packages.get_package(db, ctx, package_id)
+
+
+@router.put("/packages/{package_id}")
+def update_package(package_id: UUID, body: PackageIn, ctx: Edit, db: DbSession) -> PackageOut:
+    return packages.update_package(db, ctx, package_id, body)
+
+
+@router.delete("/packages/{package_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_package(package_id: UUID, ctx: Edit, db: DbSession) -> None:
+    packages.delete_package(db, ctx, package_id)
