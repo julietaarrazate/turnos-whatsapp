@@ -548,6 +548,292 @@
         "title": "BudgetSummary",
         "type": "object"
       },
+      "BulkIncreaseIn": {
+        "description": "Por proveedor, por categoría (con sus subcategorías) o por ambos.",
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": -1.0,
+                "maximum": 10.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,2}|(?=[\\d.]{1,9}0*$)\\d{0,2}\\.\\d{0,6}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Rate"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          }
+        },
+        "required": [
+          "rate"
+        ],
+        "title": "BulkIncreaseIn",
+        "type": "object"
+      },
+      "BulkItem": {
+        "properties": {
+          "current": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Current",
+            "type": "string"
+          },
+          "includes_iva": {
+            "title": "Includes Iva",
+            "type": "boolean"
+          },
+          "iva_rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Iva Rate",
+            "type": "string"
+          },
+          "new": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "New",
+            "type": "string"
+          },
+          "offer_id": {
+            "format": "uuid",
+            "title": "Offer Id",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "supplier_name": {
+            "title": "Supplier Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "offer_id",
+          "product_name",
+          "supplier_name",
+          "current",
+          "new",
+          "includes_iva",
+          "iva_rate"
+        ],
+        "title": "BulkItem",
+        "type": "object"
+      },
+      "BulkPreviewOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          },
+          "skipped_without_cost": {
+            "title": "Skipped Without Cost",
+            "type": "integer"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope",
+          "valid_from",
+          "items",
+          "skipped_without_cost"
+        ],
+        "title": "BulkPreviewOut",
+        "type": "object"
+      },
+      "CatalogImportIn": {
+        "description": "La planilla (.xlsx o .csv en base64) y, opcional, qué columna es cada campo (índice\ndesde 0). Lo que no se indica se sugiere por el encabezado.",
+        "properties": {
+          "file_base64": {
+            "maxLength": 7000000,
+            "minLength": 4,
+            "title": "File Base64",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/ImportField"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          }
+        },
+        "required": [
+          "file_base64",
+          "filename"
+        ],
+        "title": "CatalogImportIn",
+        "type": "object"
+      },
+      "CatalogImportOut": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "boolean"
+          },
+          "headers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Headers",
+            "type": "array"
+          },
+          "mapping": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/ImportField"
+            },
+            "title": "Mapping",
+            "type": "object"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ImportRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "sheet": {
+            "title": "Sheet",
+            "type": "string"
+          },
+          "sheets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sheets",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ImportSummary"
+          }
+        },
+        "required": [
+          "sheets",
+          "sheet",
+          "headers",
+          "mapping",
+          "rows",
+          "summary",
+          "applied"
+        ],
+        "title": "CatalogImportOut",
+        "type": "object"
+      },
       "CategoryIn": {
         "properties": {
           "default_iva_rate": {
@@ -3481,6 +3767,22 @@
         "title": "HireStatus",
         "type": "string"
       },
+      "ImportField": {
+        "enum": [
+          "name",
+          "category",
+          "supplier",
+          "unit",
+          "cost",
+          "includes_iva",
+          "iva_rate",
+          "charge_mode",
+          "description_client",
+          "supplier_sku"
+        ],
+        "title": "ImportField",
+        "type": "string"
+      },
       "ImportLineOut": {
         "properties": {
           "cost_amount": {
@@ -3650,6 +3952,93 @@
         "title": "ImportPreviewOut",
         "type": "object"
       },
+      "ImportRowOut": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          },
+          "supplier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "row",
+          "name",
+          "category",
+          "supplier",
+          "unit",
+          "cost",
+          "action",
+          "errors"
+        ],
+        "title": "ImportRowOut",
+        "type": "object"
+      },
       "ImportSectionOut": {
         "properties": {
           "lines": {
@@ -3669,6 +4058,49 @@
           "lines"
         ],
         "title": "ImportSectionOut",
+        "type": "object"
+      },
+      "ImportSummary": {
+        "properties": {
+          "categories_new": {
+            "title": "Categories New",
+            "type": "integer"
+          },
+          "costs": {
+            "title": "Costs",
+            "type": "integer"
+          },
+          "errors": {
+            "title": "Errors",
+            "type": "integer"
+          },
+          "products_new": {
+            "title": "Products New",
+            "type": "integer"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "suppliers_new": {
+            "title": "Suppliers New",
+            "type": "integer"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rows",
+          "valid",
+          "errors",
+          "products_new",
+          "suppliers_new",
+          "categories_new",
+          "costs"
+        ],
+        "title": "ImportSummary",
         "type": "object"
       },
       "InvitationAccept": {
@@ -11601,6 +12033,174 @@
         "summary": "Export Version",
         "tags": [
           "budgets"
+        ]
+      }
+    },
+    "/api/v1/catalog/bulk-increase": {
+      "post": {
+        "description": "Aplica el aumento: un costo nuevo por oferta (origen BULK_UPDATE).",
+        "operationId": "bulk_increase_api_v1_catalog_bulk_increase_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIncreaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Bulk Increase",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/bulk-increase/preview": {
+      "post": {
+        "description": "Simula el aumento: qué ofertas cambian y a cuánto, sin guardar nada.",
+        "operationId": "preview_bulk_increase_api_v1_catalog_bulk_increase_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIncreaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Bulk Increase",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/import": {
+      "post": {
+        "description": "Importa las filas sin errores: categorías, proveedores, productos, ofertas y costos.",
+        "operationId": "catalog_import_api_v1_catalog_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Catalog Import",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/import/preview": {
+      "post": {
+        "description": "Lee la planilla, sugiere el mapeo y muestra qué se importaría (con errores por fila).",
+        "operationId": "preview_catalog_import_api_v1_catalog_import_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Catalog Import",
+        "tags": [
+          "catalog"
         ]
       }
     },

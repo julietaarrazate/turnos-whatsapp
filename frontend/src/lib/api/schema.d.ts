@@ -533,6 +533,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/bulk-increase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Increase
+         * @description Aplica el aumento: un costo nuevo por oferta (origen BULK_UPDATE).
+         */
+        post: operations["bulk_increase_api_v1_catalog_bulk_increase_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/bulk-increase/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Bulk Increase
+         * @description Simula el aumento: qué ofertas cambian y a cuánto, sin guardar nada.
+         */
+        post: operations["preview_bulk_increase_api_v1_catalog_bulk_increase_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Catalog Import
+         * @description Importa las filas sin errores: categorías, proveedores, productos, ofertas y costos.
+         */
+        post: operations["catalog_import_api_v1_catalog_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Catalog Import
+         * @description Lee la planilla, sugiere el mapeo y muestra qué se importaría (con errores por fila).
+         */
+        post: operations["preview_catalog_import_api_v1_catalog_import_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categories": {
         parameters: {
             query?: never;
@@ -1738,6 +1818,93 @@ export interface components {
             version_no: number;
             version_status: components["schemas"]["VersionStatus"];
         };
+        /**
+         * BulkIncreaseIn
+         * @description Por proveedor, por categoría (con sus subcategorías) o por ambos.
+         */
+        BulkIncreaseIn: {
+            /** Category Id */
+            category_id?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Rate */
+            rate: number | string;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+        };
+        /** BulkItem */
+        BulkItem: {
+            /** Current */
+            current: string;
+            /** Includes Iva */
+            includes_iva: boolean;
+            /** Iva Rate */
+            iva_rate: string;
+            /** New */
+            new: string;
+            /**
+             * Offer Id
+             * Format: uuid
+             */
+            offer_id: string;
+            /** Product Name */
+            product_name: string;
+            /** Supplier Name */
+            supplier_name: string;
+        };
+        /** BulkPreviewOut */
+        BulkPreviewOut: {
+            /** Items */
+            items: components["schemas"]["BulkItem"][];
+            /** Scope */
+            scope: string;
+            /** Skipped Without Cost */
+            skipped_without_cost: number;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+        };
+        /**
+         * CatalogImportIn
+         * @description La planilla (.xlsx o .csv en base64) y, opcional, qué columna es cada campo (índice
+         *     desde 0). Lo que no se indica se sugiere por el encabezado.
+         */
+        CatalogImportIn: {
+            /** File Base64 */
+            file_base64: string;
+            /** Filename */
+            filename: string;
+            /** Mapping */
+            mapping?: {
+                [key: string]: number | null;
+            } | null;
+            /** Sheet */
+            sheet?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+        };
+        /** CatalogImportOut */
+        CatalogImportOut: {
+            /** Applied */
+            applied: boolean;
+            /** Headers */
+            headers: string[];
+            /** Mapping */
+            mapping: {
+                [key: string]: number | null;
+            };
+            /** Rows */
+            rows: components["schemas"]["ImportRowOut"][];
+            /** Sheet */
+            sheet: string;
+            /** Sheets */
+            sheets: string[];
+            summary: components["schemas"]["ImportSummary"];
+        };
         /** CategoryIn */
         CategoryIn: {
             /**
@@ -2560,6 +2727,11 @@ export interface components {
          * @enum {string}
          */
         HireStatus: "TO_HIRE" | "CONFIRMED" | "INVOICED" | "PAID" | "CANCELLED";
+        /**
+         * ImportField
+         * @enum {string}
+         */
+        ImportField: "name" | "category" | "supplier" | "unit" | "cost" | "includes_iva" | "iva_rate" | "charge_mode" | "description_client" | "supplier_sku";
         /** ImportLineOut */
         ImportLineOut: {
             /** Cost Amount */
@@ -2605,12 +2777,48 @@ export interface components {
             /** Warnings */
             warnings: string[];
         };
+        /** ImportRowOut */
+        ImportRowOut: {
+            /** Action */
+            action: string;
+            /** Category */
+            category: string | null;
+            /** Cost */
+            cost: string | null;
+            /** Errors */
+            errors: string[];
+            /** Name */
+            name: string | null;
+            /** Row */
+            row: number;
+            /** Supplier */
+            supplier: string | null;
+            /** Unit */
+            unit: string | null;
+        };
         /** ImportSectionOut */
         ImportSectionOut: {
             /** Lines */
             lines: components["schemas"]["ImportLineOut"][];
             /** Title */
             title: string;
+        };
+        /** ImportSummary */
+        ImportSummary: {
+            /** Categories New */
+            categories_new: number;
+            /** Costs */
+            costs: number;
+            /** Errors */
+            errors: number;
+            /** Products New */
+            products_new: number;
+            /** Rows */
+            rows: number;
+            /** Suppliers New */
+            suppliers_new: number;
+            /** Valid */
+            valid: number;
         };
         /** InvitationAccept */
         InvitationAccept: {
@@ -5518,6 +5726,138 @@ export interface operations {
                 };
                 content: {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_increase_api_v1_catalog_bulk_increase_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIncreaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_bulk_increase_api_v1_catalog_bulk_increase_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIncreaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    catalog_import_api_v1_catalog_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogImportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_catalog_import_api_v1_catalog_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogImportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogImportOut"];
                 };
             };
             /** @description Validation Error */

@@ -6,8 +6,12 @@ from fastapi import APIRouter, Depends, Query, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.catalog import service
+from app.modules.catalog import bulk, importer, service
 from app.modules.catalog.schemas import (
+    BulkIncreaseIn,
+    BulkPreviewOut,
+    CatalogImportIn,
+    CatalogImportOut,
     CategoryIn,
     CategoryOut,
     CategoryUpdate,
@@ -163,3 +167,30 @@ def list_prices(offer_id: UUID, ctx: CostView, db: DbSession) -> list[PriceOut]:
 def record_price(offer_id: UUID, body: PriceIn, ctx: CostEdit, db: DbSession) -> OfferOut:
     """Registra un costo nuevo. El historial no se edita: un error se corrige con otro registro."""
     return service.record_price(db, ctx, offer_id, body)
+
+
+# --- Aumento masivo e importación (C-09, C-10) ----------------------------------------------
+
+
+@router.post("/catalog/bulk-increase/preview")
+def preview_bulk_increase(body: BulkIncreaseIn, ctx: CostEdit, db: DbSession) -> BulkPreviewOut:
+    """Simula el aumento: qué ofertas cambian y a cuánto, sin guardar nada."""
+    return bulk.preview_bulk(db, ctx, body)
+
+
+@router.post("/catalog/bulk-increase")
+def bulk_increase(body: BulkIncreaseIn, ctx: CostEdit, db: DbSession) -> BulkPreviewOut:
+    """Aplica el aumento: un costo nuevo por oferta (origen BULK_UPDATE)."""
+    return bulk.apply_bulk(db, ctx, body)
+
+
+@router.post("/catalog/import/preview")
+def preview_catalog_import(body: CatalogImportIn, ctx: Edit, db: DbSession) -> CatalogImportOut:
+    """Lee la planilla, sugiere el mapeo y muestra qué se importaría (con errores por fila)."""
+    return importer.preview_import(db, ctx, body)
+
+
+@router.post("/catalog/import")
+def catalog_import(body: CatalogImportIn, ctx: Edit, db: DbSession) -> CatalogImportOut:
+    """Importa las filas sin errores: categorías, proveedores, productos, ofertas y costos."""
+    return importer.apply_import(db, ctx, body)

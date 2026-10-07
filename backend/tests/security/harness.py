@@ -240,6 +240,7 @@ def _sample_xlsx() -> str:
 
 
 _XLSX = _sample_xlsx()
+_CATALOG_CSV = b64encode(b"Producto;Proveedor;Costo\nItem importado;Otro proveedor;10\n").decode()
 
 SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/organization"): {"name": "Nuevo nombre"},
@@ -277,6 +278,16 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("POST", "/api/v1/events/{event_id}/status"): {"to_status": "LOST", "reason": "Otra opción"},
     ("POST", "/api/v1/budgets"): lambda w: {"event_id": str(w.ids["event_id"])},
     ("POST", "/api/v1/budgets/import/preview"): {"file_base64": _XLSX},
+    ("POST", "/api/v1/catalog/bulk-increase/preview"): lambda w: {
+        "supplier_id": str(w.ids["supplier_id"]),
+        "rate": "0.05",
+    },
+    ("POST", "/api/v1/catalog/bulk-increase"): lambda w: {
+        "supplier_id": str(w.ids["supplier_id"]),
+        "rate": "0.05",
+    },
+    ("POST", "/api/v1/catalog/import/preview"): {"file_base64": _CATALOG_CSV, "filename": "l.csv"},
+    ("POST", "/api/v1/catalog/import"): {"file_base64": _CATALOG_CSV, "filename": "l.csv"},
     ("POST", "/api/v1/budgets/import"): lambda w: {
         "event_id": str(w.ids["event_id"]),
         "file_base64": _XLSX,

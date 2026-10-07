@@ -1,8 +1,9 @@
 from datetime import date
 from decimal import Decimal
+from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from app.core.enums import TaxCondition
 from app.domain.pricing import ChargeMode
@@ -256,3 +257,97 @@ class ProductOut(BaseModel):
 class ProductPage(BaseModel):
     items: list[ProductSummary]
     next_cursor: str | None
+
+
+# --- Aumento masivo (C-10) -----------------------------------------------------------------
+
+
+class BulkIncreaseIn(BaseModel):
+    """Por proveedor, por categoría (con sus subcategorías) o por ambos."""
+
+    supplier_id: UUID | None = None
+    category_id: UUID | None = None
+    rate: Decimal = Field(gt=Decimal(-1), le=Decimal(10), max_digits=8, decimal_places=6)
+    valid_from: date | None = None  # por defecto, hoy
+    note: str | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def _scope(self) -> "BulkIncreaseIn":
+        if self.supplier_id is None and self.category_id is None:
+            raise ValueError("Elegí un proveedor o una categoría")
+        return self
+
+
+class BulkItem(BaseModel):
+    offer_id: UUID
+    product_name: str
+    supplier_name: str
+    current: Decimal
+    new: Decimal
+    includes_iva: bool
+    iva_rate: Decimal
+
+
+class BulkPreviewOut(BaseModel):
+    scope: str
+    valid_from: date
+    items: list[BulkItem]
+    skipped_without_cost: int
+
+
+# --- Importar catálogo (C-09) --------------------------------------------------------------
+
+
+class ImportField(StrEnum):
+    NAME = "name"
+    CATEGORY = "category"
+    SUPPLIER = "supplier"
+    UNIT = "unit"
+    COST = "cost"
+    INCLUDES_IVA = "includes_iva"
+    IVA_RATE = "iva_rate"
+    CHARGE_MODE = "charge_mode"
+    DESCRIPTION_CLIENT = "description_client"
+    SUPPLIER_SKU = "supplier_sku"
+
+
+class CatalogImportIn(BaseModel):
+    """La planilla (.xlsx o .csv en base64) y, opcional, qué columna es cada campo (índice
+    desde 0). Lo que no se indica se sugiere por el encabezado."""
+
+    file_base64: str = Field(min_length=4, max_length=7_000_000)
+    filename: str = Field(min_length=1, max_length=200)
+    sheet: str | None = Field(default=None, max_length=120)
+    mapping: dict[ImportField, int | None] | None = None
+    valid_from: date | None = None  # vigencia de los costos importados (por defecto, hoy)
+
+
+class ImportRowOut(BaseModel):
+    row: int
+    name: str | None
+    category: str | None
+    supplier: str | None
+    unit: str | None
+    cost: Decimal | None
+    action: str  # CREATE (producto nuevo) · UPDATE (ya existe) · ERROR (no se importa)
+    errors: list[str]
+
+
+class ImportSummary(BaseModel):
+    rows: int
+    valid: int
+    errors: int
+    products_new: int
+    suppliers_new: int
+    categories_new: int
+    costs: int  # en la vista previa: filas con costo; aplicado: costos cargados
+
+
+class CatalogImportOut(BaseModel):
+    sheets: list[str]
+    sheet: str
+    headers: list[str]
+    mapping: dict[ImportField, int | None]
+    rows: list[ImportRowOut]  # las primeras 300
+    summary: ImportSummary
+    applied: bool
