@@ -702,6 +702,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Expenses
+         * @description Gastos reales del evento y presupuestado vs real (por línea y no presupuestado).
+         */
+        get: operations["list_expenses_api_v1_events__event_id__expenses_get"];
+        put?: never;
+        /**
+         * Create Expense
+         * @description Cargar un gasto (en campo la señal es mala: con Idempotency-Key no se duplica).
+         */
+        post: operations["create_expense_api_v1_events__event_id__expenses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/production": {
         parameters: {
             query?: never;
@@ -795,6 +819,24 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/expenses/{expense_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Expense */
+        delete: operations["delete_expense_api_v1_expenses__expense_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Expense */
+        patch: operations["update_expense_api_v1_expenses__expense_id__patch"];
         trace?: never;
     };
     "/api/v1/invitations": {
@@ -1785,6 +1827,26 @@ export interface components {
             /** Version Before */
             version_before: number;
         };
+        /**
+         * ComparisonRow
+         * @description Presupuestado vs real de una línea, o de lo no presupuestado de una categoría.
+         */
+        ComparisonRow: {
+            /** Actual */
+            actual: string;
+            /** Budgeted */
+            budgeted: string | null;
+            /** Delta */
+            delta: string | null;
+            /** Delta Rate */
+            delta_rate: string | null;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Section */
+            section: string | null;
+        };
         /** ContactIn */
         ContactIn: {
             /** Email */
@@ -2090,6 +2152,140 @@ export interface components {
             teardown_days?: number | null;
             /** Venue */
             venue?: string | null;
+        };
+        /**
+         * ExpenseCurrency
+         * @enum {string}
+         */
+        ExpenseCurrency: "ARS" | "USD";
+        /**
+         * ExpenseIn
+         * @description Un gasto real (O-04). Con la línea presupuestada alcanza: proveedor y categoría salen
+         *     de ella si no se indican. Sin línea, hace falta la categoría (D-21).
+         */
+        ExpenseIn: {
+            /** Amount */
+            amount: number | string;
+            /**
+             * Amount Includes Iva
+             * @default true
+             */
+            amount_includes_iva?: boolean;
+            /** Category Id */
+            category_id?: string | null;
+            /** @default ARS */
+            currency?: components["schemas"]["ExpenseCurrency"];
+            /** Description */
+            description: string;
+            /** Expense Date */
+            expense_date?: string | null;
+            /** Fx Rate */
+            fx_rate?: number | string | null;
+            /**
+             * Iva Rate
+             * @default 0.21
+             */
+            iva_rate?: number | string;
+            /** Line Key */
+            line_key?: string | null;
+            /** Supplier Id */
+            supplier_id?: string | null;
+        };
+        /** ExpenseOut */
+        ExpenseOut: {
+            /** Amount */
+            amount: string;
+            /** Amount Base */
+            amount_base: string;
+            /** Amount Includes Iva */
+            amount_includes_iva: boolean;
+            /** Category Id */
+            category_id: string | null;
+            /** Category Name */
+            category_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            currency: components["schemas"]["ExpenseCurrency"];
+            /** Description */
+            description: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /**
+             * Expense Date
+             * Format: date
+             */
+            expense_date: string;
+            /** Fx Rate */
+            fx_rate: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Iva Rate */
+            iva_rate: string;
+            /** Line Key */
+            line_key: string | null;
+            /** Line Name */
+            line_name: string | null;
+            /** Supplier Id */
+            supplier_id: string | null;
+            /** Supplier Name */
+            supplier_name: string | null;
+        };
+        /** ExpenseUpdate */
+        ExpenseUpdate: {
+            /** Amount */
+            amount?: number | string | null;
+            /** Amount Includes Iva */
+            amount_includes_iva?: boolean | null;
+            /** Category Id */
+            category_id?: string | null;
+            currency?: components["schemas"]["ExpenseCurrency"] | null;
+            /** Description */
+            description?: string | null;
+            /** Expense Date */
+            expense_date?: string | null;
+            /** Fx Rate */
+            fx_rate?: number | string | null;
+            /** Iva Rate */
+            iva_rate?: number | string | null;
+            /** Line Key */
+            line_key?: string | null;
+            /** Supplier Id */
+            supplier_id?: string | null;
+        };
+        /** ExpensesOut */
+        ExpensesOut: {
+            /** Actual Total */
+            actual_total: string;
+            /** Budgeted Total */
+            budgeted_total: string;
+            /** Comparison */
+            comparison: components["schemas"]["ComparisonRow"][];
+            /** Delta Rate */
+            delta_rate: string | null;
+            /** Editable */
+            editable: boolean;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Has Baseline */
+            has_baseline: boolean;
+            /** Items */
+            items: components["schemas"]["ExpenseOut"][];
+            /** Lines */
+            lines: components["schemas"]["LineOption"][];
         };
         /** FieldChange */
         FieldChange: {
@@ -2431,6 +2627,31 @@ export interface components {
             rule_source: components["schemas"]["MarkupSource"];
             /** Target Margin */
             target_margin: string | null;
+        };
+        /**
+         * LineOption
+         * @description Una línea de la versión aceptada, para vincular el gasto (con su proveedor sugerido).
+         */
+        LineOption: {
+            /** Budgeted */
+            budgeted: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Category Name */
+            category_name: string | null;
+            /**
+             * Line Key
+             * Format: uuid
+             */
+            line_key: string;
+            /** Name */
+            name: string;
+            /** Section */
+            section: string;
+            /** Supplier Id */
+            supplier_id: string | null;
+            /** Supplier Name */
+            supplier_name: string | null;
         };
         /** LineOut */
         LineOut: {
@@ -5524,6 +5745,74 @@ export interface operations {
             };
         };
     };
+    list_expenses_api_v1_events__event_id__expenses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpensesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_expense_api_v1_events__event_id__expenses_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpensesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_production_api_v1_events__event_id__production_get: {
         parameters: {
             query?: never;
@@ -5678,6 +5967,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_expense_api_v1_expenses__expense_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expense_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpensesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_expense_api_v1_expenses__expense_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expense_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpensesOut"];
                 };
             };
             /** @description Validation Error */

@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
-import { useSession } from "@/features/auth/session";
+import { type Permission, useSession } from "@/features/auth/session";
 import { BUDGETS_KEY, EVENTS_KEY } from "@/features/budgets/keys";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { EventDetail, EventStatus, Schemas } from "@/lib/api/types";
@@ -201,15 +201,17 @@ function ProductionActions({ event }: { event: EventDetail }) {
   );
 }
 
-const TABS = [
+const TABS: { segment: string; label: string; permission?: Permission }[] = [
   { segment: "", label: "Resumen" },
   { segment: "/budgets", label: "Presupuestos" },
   { segment: "/production", label: "Producción" },
+  { segment: "/expenses", label: "Gastos", permission: "cost.view" }, // los gastos son costos
 ];
 
 /** Encabezado y pestañas de la ficha del evento (O-01). */
 export function EventShell({ id, children }: { id: string; children: React.ReactNode }) {
   const pathname = usePathname();
+  const { can } = useSession();
   const event = useEvent(id);
   if (event.isPending) return <p className="text-sm text-ink-muted">Cargando…</p>;
   if (event.isError) return <Notice tone="error">{errorMessage(event.error)}</Notice>;
@@ -236,7 +238,7 @@ export function EventShell({ id, children }: { id: string; children: React.React
       </header>
       <nav aria-label="Secciones del evento" className="-mx-4 mb-4 overflow-x-auto border-b border-line px-4 lg:mx-0 lg:px-0">
         <ul className="flex gap-1">
-          {TABS.map((tab) => {
+          {TABS.filter((tab) => !tab.permission || can(tab.permission)).map((tab) => {
             const href = `/events/${id}${tab.segment}`;
             const current = pathname === href;
             return (

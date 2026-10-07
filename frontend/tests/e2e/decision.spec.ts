@@ -78,6 +78,30 @@ test("el cliente acepta online y el evento queda aprobado", async ({ page, brows
   await tasks.getByLabel("Hecha: Pedir planos del salón").check();
   await expect(tasks.getByLabel("Hecha: Pedir planos del salón")).toBeChecked();
 
+  // J6: gasto real en campo, vinculado a la línea, y el desvío al instante.
+  await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Gastos" }).click();
+  await page.getByRole("button", { name: "Gasto" }).click();
+  const expense = page.getByRole("form", { name: "Nuevo gasto" });
+  await expense.getByLabel("Monto", { exact: true }).fill("1.452");
+  await expense.getByLabel("Descripción").fill("Factura sonido");
+  await expense.getByLabel("Línea del presupuesto").selectOption({ label: "Sonido" });
+  await expect(expense).toContainText("Presupuestado $ 1.000,00");
+  await expense.getByRole("button", { name: "Guardar gasto" }).click();
+  // 1.452 con IVA → 1.200 de costo para un RI: 20 % arriba de lo presupuestado.
+  await expect(page.getByRole("status").filter({ hasText: "Sonido:" })).toContainText(
+    "Sonido: presupuestado $ 1.000,00 · real $ 1.200,00 · +20 %",
+  );
+  const bva = page.getByRole("region", { name: "Presupuestado vs real" });
+  await expect(bva).toContainText("+20 %");
+  // Algo que no estaba presupuestado va a su categoría.
+  await expense.getByLabel("Monto", { exact: true }).fill("500");
+  await expense.getByLabel("Descripción").fill("Hielo");
+  await expense.getByLabel("Categoría").selectOption({ index: 1 });
+  await expense.getByLabel("El monto incluye IVA").uncheck();
+  await expense.getByRole("button", { name: "Guardar gasto" }).click();
+  await expect(bva).toContainText("No presupuestado ·");
+  await expect(page.getByRole("region", { name: "Gastos" })).toContainText("Hielo");
+
   await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Resumen" }).click();
   await expect(page.getByRole("heading", { name: "Estado: En producción" })).toBeVisible();
   await page.getByRole("button", { name: "Marcar como realizado" }).click();
