@@ -13,6 +13,7 @@ from app.modules.events.service import (
     on_budget_created,
     on_proposal_accepted,
     on_proposal_sent,
+    start_production,
 )
 
 __all__ = [
@@ -29,4 +30,5 @@ __all__ = [
     "on_proposal_accepted",
     "on_proposal_sent",
     "router",
+    "start_production",
 ]

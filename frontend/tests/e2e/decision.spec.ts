@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Dialog } from "@playwright/test";
 
 import { login } from "./helpers";
 
@@ -56,6 +56,29 @@ test("el cliente acepta online y el evento queda aprobado", async ({ page, brows
   // Ciclo de producción desde la ficha: iniciar, realizado, cerrar y reabrir con motivo.
   await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Resumen" }).click();
   await page.getByRole("button", { name: "Iniciar producción" }).click();
+  // Lleva a la pestaña Producción: lista de contratación desde la baseline y tareas sugeridas.
+  const hire = page.getByRole("region", { name: "Lista de contratación" });
+  await expect(hire).toContainText("Sin proveedor (propio o a definir)");
+  await expect(hire).toContainText("Sonido");
+  await expect(hire).toContainText("Cotizado");
+  await hire.getByRole("button", { name: /^Confirmar/ }).click();
+  await expect(hire).toContainText("Confirmado");
+  const answers = ["A-0001-00000042", "echeck 30 días"];
+  const onDialog = (dialog: Dialog) => void dialog.accept(answers.shift() ?? "");
+  page.on("dialog", onDialog);
+  await hire.getByRole("button", { name: "Cargar factura" }).click();
+  await expect(hire).toContainText("Factura A-0001-00000042 · echeck 30 días");
+  page.off("dialog", onDialog);
+  await hire.getByRole("button", { name: "Marcar pagado" }).click();
+  await expect(hire).toContainText("Pagado");
+  const tasks = page.getByRole("region", { name: "Tareas" });
+  await expect(tasks).toContainText("Confirmar con el cliente los horarios de armado y desarme");
+  await tasks.getByLabel("Nueva tarea").fill("Pedir planos del salón");
+  await tasks.getByRole("button", { name: "Agregar" }).click();
+  await tasks.getByLabel("Hecha: Pedir planos del salón").check();
+  await expect(tasks.getByLabel("Hecha: Pedir planos del salón")).toBeChecked();
+
+  await page.getByRole("navigation", { name: "Secciones del evento" }).getByRole("link", { name: "Resumen" }).click();
   await expect(page.getByRole("heading", { name: "Estado: En producción" })).toBeVisible();
   await page.getByRole("button", { name: "Marcar como realizado" }).click();
   await expect(page.getByRole("heading", { name: "Estado: Realizado" })).toBeVisible();

@@ -64,12 +64,6 @@ def change_status(event_id: UUID, body: StatusChangeIn, ctx: Decide, db: DbSessi
     return service.change_status(db, ctx, event_id, body)
 
 
-@router.post("/{event_id}/start-production")
-def start_production(event_id: UUID, ctx: Produce, db: DbSession) -> EventOut:
-    """Iniciar producción (APPROVED → IN_PRODUCTION) a partir de la versión aceptada."""
-    return service.start_production(db, ctx, event_id)
-
-
 @router.post("/{event_id}/complete")
 def complete(event_id: UUID, ctx: Produce, db: DbSession) -> EventOut:
     """Evento realizado (IN_PRODUCTION → COMPLETED)."""

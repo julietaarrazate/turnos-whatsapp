@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -102,9 +102,8 @@ function CommercialActions({ event }: { event: EventDetail }) {
   );
 }
 
-type Step = "start-production" | "complete" | "close";
+type Step = "complete" | "close";
 const STEP_PATH = {
-  "start-production": "/api/v1/events/{event_id}/start-production",
   complete: "/api/v1/events/{event_id}/complete",
   close: "/api/v1/events/{event_id}/close",
 } as const;
@@ -112,8 +111,18 @@ const STEP_PATH = {
 /** Ciclo de producción: iniciar, marcar realizado, cerrar y reabrir (§3.1). */
 function ProductionActions({ event }: { event: EventDetail }) {
   const { can } = useSession();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const update = useEventUpdate(event);
   const [reopening, setReopening] = useState(false);
+  const start = useMutation({
+    mutationFn: async () =>
+      unwrap(await api.POST("/api/v1/events/{event_id}/start-production", { params: { path: { event_id: event.id } } })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: EVENTS_KEY });
+      router.push(`/events/${event.id}/production`);
+    },
+  });
   const step = useMutation({
     mutationFn: async (which: Step) => unwrap(await api.POST(STEP_PATH[which], { params: { path: { event_id: event.id } } })),
     onSuccess: update,
@@ -132,7 +141,7 @@ function ProductionActions({ event }: { event: EventDetail }) {
   let action: React.ReactNode = null;
   if (event.status === "APPROVED" && can("production.manage")) {
     action = (
-      <Button size="sm" loading={step.isPending} onClick={() => step.mutate("start-production")}>
+      <Button size="sm" loading={start.isPending} onClick={() => start.mutate()}>
         Iniciar producción
       </Button>
     );
@@ -186,6 +195,7 @@ function ProductionActions({ event }: { event: EventDetail }) {
     <div className="flex flex-col gap-3">
       {action}
       {step.isError ? <Notice tone="error">{errorMessage(step.error)}</Notice> : null}
+      {start.isError ? <Notice tone="error">{errorMessage(start.error)}</Notice> : null}
       {reopen.isError ? <Notice tone="error">{errorMessage(reopen.error)}</Notice> : null}
     </div>
   );
@@ -194,6 +204,7 @@ function ProductionActions({ event }: { event: EventDetail }) {
 const TABS = [
   { segment: "", label: "Resumen" },
   { segment: "/budgets", label: "Presupuestos" },
+  { segment: "/production", label: "Producción" },
 ];
 
 /** Encabezado y pestañas de la ficha del evento (O-01). */

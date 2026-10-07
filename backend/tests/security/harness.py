@@ -42,6 +42,7 @@ from app.modules.catalog.models import (
 from app.modules.clients import Client
 from app.modules.events import EventIn
 from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
+from app.modules.production.models import EventSupplier, ProductionTask
 from app.modules.proposals import service as proposals
 from app.modules.proposals.schemas import ProposalIn
 from tests.factories import DEFAULT_PASSWORD, Member, add_member, create_org, create_user
@@ -151,7 +152,23 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
     sent_line = LineIn(section_id=sent.version.sections[0].id, product_id=ids["product_id"])
     sent = budgets.add_line(s, ctx, sent.id, sent.version.lock_version, sent_line)
     created, _ = proposals.create_proposal(s, ctx, sent.id, sent.version.lock_version, ProposalIn())
+    # Producción (filas directas: el evento del harness no está en producción).
+    hire = EventSupplier(
+        organization_id=owner.organization_id,
+        event_id=budget.event.id,
+        supplier_id=ids["supplier_id"],
+        supplier_name="Proveedor ejemplo",
+        budgeted_cost=Decimal("1000"),
+        items=[],
+    )
+    task = ProductionTask(
+        organization_id=owner.organization_id, event_id=budget.event.id, title="Tarea ejemplo"
+    )
+    s.add_all([hire, task])
+    s.flush()
     return {
+        "event_supplier_id": hire.id,
+        "task_id": task.id,
         "proposal_id": created.proposal.id,
         "sent_budget_id": sent.id,
         "event_id": budget.event.id,
@@ -188,6 +205,8 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "line_id": lambda w: w.ids["line_id"],
     "version_no": lambda _: 1,
     "proposal_id": lambda w: w.ids["proposal_id"],
+    "event_supplier_id": lambda w: w.ids["event_supplier_id"],
+    "task_id": lambda w: w.ids["task_id"],
 }
 
 Body = dict[str, Any] | Callable[[OrgWorld], dict[str, Any]]
@@ -245,6 +264,9 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("POST", "/api/v1/budgets/{budget_id}/proposals"): {},
     ("POST", "/api/v1/proposals/{proposal_id}/revoke"): {},
     ("POST", "/api/v1/events/{event_id}/start-production"): {},
+    ("PATCH", "/api/v1/event-suppliers/{event_supplier_id}"): {"notes": "Llamar el lunes"},
+    ("POST", "/api/v1/events/{event_id}/tasks"): {"title": "Pedir planos"},
+    ("PATCH", "/api/v1/tasks/{task_id}"): {"status": "DONE"},
     ("POST", "/api/v1/events/{event_id}/complete"): {},
     ("POST", "/api/v1/events/{event_id}/close"): {},
     ("POST", "/api/v1/events/{event_id}/reopen"): {"reason": "Faltaba una factura"},

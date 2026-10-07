@@ -566,6 +566,26 @@ export interface paths {
         patch: operations["update_client_api_v1_clients__client_id__patch"];
         trace?: never;
     };
+    "/api/v1/event-suppliers/{event_supplier_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Supplier
+         * @description Marcar un proveedor como confirmado o cancelado, o anotar algo.
+         */
+        patch: operations["update_supplier_api_v1_event_suppliers__event_supplier_id__patch"];
+        trace?: never;
+    };
     "/api/v1/events": {
         parameters: {
             query?: never;
@@ -642,6 +662,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/production": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Production */
+        get: operations["get_production_api_v1_events__event_id__production_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/reopen": {
         parameters: {
             query?: never;
@@ -673,7 +710,8 @@ export interface paths {
         put?: never;
         /**
          * Start Production
-         * @description Iniciar producción (APPROVED → IN_PRODUCTION) a partir de la versión aceptada.
+         * @description Iniciar producción (APPROVED → IN_PRODUCTION): arma la lista de contratación por
+         *     proveedor desde la versión aceptada y las tareas sugeridas.
          */
         post: operations["start_production_api_v1_events__event_id__start_production_post"];
         delete?: never;
@@ -696,6 +734,23 @@ export interface paths {
          * @description Marcar perdido, cancelar o reabrir. Los demás cambios de estado son automáticos.
          */
         post: operations["change_status_api_v1_events__event_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Task */
+        post: operations["add_task_api_v1_events__event_id__tasks_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1226,6 +1281,24 @@ export interface paths {
         head?: never;
         /** Update Supplier */
         patch: operations["update_supplier_api_v1_suppliers__supplier_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Task */
+        delete: operations["delete_task_api_v1_tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Task */
+        patch: operations["update_task_api_v1_tasks__task_id__patch"];
         trace?: never;
     };
     "/api/v1/units": {
@@ -1893,6 +1966,43 @@ export interface components {
             start_date: string | null;
             status: components["schemas"]["EventStatus"];
         };
+        /** EventSupplierOut */
+        EventSupplierOut: {
+            /** Budgeted Cost */
+            budgeted_cost: string | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Invoice Number */
+            invoice_number: string | null;
+            /** Items */
+            items: components["schemas"]["HireItem"][];
+            /** Notes */
+            notes: string | null;
+            /** Paid At */
+            paid_at: string | null;
+            /** Payment Terms */
+            payment_terms: string | null;
+            status: components["schemas"]["HireStatus"];
+            /** Supplier Id */
+            supplier_id: string | null;
+            /** Supplier Name */
+            supplier_name: string | null;
+        };
+        /** EventSupplierUpdate */
+        EventSupplierUpdate: {
+            /** Invoice Number */
+            invoice_number?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Payment Terms */
+            payment_terms?: string | null;
+            status?: components["schemas"]["HireStatus"] | null;
+        };
         /** EventUpdate */
         EventUpdate: {
             /** City */
@@ -1995,6 +2105,31 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HireItem */
+        HireItem: {
+            /** Cost Total */
+            cost_total: string | null;
+            /** Days */
+            days: number;
+            /**
+             * Line Key
+             * Format: uuid
+             */
+            line_key: string;
+            /** Name */
+            name: string;
+            /** Quantity */
+            quantity: string;
+            /** Unit Code */
+            unit_code: string;
+        };
+        /**
+         * HireStatus
+         * @description Lista de contratación, como la sigue la piloto en su planilla: cotizado → confirmado →
+         *     factura cargada → pagado (siempre hacia adelante) · cancelado antes de facturar.
+         * @enum {string}
+         */
+        HireStatus: "TO_HIRE" | "CONFIRMED" | "INVOICED" | "PAID" | "CANCELLED";
         /** InvitationAccept */
         InvitationAccept: {
             /** Name */
@@ -2796,6 +2931,17 @@ export interface components {
             /** Unit Id */
             unit_id?: string | null;
         };
+        /** ProductionOut */
+        ProductionOut: {
+            /** Budgeted Cost */
+            budgeted_cost: string | null;
+            /** Started */
+            started: boolean;
+            /** Suppliers */
+            suppliers: components["schemas"]["EventSupplierOut"][];
+            /** Tasks */
+            tasks: components["schemas"]["TaskOut"][];
+        };
         /** ProposalCreated */
         ProposalCreated: {
             /** Emailed To */
@@ -3330,6 +3476,47 @@ export interface components {
              * Format: uuid
              */
             organization_id: string;
+        };
+        /** TaskIn */
+        TaskIn: {
+            /** Assignee User Id */
+            assignee_user_id?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** TaskOut */
+        TaskOut: {
+            /** Assignee Name */
+            assignee_name: string | null;
+            /** Assignee User Id */
+            assignee_user_id: string | null;
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * TaskStatus
+         * @enum {string}
+         */
+        TaskStatus: "TODO" | "IN_PROGRESS" | "DONE";
+        /** TaskUpdate */
+        TaskUpdate: {
+            /** Assignee User Id */
+            assignee_user_id?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            status?: components["schemas"]["TaskStatus"] | null;
+            /** Title */
+            title?: string | null;
         };
         /**
          * TaxCondition
@@ -4885,6 +5072,41 @@ export interface operations {
             };
         };
     };
+    update_supplier_api_v1_event_suppliers__event_supplier_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_supplier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventSupplierUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSupplierOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_events_api_v1_events_get: {
         parameters: {
             query?: {
@@ -5081,6 +5303,37 @@ export interface operations {
             };
         };
     };
+    get_production_api_v1_events__event_id__production_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reopen_api_v1_events__event_id__reopen_post: {
         parameters: {
             query?: never;
@@ -5133,7 +5386,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EventOut"];
+                    "application/json": components["schemas"]["ProductionOut"];
                 };
             };
             /** @description Validation Error */
@@ -5169,6 +5422,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_task_api_v1_events__event_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
                 };
             };
             /** @description Validation Error */
@@ -6460,6 +6748,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SupplierOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_task_api_v1_tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_api_v1_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
                 };
             };
             /** @description Validation Error */
