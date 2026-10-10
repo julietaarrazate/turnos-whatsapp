@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
+import { toBase64 } from "@/lib/files";
 import { formatMoney } from "@/lib/format/number";
 
 import { CATALOG_KEY } from "./shared";
@@ -37,13 +38,6 @@ const ACTIONS: Record<string, { label: string; tone: string }> = {
   UPDATE: { label: "Existe", tone: "text-ink-muted" },
   ERROR: { label: "Error", tone: "text-danger" },
 };
-
-async function toBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(binary);
-}
 
 /** C-09: importar el catálogo desde Excel o CSV, con mapeo, vista previa y confirmación. */
 export function CatalogImport() {

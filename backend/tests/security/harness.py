@@ -255,6 +255,7 @@ def _sample_xlsx() -> str:
 
 _XLSX = _sample_xlsx()
 _CATALOG_CSV = b64encode(b"Producto;Proveedor;Costo\nItem importado;Otro proveedor;10\n").decode()
+_JPEG = {"filename": "ticket.jpg", "file_base64": b64encode(b"\xff\xd8\xff" + bytes(16)).decode()}
 
 SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/organization"): {"name": "Nuevo nombre"},
@@ -300,6 +301,8 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
         "supplier_id": str(w.ids["supplier_id"]),
         "rate": "0.05",
     },
+    ("POST", "/api/v1/documents/receipts"): _JPEG,
+    ("POST", "/api/v1/documents/purchase-orders"): _JPEG,
     ("POST", "/api/v1/catalog/import/preview"): {"file_base64": _CATALOG_CSV, "filename": "l.csv"},
     ("POST", "/api/v1/catalog/import"): {"file_base64": _CATALOG_CSV, "filename": "l.csv"},
     ("POST", "/api/v1/budgets/import"): lambda w: {

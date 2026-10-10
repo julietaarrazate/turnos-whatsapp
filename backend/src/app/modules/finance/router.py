@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, Response, status
 
 from app.core.db import DbSession
 from app.core.idempotency import run_idempotent
@@ -54,6 +54,16 @@ def update_expense(expense_id: UUID, body: ExpenseUpdate, ctx: Edit, db: DbSessi
 @router.delete("/expenses/{expense_id}")
 def delete_expense(expense_id: UUID, ctx: Edit, db: DbSession) -> ExpensesOut:
     return service.delete_expense(db, ctx, expense_id)
+
+
+@router.get(
+    "/expenses/{expense_id}/receipt",
+    response_class=Response,
+    responses={200: {"content": {"image/jpeg": {}, "application/pdf": {}}}},
+)
+def get_receipt(expense_id: UUID, ctx: CostView, db: DbSession) -> Response:
+    """La foto o el PDF del comprobante (para verlo en el navegador)."""
+    return service.receipt_file(db, ctx, expense_id)
 
 
 @router.get("/events/{event_id}/profitability")

@@ -58,3 +58,4 @@ class MeResponse(BaseModel):
     role: Role | None
     permissions: list[str]
     memberships: list[MembershipOut]
+    uploads_enabled: bool  # hay dónde guardar archivos (comprobantes, OC)

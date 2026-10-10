@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { useSession } from "@/features/auth/session";
+import { AttachmentField, AttachmentLink, type UploadedDocument, useUpload } from "@/features/documents/attachment";
 import { budgetKey, EVENTS_KEY } from "@/features/budgets/keys";
 import type { BudgetEditor } from "@/features/budgets/use-budget-editor";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
@@ -181,6 +182,9 @@ function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: Budget
 }
 
 function ApproveDialog({ proposal, onDone }: { proposal: Proposal; onDone: (approved: boolean) => void }) {
+  const { me } = useSession();
+  const [order, setOrder] = useState<UploadedDocument | null>(null);
+  const upload = useUpload("purchase-orders", setOrder);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => dialog.current?.showModal(), []);
   const approve = useMutation({
@@ -208,7 +212,11 @@ function ApproveDialog({ proposal, onDone }: { proposal: Proposal; onDone: (appr
         onSubmit={(e) => {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
-          approve.mutate({ po_number: textValue(form, "po_number"), comment: textValue(form, "comment") });
+          approve.mutate({
+            po_number: textValue(form, "po_number"),
+            po_document_id: order?.id ?? null,
+            comment: textValue(form, "comment"),
+          });
         }}
       >
         <h2 className="text-lg font-semibold">Aprobar propuesta #{proposal.number}</h2>
@@ -217,13 +225,16 @@ function ApproveDialog({ proposal, onDone }: { proposal: Proposal; onDone: (appr
           ser la aprobada del evento: producción y el control de costos parten de ella.
         </p>
         <TextField label="N° de orden de compra (opcional)" name="po_number" maxLength={100} autoFocus />
+        {me.uploads_enabled ? (
+          <AttachmentField label="OC adjunta (opcional)" value={order} upload={upload} onRemove={() => setOrder(null)} />
+        ) : null}
         <TextAreaField label="Comentario (opcional)" name="comment" rows={2} maxLength={2000} placeholder="Ej.: confirmó por mail el 3/10" />
         {approve.isError ? <Notice tone="error">{errorMessage(approve.error)}</Notice> : null}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={() => dialog.current?.close()}>
             Cancelar
           </Button>
-          <Button type="submit" loading={approve.isPending}>
+          <Button type="submit" loading={approve.isPending} disabled={upload.isPending}>
             Aprobar
           </Button>
         </div>
@@ -353,7 +364,17 @@ export function ProposalsPanel({ budget, editor }: { budget: Budget; editor: Bud
                     </Button>
                   ) : null}
                 </span>
-                {decisionText(p) ? <p className="basis-full text-ink-muted">{decisionText(p)}</p> : null}
+                {decisionText(p) ? (
+                  <p className="basis-full text-ink-muted">
+                    {decisionText(p)}
+                    {p.po_document_id ? (
+                      <>
+                        {" · "}
+                        <AttachmentLink href={`/api/v1/proposals/${p.id}/purchase-order`}>Ver OC</AttachmentLink>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>

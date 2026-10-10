@@ -53,6 +53,7 @@ class Proposal(IdMixin, TimestampMixin, Base):
         tenant_unique(),
         tenant_fk("budget_id", "budgets"),
         tenant_fk("budget_version_id", "budget_versions"),
+        tenant_fk("po_document_id", "documents"),
         Index("uq_proposals_org_number", "organization_id", "number", unique=True),
         Index("uq_proposals_token_hash", "token_hash", unique=True),
         # I6: como máximo una propuesta activa por presupuesto.
@@ -91,6 +92,7 @@ class Proposal(IdMixin, TimestampMixin, Base):
     decision_user_agent: Mapped[str | None] = mapped_column(String(500))
     approval_method: Mapped[str | None] = mapped_column(String(10))
     po_number: Mapped[str | None] = mapped_column(String(100))
+    po_document_id: Mapped[UUID | None]  # la OC adjunta (PDF o foto)
     approved_by_user_id: Mapped[UUID | None]
     revoked_at: Mapped[datetime | None]
     created_by: Mapped[UUID | None]

@@ -10,6 +10,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 from uuid import UUID
 
+from fastapi import Response
 from sqlalchemy import func, select
 
 from app.core.db import AppSession
@@ -20,6 +21,13 @@ from app.modules.audit import record
 from app.modules.auth import TenantContext
 from app.modules.budgets import BaselineLine, baseline_lines, version_totals
 from app.modules.catalog import category_info, supplier_name, today_ar
+from app.modules.documents import (
+    DocumentKind,
+    documents_by_id,
+    file_response,
+    get_document,
+    uploads_enabled,
+)
 from app.modules.events import Event, EventStatus, get_event
 from app.modules.finance.models import Expense, ExpenseCurrency
 from app.modules.finance.profitability import Result, deviation, result
@@ -57,6 +65,7 @@ _FIELDS = (
     "line_key",
     "supplier_id",
     "category_id",
+    "receipt_document_id",
 )
 
 
@@ -84,6 +93,9 @@ def _snapshot(expense: Expense) -> dict[str, Any]:
         "currency": expense.currency,
         "amount_base": str(expense.amount_base),
         "line_key": str(expense.line_key) if expense.line_key else None,
+        "receipt_document_id": (
+            str(expense.receipt_document_id) if expense.receipt_document_id else None
+        ),
     }
 
 
@@ -150,6 +162,8 @@ def _apply(
         supplier_name(db, ctx, expense.supplier_id)  # 404 si es de otra organización
     if expense.category_id is not None:
         category_info(db, ctx, expense.category_id)
+    if "receipt_document_id" in explicit and expense.receipt_document_id is not None:
+        _check_receipt(db, ctx, expense, expense.receipt_document_id)
     # En dólares: el tipo de cambio indicado o, si no, el último cargado. Al editar otra cosa,
     # se conserva el que tenía.
     keeps_rate = expense.id is not None and not {"fx_rate", "currency"} & explicit
@@ -167,6 +181,18 @@ def _apply(
     expense.iva_rate = expense.iva_rate.quantize(Decimal("0.0001"))
     expense.fx_rate = expense.fx_rate.quantize(RATE)
     expense.amount_base = _amount_base(db, ctx, event, expense)
+
+
+def _check_receipt(db: AppSession, ctx: TenantContext, expense: Expense, document_id: UUID) -> None:
+    """El comprobante es de la organización, es un comprobante y no está en otro gasto."""
+    get_document(db, ctx.organization_id, document_id, DocumentKind.RECEIPT)
+    query = select(Expense.id).where(
+        Expense.organization_id == ctx.organization_id, Expense.receipt_document_id == document_id
+    )
+    if expense.id is not None:
+        query = query.where(Expense.id != expense.id)
+    if db.execute(query).first() is not None:
+        raise AppError(409, "document_in_use", "Ese comprobante ya está en otro gasto")
 
 
 def _expense(db: AppSession, ctx: TenantContext, expense_id: UUID) -> Expense:
@@ -333,11 +359,15 @@ def list_expenses(db: AppSession, ctx: TenantContext, event_id: UUID) -> Expense
             select(User).where(User.id.in_({e.created_by for e in expenses}))
         ).scalars()
     }
+    receipts = documents_by_id(
+        db, ctx.organization_id, {e.receipt_document_id for e in expenses if e.receipt_document_id}
+    )
     _, delta_rate = deviation(data.budgeted_total, data.actual_total)
     status = EventStatus(event.status)
     return ExpensesOut(
         event_id=event.id,
         editable=ctx.can(Permission.EXPENSES_EDIT) and status in _OPEN,
+        receipts_enabled=uploads_enabled(),
         has_baseline=bool(lines),
         items=[
             ExpenseOut(
@@ -357,6 +387,7 @@ def list_expenses(db: AppSession, ctx: TenantContext, event_id: UUID) -> Expense
                 supplier_name=data.suppliers.get(e.supplier_id) if e.supplier_id else None,
                 category_id=e.category_id,
                 category_name=data.categories.get(e.category_id) if e.category_id else None,
+                receipt=receipts.get(e.receipt_document_id) if e.receipt_document_id else None,
                 created_by_name=users.get(e.created_by),
                 created_at=e.created_at,
             )
@@ -457,7 +488,7 @@ def update_expense(
     expense = _expense(db, ctx, expense_id)
     event = _editable_event(db, ctx, expense.event_id)
     before = _snapshot(expense)
-    nullable = {"line_key", "supplier_id", "category_id", "fx_rate"}
+    nullable = {"line_key", "supplier_id", "category_id", "fx_rate", "receipt_document_id"}
     for field in body.model_fields_set & set(_FIELDS):
         value = getattr(body, field)
         if value is None and field not in nullable:
@@ -480,6 +511,16 @@ def delete_expense(db: AppSession, ctx: TenantContext, expense_id: UUID) -> Expe
     db.delete(expense)
     db.flush()
     return list_expenses(db, ctx, event.id)
+
+
+def receipt_file(db: AppSession, ctx: TenantContext, expense_id: UUID) -> Response:
+    expense = _expense(db, ctx, expense_id)
+    if expense.receipt_document_id is None:
+        raise not_found("receipt_not_found", "El gasto no tiene comprobante")
+    document = get_document(
+        db, ctx.organization_id, expense.receipt_document_id, DocumentKind.RECEIPT
+    )
+    return file_response(document)
 
 
 def actual_costs(

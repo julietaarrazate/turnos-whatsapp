@@ -9,6 +9,7 @@ import { SelectField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
+import { toBase64 } from "@/lib/files";
 import { formatMoney, formatPercentCompact, formatQuantity } from "@/lib/format/number";
 
 export type SheetChoice = { file_base64: string; sheet: string; title_hint: string };
@@ -17,13 +18,6 @@ const LABELS: Record<NonNullable<Schemas["ImportLineOut"]["price_label"]>, strin
   BONIFICADO: "Bonificado",
   A_DEFINIR: "A definir",
 };
-
-async function toBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(binary);
-}
 
 function Preview({ data }: { data: Schemas["ImportPreviewOut"] }) {
   return (

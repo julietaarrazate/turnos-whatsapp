@@ -4,6 +4,7 @@ Por defecto: base ``app_test`` en localhost (ver ``infra/postgres/init.sql``).
 """
 
 import os
+import tempfile
 from collections.abc import Iterator
 
 os.environ.setdefault("ENV", "test")
@@ -13,6 +14,8 @@ os.environ.setdefault(
     "MIGRATOR_DATABASE_URL",
     "postgresql+psycopg://app_migrator@localhost:5432/app_test",
 )
+# Los archivos subidos en los tests van a un directorio temporal (storage local).
+os.environ.setdefault("STORAGE_LOCAL_DIR", tempfile.mkdtemp(prefix="app-storage-"))
 
 import pytest
 from alembic import command

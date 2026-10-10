@@ -132,7 +132,7 @@ flowchart LR
 | `event_suppliers` 🏢 | `event_id`, `supplier_id`, `status` (`TO_HIRE` / `CONFIRMED` / `CANCELLED`), `budgeted_cost` (derivado de las líneas aceptadas, guardado al iniciar producción), `notes`, `confirmed_at` | La "lista de contratación". En V2 evoluciona a `purchase_orders`. |
 | `production_tasks` 🏢 | `event_id`, `title`, `status` (`TODO` / `IN_PROGRESS` / `DONE`), `assignee_user_id`, `due_date`, `category_id?`, `line_key?`, `sort` | |
 | `expenses` 🏢 | `event_id`, `supplier_id?`, `category_id`, `line_key?` (vincula con una línea de la versión aceptada), `description`, `amount`, `currency`, `amount_includes_iva`, `iva_rate`, `fx_rate`, `amount_base` (efectivo, en moneda base), `expense_date`, `receipt_document_id?`, `created_by` | Costo real. El monto efectivo se normaliza igual que en el motor (§5.2, L1–L2). |
-| `documents` 🏢 | `entity_type`, `entity_id`, `kind` (`PROPOSAL_PDF` / `RECEIPT` / `PO` / `LOGO` / `ATTACHMENT`), `storage_key`, `filename`, `mime`, `size`, `sha256`, `created_by` | |
+| `documents` 🏢 | `kind` (`RECEIPT` / `PURCHASE_ORDER`), `storage_key`, `filename`, `mime` (detectado por contenido), `size`, `sha256`, `created_by`, `created_at` | Inmutable (solo `SELECT, INSERT`). La entidad dueña lo referencia con FK compuesta (`expenses.receipt_document_id`, `proposals.po_document_id`) y su permiso decide quién lo descarga. Más tipos (logo, PDF cacheado) se agregan cuando hagan falta. |
 | *(V2)* `purchase_orders`, `supplier_invoices`, `payments`, `receivables` | | Fuera del MVP |
 
 ### 2.9 Transversales

@@ -85,6 +85,18 @@
             ],
             "title": "Comment"
           },
+          "po_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Po Document Id"
+          },
           "po_number": {
             "anyOf": [
               {
@@ -2150,6 +2162,76 @@
         "title": "DisplayMode",
         "type": "string"
       },
+      "DocumentKind": {
+        "enum": [
+          "RECEIPT",
+          "PURCHASE_ORDER"
+        ],
+        "title": "DocumentKind",
+        "type": "string"
+      },
+      "DocumentOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "filename",
+          "mime",
+          "size",
+          "created_at"
+        ],
+        "title": "DocumentOut",
+        "type": "object"
+      },
+      "DocumentUploadIn": {
+        "description": "Un archivo en base64 (como las planillas): foto (JPG, PNG, WEBP, HEIC) o PDF, ≤ 10 MB.",
+        "properties": {
+          "file_base64": {
+            "maxLength": 14000000,
+            "minLength": 4,
+            "title": "File Base64",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "file_base64"
+        ],
+        "title": "DocumentUploadIn",
+        "type": "object"
+      },
       "DuplicateIn": {
         "description": "Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.",
         "properties": {
@@ -3099,6 +3181,18 @@
             ],
             "title": "Line Key"
           },
+          "receipt_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Document Id"
+          },
           "supplier_id": {
             "anyOf": [
               {
@@ -3229,6 +3323,16 @@
             ],
             "title": "Line Name"
           },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "supplier_id": {
             "anyOf": [
               {
@@ -3270,6 +3374,7 @@
           "supplier_name",
           "category_id",
           "category_name",
+          "receipt",
           "created_by_name",
           "created_at"
         ],
@@ -3397,6 +3502,18 @@
             ],
             "title": "Line Key"
           },
+          "receipt_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Document Id"
+          },
           "supplier_id": {
             "anyOf": [
               {
@@ -3484,11 +3601,16 @@
             },
             "title": "Lines",
             "type": "array"
+          },
+          "receipts_enabled": {
+            "title": "Receipts Enabled",
+            "type": "boolean"
           }
         },
         "required": [
           "event_id",
           "editable",
+          "receipts_enabled",
           "has_baseline",
           "items",
           "lines",
@@ -5590,6 +5712,10 @@
               }
             ]
           },
+          "uploads_enabled": {
+            "title": "Uploads Enabled",
+            "type": "boolean"
+          },
           "user": {
             "$ref": "#/components/schemas/UserOut"
           }
@@ -5599,7 +5725,8 @@
           "active_organization_id",
           "role",
           "permissions",
-          "memberships"
+          "memberships",
+          "uploads_enabled"
         ],
         "title": "MeResponse",
         "type": "object"
@@ -7615,6 +7742,18 @@
             "title": "Number",
             "type": "integer"
           },
+          "po_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Po Document Id"
+          },
           "po_number": {
             "anyOf": [
               {
@@ -7673,7 +7812,8 @@
           "decided_by_email",
           "decision_comment",
           "approval_method",
-          "po_number"
+          "po_number",
+          "po_document_id"
         ],
         "title": "ProposalOut",
         "type": "object"
@@ -13066,6 +13206,90 @@
         ]
       }
     },
+    "/api/v1/documents/purchase-orders": {
+      "post": {
+        "description": "La OC del cliente (PDF o foto). Se adjunta en la aprobación manual.",
+        "operationId": "upload_purchase_order_api_v1_documents_purchase_orders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentUploadIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Purchase Order",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/receipts": {
+      "post": {
+        "description": "La foto o el PDF del comprobante de un gasto. Se adjunta al crear o editar el gasto.",
+        "operationId": "upload_receipt_api_v1_documents_receipts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentUploadIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Receipt",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
     "/api/v1/event-suppliers/{event_supplier_id}": {
       "patch": {
         "description": "Marcar un proveedor como confirmado o cancelado, o anotar algo.",
@@ -13950,6 +14174,47 @@
           }
         },
         "summary": "Update Expense",
+        "tags": [
+          "finance"
+        ]
+      }
+    },
+    "/api/v1/expenses/{expense_id}/receipt": {
+      "get": {
+        "description": "La foto o el PDF del comprobante (para verlo en el navegador).",
+        "operationId": "get_receipt_api_v1_expenses__expense_id__receipt_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expense_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Expense Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {},
+              "image/jpeg": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Receipt",
         "tags": [
           "finance"
         ]
@@ -15562,6 +15827,47 @@
           }
         },
         "summary": "Proposal Pdf",
+        "tags": [
+          "proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{proposal_id}/purchase-order": {
+      "get": {
+        "description": "La OC adjunta en la aprobación manual.",
+        "operationId": "purchase_order_api_v1_proposals__proposal_id__purchase_order_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {},
+              "image/jpeg": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Purchase Order",
         "tags": [
           "proposals"
         ]

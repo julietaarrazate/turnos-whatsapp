@@ -1,0 +1,157 @@
+"""Subir y descargar archivos (comprobantes y OC).
+
+El archivo se valida antes de guardarse: tamaño (≤ 10 MB) y tipo por sus primeros bytes, nunca
+por la extensión ni por el content-type que declara el navegador. Se descarga con ese tipo y
+``nosniff``, así un archivo subido no puede ejecutarse como HTML en el dominio de la app.
+"""
+
+import binascii
+import hashlib
+from base64 import b64decode
+from urllib.parse import quote
+from uuid import UUID
+
+from fastapi import Response
+from sqlalchemy import select
+
+from app.core.db import AppSession
+from app.core.errors import AppError, not_found
+from app.core.ids import uuid7
+from app.core.rate_limit import enforce
+from app.core.storage import get_storage, require_storage
+from app.modules.audit import record
+from app.modules.auth import TenantContext
+from app.modules.documents.models import Document, DocumentKind
+from app.modules.documents.schemas import DocumentOut, DocumentUploadIn
+
+MAX_BYTES = 10 * 1024 * 1024
+_HEIF_BRANDS = {b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"mif1", b"msf1"}
+
+
+def sniff(data: bytes) -> str | None:
+    """El tipo real del archivo por su firma, o None si no es una foto o un PDF."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if data[4:8] == b"ftyp" and data[8:12] in _HEIF_BRANDS:
+        return "image/heic"
+    if data.startswith(b"%PDF-"):
+        return "application/pdf"
+    return None
+
+
+def clean_filename(name: str) -> str:
+    """Solo el nombre (sin rutas), sin caracteres de control, ≤ 200 caracteres."""
+    base = name.replace("\\", "/").rsplit("/", 1)[-1]
+    base = "".join(ch for ch in base if ch.isprintable() and ch not in "\"'").strip()
+    return base[:200] or "archivo"
+
+
+def document_out(document: Document) -> DocumentOut:
+    return DocumentOut(
+        id=document.id,
+        kind=DocumentKind(document.kind),
+        filename=document.filename,
+        mime=document.mime,
+        size=document.size,
+        created_at=document.created_at,
+    )
+
+
+def uploads_enabled() -> bool:
+    return get_storage() is not None
+
+
+def upload(
+    db: AppSession, ctx: TenantContext, kind: DocumentKind, body: DocumentUploadIn
+) -> DocumentOut:
+    storage = require_storage()
+    enforce(f"upload:user:{ctx.user_id}", limit=60, window_seconds=600)
+    try:
+        data = b64decode(body.file_base64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise AppError(422, "upload_invalid", "El archivo llegó dañado. Probá de nuevo.") from exc
+    if len(data) > MAX_BYTES:
+        raise AppError(413, "upload_too_large", "El archivo pesa más de 10 MB")
+    mime = sniff(data)
+    if mime is None:
+        raise AppError(
+            415, "upload_unsupported", "Solo se aceptan fotos (JPG, PNG, WEBP o HEIC) o PDF"
+        )
+    document_id = uuid7()
+    key = f"{ctx.organization_id}/{kind.value.lower()}/{document_id}"
+    # Primero el archivo: si la transacción falla después, queda un objeto huérfano (inocuo);
+    # al revés quedaría una fila que apunta a nada.
+    storage.put(key, data, mime)
+    document = Document(
+        id=document_id,
+        organization_id=ctx.organization_id,
+        kind=kind.value,
+        storage_key=key,
+        filename=clean_filename(body.filename),
+        mime=mime,
+        size=len(data),
+        sha256=hashlib.sha256(data).hexdigest(),
+        created_by=ctx.user_id,
+    )
+    db.add(document)
+    db.flush()
+    db.refresh(document)
+    record(
+        db,
+        organization_id=ctx.organization_id,
+        action="document.uploaded",
+        entity_type="document",
+        entity_id=document.id,
+        actor_user_id=ctx.user_id,
+        ip=ctx.client.ip,
+        user_agent=ctx.client.user_agent,
+        after={"kind": kind.value, "filename": document.filename, "size": document.size},
+    )
+    return document_out(document)
+
+
+def get_document(
+    db: AppSession, organization_id: UUID, document_id: UUID, kind: DocumentKind
+) -> Document:
+    """Un archivo de la organización y del tipo pedido (si no, 404 como cualquier ID ajeno)."""
+    document = db.execute(
+        select(Document).where(
+            Document.id == document_id,
+            Document.organization_id == organization_id,
+            Document.kind == kind.value,
+        )
+    ).scalar_one_or_none()
+    if document is None:
+        raise not_found("document_not_found", "El archivo adjunto no existe")
+    return document
+
+
+def documents_by_id(
+    db: AppSession, organization_id: UUID, ids: set[UUID]
+) -> dict[UUID, DocumentOut]:
+    if not ids:
+        return {}
+    rows = db.execute(
+        select(Document).where(Document.organization_id == organization_id, Document.id.in_(ids))
+    ).scalars()
+    return {row.id: document_out(row) for row in rows}
+
+
+def file_response(document: Document) -> Response:
+    """El archivo para ver en el navegador (o descargar), sin que se interprete como otra cosa."""
+    data = require_storage().get(document.storage_key)
+    ascii_name = document.filename.encode("ascii", "ignore").decode() or "archivo"
+    disposition = f"inline; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(document.filename)}"
+    return Response(
+        content=data,
+        media_type=document.mime,
+        headers={
+            "Content-Disposition": disposition,
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, max-age=300",
+        },
+    )

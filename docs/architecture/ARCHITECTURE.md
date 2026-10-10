@@ -70,7 +70,6 @@ flowchart LR
 
     UI -->|HTTPS mismo origen /api/*| NEXT
     NEXT -->|rewrite / proxy| API
-    UI -->|PUT presignado| S3
     API --> PG
     API --> S3
     API --> RS
@@ -88,7 +87,7 @@ flowchart LR
 | **Tiers** | Nada de planes que "duermen". Render pago (sin cold start de 30–50 s). En Neon de producción, sin scale-to-zero o con cold start aceptado (~0,5 s). | Un cliente que abre una propuesta no puede esperar 40 segundos. |
 | **API como contenedor Docker** | Imagen con las libs de sistema de WeasyPrint (Pango). | El PDF se genera server-side (D-16). |
 | **Migraciones** | `alembic upgrade head` como **pre-deploy command** de Render. | Se ejecutan antes de que entre el código nuevo. Exige migraciones *expand/contract* (compatibles hacia atrás). |
-| **Storage** (D-17) | Cloudflare R2 (o AWS S3) con bucket privado y URLs presignadas de vida corta. | Compatible con S3 y sin costo de egreso. |
+| **Storage** (D-17) | Cloudflare R2 (o AWS S3) con bucket privado. Los archivos entran y salen **por la API** (ver §8.6). | Compatible con S3 y sin costo de egreso. |
 
 ---
 
@@ -373,7 +372,13 @@ En el MVP se usa `slowapi` en memoria (una sola instancia): login (por IP y por 
 
 ### 8.6 Archivos
 
-Uploads directos a S3 con **PUT presignado** restringido por content-type y tamaño (≤ 10 MB). Después del upload, el server verifica los magic bytes. Las descargas usan GET presignado de 5 min. El bucket es privado y no se puede listar.
+Los comprobantes y las OC **pasan por la API** (`core/storage.py`, módulo `documents`):
+
+- **Subida:** el navegador achica las fotos (2000 px, JPEG) y manda el archivo en base64. El server valida **antes de guardar**: ≤ 10 MB y tipo por los primeros bytes (JPG, PNG, WEBP, HEIC o PDF), nunca por la extensión ni por el content-type declarado. Rate limit por usuario.
+- **Clave:** `{organization_id}/{tipo}/{document_id}`, sin nada que venga del usuario. La fila de `documents` es inmutable (el rol de runtime solo tiene `SELECT, INSERT`).
+- **Descarga:** por la ruta de la entidad dueña (`GET /expenses/{id}/receipt`, `GET /proposals/{id}/purchase-order`), con su permiso y su aislamiento por organización. Se sirve con el tipo detectado y `X-Content-Type-Options: nosniff`.
+- El bucket es privado y no se expone nunca: no hay URLs presignadas ni CORS que configurar.
+- *Por qué no PUT presignado (el plan original):* el tamaño no se puede limitar de verdad con un PUT presignado (R2 no soporta POST con `content-length-range`), lo subido sin validar ya está en el bucket, y hay que configurar CORS en el bucket. Con fotos achicadas (~300 KB) pasar por la API no pesa. Si algún día se suben archivos grandes, se vuelve al presignado con verificación posterior.
 
 ### 8.7 Secretos, dependencias y datos
 
@@ -437,7 +442,7 @@ modules/ai/
 
 | Entorno | Frontend | API | DB | Uso |
 |---|---|---|---|---|
-| Local | `next dev` | `uvicorn --reload` | Postgres 16 en Docker Compose (+ MinIO para S3 y Mailpit para email) | Desarrollo |
+| Local | `next dev` | `uvicorn --reload` | Postgres 16 en Docker Compose (+ Mailpit para email; los archivos van a `backend/.storage/`) | Desarrollo |
 | Preview (por PR) | Vercel Preview | API de staging | DB de staging | Revisar UI (solo PRs sin migraciones). V2: Neon branch + API efímera por PR. |
 | Staging | Vercel (branch `main`) | Render (auto-deploy desde `main`) | Neon branch `staging` | QA, demo |
 | Producción | Vercel (tag o promoción) | Render (deploy manual o por tag) | Neon `main` | Piloto |

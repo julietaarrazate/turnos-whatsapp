@@ -44,6 +44,7 @@ class ProposalOut(BaseModel):
     decision_comment: str | None
     approval_method: ApprovalMethod | None
     po_number: str | None
+    po_document_id: UUID | None
 
 
 class ProposalCreated(BaseModel):
@@ -57,4 +58,5 @@ class ApproveIn(BaseModel):
     """Aprobación manual (P-06): el cliente confirmó por otro canal, típicamente con una OC."""
 
     po_number: str | None = Field(default=None, max_length=100)
+    po_document_id: UUID | None = None  # subido antes con POST /documents/purchase-orders
     comment: str | None = Field(default=None, max_length=2000)
