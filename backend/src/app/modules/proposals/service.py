@@ -7,6 +7,7 @@ from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
+from fastapi import Response
 from sqlalchemy import select
 
 from app.core.config import get_settings
@@ -26,6 +27,7 @@ from app.modules.budgets import (
     sendable_version,
 )
 from app.modules.catalog import today_ar
+from app.modules.documents import DocumentKind, file_response, get_document
 from app.modules.events import (
     Actor,
     accepts_decisions,
@@ -164,6 +166,7 @@ def _out(proposal: Proposal) -> ProposalOut:
         if proposal.approval_method
         else None,
         po_number=proposal.po_number,
+        po_document_id=proposal.po_document_id,
     )
 
 
@@ -378,6 +381,9 @@ def approve(
     proposal = _proposal(db, ctx, proposal_id)
     _require_open(proposal, manual=True)
     proposal.po_number = (body.po_number or "").strip() or None
+    if body.po_document_id is not None:
+        get_document(db, ctx.organization_id, body.po_document_id, DocumentKind.PURCHASE_ORDER)
+        proposal.po_document_id = body.po_document_id
     proposal.decision_comment = (body.comment or "").strip() or None
     proposal.approved_by_user_id = ctx.user_id
     _accept(db, ctx, proposal, ApprovalMethod.MANUAL)
@@ -389,11 +395,28 @@ def approve(
         "proposal.approved",
         proposal.id,
         client=ctx.client,
-        after={"po_number": proposal.po_number, "hash": proposal.content_hash},
+        after={
+            "po_number": proposal.po_number,
+            "po_document_id": str(body.po_document_id) if body.po_document_id else None,
+            "hash": proposal.content_hash,
+        },
     )
     db.flush()
     emails = _decision_email(db, ctx, proposal, accepted=True, owners=True)
     return _out(proposal), emails
+
+
+def purchase_order_file(db: AppSession, ctx: TenantContext, proposal_id: UUID) -> Response:
+    """La OC adjunta en la aprobación manual (para verla en el navegador)."""
+    document_id = db.execute(
+        select(Proposal.po_document_id).where(
+            Proposal.id == proposal_id, Proposal.organization_id == ctx.organization_id
+        )
+    ).scalar_one_or_none()
+    if document_id is None:  # no existe la propuesta o no tiene OC adjunta
+        raise not_found("purchase_order_not_found", "La propuesta no tiene una OC adjunta")
+    document = get_document(db, ctx.organization_id, document_id, DocumentKind.PURCHASE_ORDER)
+    return file_response(document)
 
 
 def _pdf(proposal: Proposal) -> tuple[bytes, str]:

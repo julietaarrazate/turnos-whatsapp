@@ -746,6 +746,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Purchase Order
+         * @description La OC del cliente (PDF o foto). Se adjunta en la aprobación manual.
+         */
+        post: operations["upload_purchase_order_api_v1_documents_purchase_orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Receipt
+         * @description La foto o el PDF del comprobante de un gasto. Se adjunta al crear o editar el gasto.
+         */
+        post: operations["upload_receipt_api_v1_documents_receipts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-suppliers/{event_supplier_id}": {
         parameters: {
             query?: never;
@@ -997,6 +1037,26 @@ export interface paths {
         head?: never;
         /** Update Expense */
         patch: operations["update_expense_api_v1_expenses__expense_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/expenses/{expense_id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Receipt
+         * @description La foto o el PDF del comprobante (para verlo en el navegador).
+         */
+        get: operations["get_receipt_api_v1_expenses__expense_id__receipt_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/invitations": {
@@ -1428,6 +1488,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/proposals/{proposal_id}/purchase-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Purchase Order
+         * @description La OC adjunta en la aprobación manual.
+         */
+        get: operations["purchase_order_api_v1_proposals__proposal_id__purchase_order_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals/{proposal_id}/revoke": {
         parameters: {
             query?: never;
@@ -1715,6 +1795,8 @@ export interface components {
         ApproveIn: {
             /** Comment */
             comment?: string | null;
+            /** Po Document Id */
+            po_document_id?: string | null;
             /** Po Number */
             po_number?: string | null;
         };
@@ -2334,6 +2416,41 @@ export interface components {
          */
         DisplayMode: "DETAILED" | "BY_SECTION" | "TOTAL_ONLY";
         /**
+         * DocumentKind
+         * @enum {string}
+         */
+        DocumentKind: "RECEIPT" | "PURCHASE_ORDER";
+        /** DocumentOut */
+        DocumentOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["DocumentKind"];
+            /** Mime */
+            mime: string;
+            /** Size */
+            size: number;
+        };
+        /**
+         * DocumentUploadIn
+         * @description Un archivo en base64 (como las planillas): foto (JPG, PNG, WEBP, HEIC) o PDF, ≤ 10 MB.
+         */
+        DocumentUploadIn: {
+            /** File Base64 */
+            file_base64: string;
+            /** Filename */
+            filename: string;
+        };
+        /**
          * DuplicateIn
          * @description Copia la última versión a otro evento (existente o nuevo) con costos y reglas actuales.
          */
@@ -2579,6 +2696,8 @@ export interface components {
             iva_rate?: number | string;
             /** Line Key */
             line_key?: string | null;
+            /** Receipt Document Id */
+            receipt_document_id?: string | null;
             /** Supplier Id */
             supplier_id?: string | null;
         };
@@ -2627,6 +2746,7 @@ export interface components {
             line_key: string | null;
             /** Line Name */
             line_name: string | null;
+            receipt: components["schemas"]["DocumentOut"] | null;
             /** Supplier Id */
             supplier_id: string | null;
             /** Supplier Name */
@@ -2651,6 +2771,8 @@ export interface components {
             iva_rate?: number | string | null;
             /** Line Key */
             line_key?: string | null;
+            /** Receipt Document Id */
+            receipt_document_id?: string | null;
             /** Supplier Id */
             supplier_id?: string | null;
         };
@@ -2681,6 +2803,8 @@ export interface components {
             items: components["schemas"]["ExpenseOut"][];
             /** Lines */
             lines: components["schemas"]["LineOption"][];
+            /** Receipts Enabled */
+            receipts_enabled: boolean;
         };
         /** FieldChange */
         FieldChange: {
@@ -3284,6 +3408,8 @@ export interface components {
             /** Permissions */
             permissions: string[];
             role: components["schemas"]["Role"] | null;
+            /** Uploads Enabled */
+            uploads_enabled: boolean;
             user: components["schemas"]["UserOut"];
         };
         /** MemberOut */
@@ -3931,6 +4057,8 @@ export interface components {
             last_viewed_at: string | null;
             /** Number */
             number: number;
+            /** Po Document Id */
+            po_document_id: string | null;
             /** Po Number */
             po_number: string | null;
             /**
@@ -6417,6 +6545,72 @@ export interface operations {
             };
         };
     };
+    upload_purchase_order_api_v1_documents_purchase_orders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentUploadIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_receipt_api_v1_documents_receipts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentUploadIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_supplier_api_v1_event_suppliers__event_supplier_id__patch: {
         parameters: {
             query?: never;
@@ -6967,6 +7161,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExpensesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_receipt_api_v1_expenses__expense_id__receipt_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expense_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                    "image/jpeg": unknown;
                 };
             };
             /** @description Validation Error */
@@ -8095,6 +8321,38 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchase_order_api_v1_proposals__proposal_id__purchase_order_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                    "image/jpeg": unknown;
                 };
             };
             /** @description Validation Error */

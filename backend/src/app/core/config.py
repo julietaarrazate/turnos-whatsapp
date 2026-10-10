@@ -39,6 +39,17 @@ class Settings(BaseSettings):
 
     rate_limit_enabled: bool = True
 
+    # Archivos (comprobantes, OC) — D-17. Sin configurar: en local y test se guardan en disco;
+    # en staging y producción la función queda apagada hasta que se configure un bucket S3
+    # (Cloudflare R2 o AWS S3). El disco de Render se borra en cada deploy: no sirve.
+    storage_backend: Literal["disabled", "local", "s3"] | None = None
+    storage_local_dir: str = ".storage"
+    s3_bucket: str | None = None
+    s3_endpoint_url: str | None = None  # R2: https://<account_id>.r2.cloudflarestorage.com
+    s3_region: str = "auto"
+    s3_access_key_id: str | None = None
+    s3_secret_access_key: SecretStr | None = None
+
     # Observabilidad
     sentry_dsn: str | None = None
     sentry_traces_sample_rate: float = 0.1
@@ -64,6 +75,16 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET debe configurarse (>= 32 caracteres) fuera de local")
             if self.email_backend == "resend" and self.resend_api_key is None:
                 raise ValueError("RESEND_API_KEY es obligatorio con EMAIL_BACKEND=resend")
+            if self.storage_backend == "local":
+                raise ValueError("STORAGE_BACKEND=local es solo para desarrollo: usá s3")
+        if self.storage_backend is None:
+            self.storage_backend = "local" if self.env in ("local", "test") else "disabled"
+        if self.storage_backend == "s3" and not (
+            self.s3_bucket and self.s3_access_key_id and self.s3_secret_access_key
+        ):
+            raise ValueError(
+                "STORAGE_BACKEND=s3 necesita S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY"
+            )
         return self
 
 

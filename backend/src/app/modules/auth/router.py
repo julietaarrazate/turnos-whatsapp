@@ -6,6 +6,7 @@ from app.core.config import get_settings
 from app.core.db import AppSession, DbSession
 from app.core.errors import AppError, ensure
 from app.core.rate_limit import enforce
+from app.core.storage import get_storage
 from app.modules.auth import service
 from app.modules.auth.dependencies import (
     ACCESS_COOKIE,
@@ -86,6 +87,7 @@ def _me(db: AppSession, auth: service.AuthContext) -> MeResponse:
             MembershipOut(organization_id=o.id, organization_name=o.name, role=m.role)
             for m, o in memberships
         ],
+        uploads_enabled=get_storage() is not None,
     )
 
 

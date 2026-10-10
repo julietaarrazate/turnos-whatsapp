@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.modules.documents import DocumentOut
 from app.modules.events import EventStatus
 from app.modules.finance.models import ExpenseCurrency
 
@@ -26,6 +27,7 @@ class ExpenseIn(BaseModel):
     line_key: UUID | None = None
     supplier_id: UUID | None = None
     category_id: UUID | None = None
+    receipt_document_id: UUID | None = None  # subido antes con POST /documents/receipts
 
 
 class ExpenseUpdate(BaseModel):
@@ -41,6 +43,7 @@ class ExpenseUpdate(BaseModel):
     line_key: UUID | None = None
     supplier_id: UUID | None = None
     category_id: UUID | None = None
+    receipt_document_id: UUID | None = None  # null: quitar el comprobante
 
 
 class ExpenseOut(BaseModel):
@@ -60,6 +63,7 @@ class ExpenseOut(BaseModel):
     supplier_name: str | None
     category_id: UUID | None
     category_name: str | None
+    receipt: DocumentOut | None
     created_by_name: str | None
     created_at: datetime
 
@@ -92,6 +96,7 @@ class ComparisonRow(BaseModel):
 class ExpensesOut(BaseModel):
     event_id: UUID
     editable: bool
+    receipts_enabled: bool  # hay dónde guardar archivos (D-17)
     has_baseline: bool
     items: list[ExpenseOut]
     lines: list[LineOption]

@@ -15,6 +15,7 @@ from app.modules import (
     catalog,
     clients,
     dashboard,
+    documents,
     events,
     finance,
     organizations,
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(proposals.public_router)
     app.include_router(production.router)
     app.include_router(finance.router)
+    app.include_router(documents.router)
     app.include_router(dashboard.router)
     return app
 

@@ -127,6 +127,7 @@ Pendiente (Q1). Mientras tanto, los documentos usan "la plataforma". El código 
 ## D-17 · Object storage — 🟡
 
 - **Recomendación:** Cloudflare R2 (API S3, sin costo de egreso). Alternativa: AWS S3. El código usa la API S3 genérica (boto3) y se cambia de proveedor por configuración.
+- *Actualización (4.3b):* implementado con `STORAGE_BACKEND=s3` (R2 o S3) o, en desarrollo, disco local. Sin configurar, en staging y producción la función queda **apagada** (la app no muestra "adjuntar") en lugar de romper el deploy. Los archivos entran y salen por la API en vez de URLs presignadas (ARCHITECTURE §8.6). Falta elegir el proveedor y crear el bucket (pasos en DEPLOY.md).
 
 ## D-18 · Hosting, región y costos — ✅ (planes gratuitos para staging y piloto)
 

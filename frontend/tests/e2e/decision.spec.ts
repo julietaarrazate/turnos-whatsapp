@@ -3,6 +3,9 @@ import { expect, test, type APIRequestContext, type Dialog } from "@playwright/t
 import { login } from "./helpers";
 
 const H = { "X-Requested-With": "fetch" };
+// Archivos mínimos con firma válida: el servidor mira el contenido, no la extensión.
+const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]);
+const PDF = Buffer.from("%PDF-1.7\n%prueba\n");
 
 /** Presupuesto con un ítem libre y su propuesta enviada, todo por API. Devuelve el link. */
 async function sentProposal(request: APIRequestContext, suffix: string) {
@@ -86,6 +89,9 @@ test("el cliente acepta online y el evento queda aprobado", async ({ page, brows
   await expense.getByLabel("Descripción").fill("Factura sonido");
   await expense.getByLabel("Línea del presupuesto").selectOption({ label: "Sonido" });
   await expect(expense).toContainText("Presupuestado $ 1.000,00");
+  // La foto del comprobante, en el mismo paso.
+  await expense.getByLabel("Comprobante (opcional)").setInputFiles({ name: "ticket-sonido.jpg", mimeType: "image/jpeg", buffer: JPEG });
+  await expect(expense).toContainText("ticket-sonido.jpg");
   await expense.getByRole("button", { name: "Guardar gasto" }).click();
   // 1.452 con IVA → 1.200 de costo para un RI: 20 % arriba de lo presupuestado.
   await expect(page.getByRole("status").filter({ hasText: "Sonido:" })).toContainText(
@@ -100,7 +106,15 @@ test("el cliente acepta online y el evento queda aprobado", async ({ page, brows
   await expense.getByLabel("El monto incluye IVA").uncheck();
   await expense.getByRole("button", { name: "Guardar gasto" }).click();
   await expect(bva).toContainText("No presupuestado ·");
-  await expect(page.getByRole("region", { name: "Gastos" })).toContainText("Hielo");
+  const items = page.getByRole("region", { name: "Gastos" });
+  await expect(items).toContainText("Hielo");
+  // El del sonido quedó con su comprobante; al del hielo se le adjunta después (llega más tarde).
+  await expect(items.getByRole("link", { name: "Comprobante" })).toHaveCount(1);
+  await items.getByLabel("Adjuntar comprobante a Hielo").setInputFiles({ name: "hielo.pdf", mimeType: "application/pdf", buffer: PDF });
+  await expect(items.getByRole("link", { name: "Comprobante" })).toHaveCount(2);
+  const receipt = await page.request.get((await items.getByRole("link", { name: "Comprobante" }).first().getAttribute("href")) ?? "");
+  expect(receipt.ok()).toBeTruthy();
+  expect(["image/jpeg", "application/pdf"]).toContain(receipt.headers()["content-type"]);
   await bva.getByRole("radio", { name: "Proveedor" }).click();
   await expect(bva).toContainText("Sin proveedor");
 
@@ -154,8 +168,13 @@ test("el cliente rechaza y la productora aprueba otra con OC", async ({ page, br
   await panel.getByRole("button", { name: "Aprobar" }).click();
   const dialog = page.getByRole("dialog", { name: "Aprobar propuesta" });
   await dialog.getByLabel("N° de orden de compra (opcional)").fill("OC-4471");
+  await dialog.getByLabel("OC adjunta (opcional)").setInputFiles({ name: "OC-4471.pdf", mimeType: "application/pdf", buffer: PDF });
+  await expect(dialog).toContainText("OC-4471.pdf");
   await dialog.getByRole("button", { name: "Aprobar" }).click();
   await expect(panel).toContainText("OC OC-4471");
+  const order = await page.request.get((await panel.getByRole("link", { name: "Ver OC" }).getAttribute("href")) ?? "");
+  expect(order.ok()).toBeTruthy();
+  expect(order.headers()["content-type"]).toBe("application/pdf");
   await expect(panel.getByRole("button", { name: "Marcar como perdido" })).toHaveCount(0);
 });
 

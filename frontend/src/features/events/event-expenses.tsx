@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { Paperclip, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { CheckboxField, SelectField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { EVENTS_KEY } from "@/features/budgets/keys";
 import { IVA_OPTIONS, useCategories } from "@/features/catalog/shared";
+import { ACCEPT, AttachmentField, AttachmentLink, type UploadedDocument, useUpload } from "@/features/documents/attachment";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
@@ -67,6 +68,8 @@ function ExpenseForm({ id, data, onSaved }: { id: string; data: Expenses; onSave
   const [lineKey, setLineKey] = useState(UNBUDGETED);
   const [currency, setCurrency] = useState<"ARS" | "USD">("ARS");
   const [includesIva, setIncludesIva] = useState(true);
+  const [receipt, setReceipt] = useState<UploadedDocument | null>(null);
+  const upload = useUpload("receipts", setReceipt);
   const create = useMutation({
     mutationFn: async (body: Schemas["ExpenseIn"]) =>
       unwrap(
@@ -86,6 +89,7 @@ function ExpenseForm({ id, data, onSaved }: { id: string; data: Expenses; onSave
       setKey(newKey());
       setAmount("");
       setLineKey(UNBUDGETED);
+      setReceipt(null);
     },
   });
   const parsed = parseDecimalAR(amount);
@@ -112,6 +116,7 @@ function ExpenseForm({ id, data, onSaved }: { id: string; data: Expenses; onSave
           line_key: lineKey || null,
           supplier_id: null,
           category_id: lineKey ? null : String(form.get("category_id") || "") || null,
+          receipt_document_id: receipt?.id ?? null,
         });
       }}
     >
@@ -179,8 +184,13 @@ function ExpenseForm({ id, data, onSaved }: { id: string; data: Expenses; onSave
       <TextField label="Fecha" name="expense_date" type="date" hint="Vacía: hoy." />
       <SelectField label="IVA del comprobante" name="iva_rate" defaultValue="0.21" options={IVA_OPTIONS} />
       <CheckboxField label="El monto incluye IVA" checked={includesIva} onChange={(e) => setIncludesIva(e.target.checked)} />
+      {data.receipts_enabled ? (
+        <div className="sm:col-span-2">
+          <AttachmentField label="Comprobante (opcional)" value={receipt} upload={upload} onRemove={() => setReceipt(null)} />
+        </div>
+      ) : null}
       <div className="sm:col-span-2">
-        <Button type="submit" size="lg" loading={create.isPending} disabled={!parsed}>
+        <Button type="submit" size="lg" loading={create.isPending} disabled={!parsed || upload.isPending}>
           Guardar gasto
         </Button>
       </div>
@@ -193,13 +203,36 @@ function ExpenseForm({ id, data, onSaved }: { id: string; data: Expenses; onSave
   );
 }
 
-function ExpenseItem({ expense, id, editable }: { expense: Schemas["ExpenseOut"]; id: string; editable: boolean }) {
+function ExpenseItem({
+  expense,
+  id,
+  editable,
+  receiptsEnabled,
+}: {
+  expense: Schemas["ExpenseOut"];
+  id: string;
+  editable: boolean;
+  receiptsEnabled: boolean;
+}) {
   const queryClient = useQueryClient();
   const remove = useMutation({
     mutationFn: async () =>
       unwrap(await api.DELETE("/api/v1/expenses/{expense_id}", { params: { path: { expense_id: expense.id } } })),
     onSuccess: (result) => queryClient.setQueryData(expensesKey(id), result),
   });
+  // El comprobante suele llegar después: se adjunta al gasto ya cargado.
+  const attach = useMutation({
+    mutationFn: async (documentId: string) =>
+      unwrap(
+        await api.PATCH("/api/v1/expenses/{expense_id}", {
+          params: { path: { expense_id: expense.id } },
+          body: { receipt_document_id: documentId },
+        }),
+      ),
+    onSuccess: (result) => queryClient.setQueryData(expensesKey(id), result),
+  });
+  const upload = useUpload("receipts", (document) => attach.mutate(document.id));
+  const attaching = upload.isPending || attach.isPending;
   return (
     <li className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm">
       <span className="text-ink-muted">{formatDay(expense.expense_date)}</span>
@@ -217,6 +250,26 @@ function ExpenseItem({ expense, id, editable }: { expense: Schemas["ExpenseOut"]
           <span className="text-ink-muted"> → {formatMoney(expense.amount_base)}</span>
         ) : null}
       </span>
+      {expense.receipt ? (
+        <AttachmentLink href={`/api/v1/expenses/${expense.id}/receipt`}>Comprobante</AttachmentLink>
+      ) : editable && receiptsEnabled ? (
+        <label className={cn("inline-flex cursor-pointer items-center gap-1 rounded text-ink-muted hover:text-ink focus-within:outline-2 focus-within:outline-accent", attaching && "pointer-events-none opacity-60")}>
+          <Paperclip className="size-3.5" aria-hidden />
+          {attaching ? "Subiendo…" : "Adjuntar"}
+          <input
+            type="file"
+            accept={ACCEPT}
+            aria-label={`Adjuntar comprobante a ${expense.description}`}
+            className="sr-only"
+            disabled={attaching}
+            onChange={(e) => {
+              const file = e.currentTarget.files?.[0];
+              e.currentTarget.value = "";
+              if (file) upload.mutate(file);
+            }}
+          />
+        </label>
+      ) : null}
       {editable ? (
         <Button
           size="sm"
@@ -229,6 +282,7 @@ function ExpenseItem({ expense, id, editable }: { expense: Schemas["ExpenseOut"]
         </Button>
       ) : null}
       {remove.isError ? <Notice tone="error">{errorMessage(remove.error)}</Notice> : null}
+      {upload.isError || attach.isError ? <Notice tone="error">{errorMessage(upload.error ?? attach.error)}</Notice> : null}
     </li>
   );
 }
@@ -306,7 +360,7 @@ export function EventExpenses({ id }: { id: string }) {
         {data.items.length ? (
           <ul className="divide-y divide-line">
             {data.items.map((expense) => (
-              <ExpenseItem key={expense.id} expense={expense} id={id} editable={data.editable} />
+              <ExpenseItem key={expense.id} expense={expense} id={id} editable={data.editable} receiptsEnabled={data.receipts_enabled} />
             ))}
           </ul>
         ) : (

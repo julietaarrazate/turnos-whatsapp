@@ -10,6 +10,7 @@
 | API | Render, `productoras-api-staging` (Virginia, free, Docker), https://productoras-api-staging.onrender.com | ✅ En línea. Migra al arrancar. Despliega la rama de trabajo (staging de lo último); `main` es la versión estable. |
 | Frontend | Vercel, `productoras-web` (Hobby, Root Directory `frontend`, Next.js), https://productoras-web.vercel.app | ✅ En línea. Despliega `main` a producción. |
 | Email | — | Consola (sin Resend): los links de invitación y reset quedan en los logs de Render. |
+| Archivos (comprobantes, OC) | — | Apagado hasta crear el bucket (sección 4b). La app no muestra "adjuntar". |
 | Primera organización | "Productora piloto" (RI) | ✅ La titular aceptó la invitación de OWNER (verificado en logs: invitación → aceptación → /me, todo 200). |
 
 Las credenciales viven solo en las variables de entorno de Render. No están en el repo.
@@ -18,6 +19,7 @@ Las credenciales viven solo en las variables de entorno de Render. No están en 
 Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI, Docker) ──► Neon (Postgres 16)
                                                        │
                                                        ├─► Resend (email)
+                                                       ├─► R2 / S3 (comprobantes y OC)
                                                        └─► Sentry (errores)
 ```
 
@@ -49,6 +51,7 @@ Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI
 | `EMAIL_FROM` | `Nombre <notificaciones@<tu-dominio>>` |
 | `RESEND_API_KEY` | de Resend |
 | `SENTRY_DSN` | proyecto Python en Sentry (opcional) |
+| `STORAGE_BACKEND`, `S3_*` | ver sección 4b (opcional: sin esto no se adjuntan archivos) |
 
 3. Con `RUN_MIGRATIONS=true`, el contenedor corre `alembic upgrade head` antes de levantar la API (el plan free de Render no tiene pre-deploy command). Si la migración falla, el contenedor no arranca y Render mantiene la versión anterior. Por eso las migraciones son *expand/contract*. En un plan pago conviene usar `preDeployCommand: alembic upgrade head` y sacar la variable.
 4. El health check es `/readyz`: verifica que la API llegue a la base.
@@ -69,6 +72,26 @@ Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI
 ## 4. Email (Resend)
 
 Verificar tu dominio (SPF, DKIM y DMARC) y usar una dirección de ese dominio en `EMAIL_FROM`. Sin esto, los emails de invitación y reset caen en spam.
+
+## 4b. Archivos: comprobantes y OC (Cloudflare R2)
+
+Sin configurar, la app funciona igual pero no deja adjuntar la foto del comprobante ni la OC (D-17). Para activarlo con R2 (10 GB gratis, sin costo de egreso):
+
+1. Cloudflare → **R2** → *Create bucket* (por ejemplo `productoras-archivos`). Dejarlo **privado**: sin dominio público ni acceso público. No hace falta configurar CORS (los archivos pasan por la API).
+2. R2 → *Manage API tokens* → *Create API token* con permiso **Object Read & Write** limitado a ese bucket. Guardar el *Access Key ID* y el *Secret Access Key* (se muestran una sola vez).
+3. En Render, cargar:
+
+| Variable | Valor |
+|---|---|
+| `STORAGE_BACKEND` | `s3` |
+| `S3_BUCKET` | el nombre del bucket |
+| `S3_ENDPOINT_URL` | `https://<account_id>.r2.cloudflarestorage.com` (está en la página del bucket) |
+| `S3_REGION` | `auto` |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | los del token |
+
+4. Verificar: en un evento aprobado, cargar un gasto con una foto y abrir "Comprobante".
+
+Con AWS S3 es igual: `S3_ENDPOINT_URL` vacío, `S3_REGION` la del bucket y un usuario IAM con `s3:GetObject` y `s3:PutObject` sobre ese bucket. `STORAGE_BACKEND=local` no se acepta fuera de desarrollo: el disco de Render se borra en cada deploy.
 
 ## 5. Primera organización
 

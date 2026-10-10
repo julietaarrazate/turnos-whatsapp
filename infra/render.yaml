@@ -33,3 +33,16 @@ services:
         sync: false
       - key: SENTRY_DSN
         sync: false
+      # Archivos (D-17, DEPLOY.md §4b). Sin STORAGE_BACKEND, adjuntar queda apagado.
+      - key: STORAGE_BACKEND
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_REGION
+        value: auto
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false

@@ -97,6 +97,16 @@ def approve(
     return result
 
 
+@router.get(
+    "/proposals/{proposal_id}/purchase-order",
+    response_class=Response,
+    responses={200: {"content": {"image/jpeg": {}, "application/pdf": {}}}},
+)
+def purchase_order(proposal_id: UUID, ctx: View, db: DbSession) -> Response:
+    """La OC adjunta en la aprobación manual."""
+    return service.purchase_order_file(db, ctx, proposal_id)
+
+
 @router.get("/proposals/{proposal_id}/pdf", response_class=Response, responses=_PDF)
 def proposal_pdf(proposal_id: UUID, ctx: View, db: DbSession) -> Response:
     return _pdf_response(*service.proposal_pdf(db, ctx, proposal_id))

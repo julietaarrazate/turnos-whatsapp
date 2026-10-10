@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Numeric, String
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, IdMixin, TimestampMixin, tenant_fk, tenant_unique
@@ -34,6 +34,8 @@ class Expense(IdMixin, TimestampMixin, Base):
         tenant_fk("event_id", "events", ondelete="CASCADE"),
         tenant_fk("supplier_id", "suppliers"),
         tenant_fk("category_id", "categories"),
+        tenant_fk("receipt_document_id", "documents"),
+        Index("uq_expenses_receipt", "receipt_document_id", unique=True),
         CheckConstraint(check_in("currency", ExpenseCurrency), name="currency"),
         CheckConstraint("amount > 0", name="amount_positive"),
         CheckConstraint("iva_rate >= 0 AND iva_rate < 1", name="iva_rate"),
@@ -54,4 +56,5 @@ class Expense(IdMixin, TimestampMixin, Base):
     fx_rate: Mapped[Decimal] = mapped_column(Numeric(14, 6), default=Decimal(1))
     amount_base: Mapped[Decimal] = mapped_column(Numeric(18, 2))  # efectivo, en pesos
     expense_date: Mapped[date]
+    receipt_document_id: Mapped[UUID | None]  # foto o PDF del comprobante
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
