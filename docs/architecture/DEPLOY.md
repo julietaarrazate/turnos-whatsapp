@@ -1,6 +1,6 @@
 # Deploy: staging y producción
 
-> Estado: staging en **planes gratuitos** (D-18). Ver ARCHITECTURE §3.
+> Regla: **todo en planes gratuitos**, también producción (D-18). Ver ARCHITECTURE §3.
 
 ## Estado actual (staging)
 
@@ -11,6 +11,7 @@
 | Frontend | Vercel, `productoras-web` (Hobby, Root Directory `frontend`, Next.js), https://productoras-web.vercel.app | ✅ En línea. Despliega `main` a producción. |
 | Email | — | Consola (sin Resend): los links de invitación y reset quedan en los logs de Render. |
 | Archivos (comprobantes, OC) | — | Apagado hasta crear el bucket (sección 4b). La app no muestra "adjuntar". |
+| Backup diario | GitHub Actions → bucket | Apagado hasta cargar los secrets (sección 7). Mientras tanto, solo el restore de Neon (6 horas). |
 | Primera organización | "Productora piloto" (RI) | ✅ La titular aceptó la invitación de OWNER (verificado en logs: invitación → aceptación → /me, todo 200). |
 
 Las credenciales viven solo en las variables de entorno de Render. No están en el repo.
@@ -35,7 +36,8 @@ Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI
 3. Las URLs:
    - `MIGRATOR_DATABASE_URL`: rol `app_migrator`, endpoint **directo** (las migraciones usan DDL).
    - `DATABASE_URL`: rol `app_runtime`, endpoint **con pooler** (`-pooler` en el host). El contexto de tenant usa `set_config(..., true)`, que es compatible con PgBouncer en modo transacción.
-4. Producción: desactivar el *scale to zero* (o aceptar ~0,5 s de cold start) y verificar la retención de PITR del plan.
+4. Plan gratis: el cómputo se suspende a los 5 min sin uso (al volver tarda ~0,5 s). Conviene así: las horas de cómputo gratis (100 por mes) se gastan solo mientras se usa. El restore de Neon llega a 6 horas atrás; para más, está el backup diario (sección 7).
+5. El rol dueño que crea Neon (`neondb_owner`; en staging se llama `app_bootstrap_owner`) puede leer todas las filas (BYPASSRLS). La app no lo usa: solo el backup.
 
 ## 2. Render (API)
 
@@ -54,7 +56,15 @@ Browser ──► Vercel (Next.js) ──/api/* rewrite──► Render (FastAPI
 | `STORAGE_BACKEND`, `S3_*` | ver sección 4b (opcional: sin esto no se adjuntan archivos) |
 
 3. Con `RUN_MIGRATIONS=true`, el contenedor corre `alembic upgrade head` antes de levantar la API (el plan free de Render no tiene pre-deploy command). Si la migración falla, el contenedor no arranca y Render mantiene la versión anterior. Por eso las migraciones son *expand/contract*. En un plan pago conviene usar `preDeployCommand: alembic upgrade head` y sacar la variable.
-4. El health check es `/readyz`: verifica que la API llegue a la base.
+4. El health check es `/healthz`, que **no toca la base**. Render lo consulta seguido mientras la API está despierta: si fuera `/readyz`, Neon no se suspendería nunca y gastaría sus horas gratis. Si el servicio se creó antes de este cambio y no sigue el Blueprint, cambiarlo a mano en Render → *Settings* → *Health Check Path*. `/readyz` (que sí verifica la base) queda para chequeos manuales.
+
+## 2b. Que la API no se duerma (opcional, gratis)
+
+El plan free de Render apaga la API a los 15 min sin tráfico y la primera visita después tarda ~1 min. Para evitarlo en horario de trabajo, un servicio gratuito como [cron-job.org](https://cron-job.org) puede llamarla cada 10 min:
+
+- URL: `https://<servicio>.onrender.com/healthz` (no `/readyz`: despertaría la base para nada).
+- Horario: por ejemplo de lunes a sábado de 8 a 22 (hora de Argentina). **No las 24 horas:** las 750 horas gratis por mes son de todo el workspace de Render; un servicio despierto todo el mes usa ~744 y, si hay otros servicios gratis en el mismo workspace, se suspenden todos hasta el mes siguiente. De 8 a 22, seis días por semana, son ~360 horas.
+- Fuera de ese horario, la primera visita tarda ~1 min. Un cliente que abre una propuesta a la noche espera ese minuto.
 
 ## 3. Vercel (frontend)
 
@@ -108,8 +118,43 @@ El script crea la organización y envía la invitación de OWNER (y también imp
 
 - [ ] **Medir latencia desde Argentina** (D-18): `curl -w "%{time_total}\n" -o /dev/null -s https://<frontend>/api/v1/auth/me` desde una conexión local, 10 veces. Objetivo: p95 < 400 ms. Si no se cumple, se reabre D-18.
 - [ ] Forzar un error de prueba y verificar que llega a Sentry con release y `request_id`, sin cookies, cuerpos ni tokens.
-- [ ] Backup: confirmar PITR en Neon. El `pg_dump` nocturno a S3 se agrega cuando haya datos reales (Fase 3).
+- [ ] Backup: cargar los secrets (sección 7), correrlo a mano una vez y verificar el archivo en el bucket.
 - [ ] Revisar los headers de seguridad en https://securityheaders.com.
+
+## 7. Backups y restore
+
+Neon gratis permite volver solo 6 horas atrás. El workflow `.github/workflows/backup.yml` corre todos los días a las 03:17 (Argentina) y también a mano (*Actions* → *Backup* → *Run workflow*). Cada corrida:
+
+1. Hace `pg_dump` de la base.
+2. **Lo restaura** en un Postgres vacío del runner (con los mismos roles que la base real) y compara las filas tabla por tabla. Si no coincide, falla. Es el simulacro de restore, todos los días.
+3. Lo cifra (gpg, AES-256) y lo sube al bucket como `backups/app-AAAA-MM-DD.dump.gpg`.
+4. Borra los de más de 30 días.
+
+Gratis: ~1-2 minutos de Actions por día (el repo privado tiene 2.000 por mes) y ~1-2 MB por día en el bucket. Si una corrida falla, GitHub te manda un email.
+
+**Configurar** (GitHub → el repo → *Settings* → *Secrets and variables* → *Actions* → *New repository secret*):
+
+| Secret | Valor |
+|---|---|
+| `BACKUP_DATABASE_URL` | Neon → *Connect* → rol **dueño** (`neondb_owner`; en staging, `app_bootstrap_owner`), base `app`, conexión **directa** (sin `-pooler`). `app_migrator` y `app_runtime` no sirven: están sujetos a RLS y el backup sale vacío o falla. |
+| `BACKUP_PASSPHRASE` | Una clave larga al azar. **Guardala también en tu gestor de contraseñas:** sin ella los backups no se pueden abrir. |
+| `S3_BUCKET`, `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Los mismos del bucket de la sección 4b (los backups van a la carpeta `backups/`). |
+
+Sin estos secrets, el workflow termina en verde con un aviso y no hace nada.
+
+**Restaurar** (si se perdió o se rompió la base):
+
+```bash
+# 1. Bajar el archivo del bucket (Cloudflare → R2 → el bucket → backups/) y descifrarlo
+gpg --decrypt --output app.dump app-AAAA-MM-DD.dump.gpg     # pide BACKUP_PASSPHRASE
+# 2. En Neon, crear una base vacía cuyo dueño sea app_migrator (por ejemplo, app_restore)
+# 3. Restaurar como app_migrator: tablas, datos, RLS y permisos de app_runtime quedan como estaban
+pg_restore --no-owner --exit-on-error --dbname="<URL directa de app_migrator a app_restore>" app.dump
+```
+
+Después, apuntar `DATABASE_URL` y `MIGRATOR_DATABASE_URL` de Render a la base nueva y redeployar. Este procedimiento exacto está cubierto por `backend/tests/ops/test_backup.py`.
+
+Backup a mano, en tu computadora (sin bucket): `BACKUP_DATABASE_URL=... BACKUP_PASSPHRASE=... uv run python scripts/backup.py --output <carpeta>`.
 
 ## Limitaciones conocidas
 

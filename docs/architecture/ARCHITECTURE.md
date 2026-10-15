@@ -84,9 +84,9 @@ flowchart LR
 |---|---|---|
 | **Mismo origen** (D-13) | El browser habla con `app.dominio.com/api/*` y Next.js **reescribe** hacia Render. | Las cookies quedan como first-party, no hace falta CORS y los preview deployments de Vercel funcionan sin trucos de dominio. |
 | **Región** (D-18) | Render **Virginia** + Neon **AWS us-east-1** (co-ubicados). | Un ORM hace varias queries por request; API y DB **tienen que** estar juntas. Desde Argentina hay ~130–170 ms de RTT a us-east. Medimos en la Fase 1 y, si molesta, se evalúa São Paulo. |
-| **Tiers** | Nada de planes que "duermen". Render pago (sin cold start de 30–50 s). En Neon de producción, sin scale-to-zero o con cold start aceptado (~0,5 s). | Un cliente que abre una propuesta no puede esperar 40 segundos. |
+| **Tiers** (D-18) | **Todo en planes gratuitos**, también producción. Render free duerme a los 15 min sin tráfico (despierta en ~1 min); opcionalmente se mantiene despierta en horario de trabajo con un ping gratuito (DEPLOY §2b). Neon suspende el cómputo sin uso (~0,5 s al volver). | Decisión de costos de la dueña. Lo que se acepta: la primera visita fuera de horario tarda ~1 min. |
 | **API como contenedor Docker** | Imagen con las libs de sistema de WeasyPrint (Pango). | El PDF se genera server-side (D-16). |
-| **Migraciones** | `alembic upgrade head` como **pre-deploy command** de Render. | Se ejecutan antes de que entre el código nuevo. Exige migraciones *expand/contract* (compatibles hacia atrás). |
+| **Migraciones** | `alembic upgrade head` al arrancar el contenedor (`RUN_MIGRATIONS=true`: el plan free no tiene pre-deploy command). | Si falla, el contenedor no arranca y Render mantiene la versión anterior. Exige migraciones *expand/contract* (compatibles hacia atrás). |
 | **Storage** (D-17) | Cloudflare R2 (o AWS S3) con bucket privado. Los archivos entran y salen **por la API** (ver §8.6). | Compatible con S3 y sin costo de egreso. |
 
 ---
@@ -383,7 +383,7 @@ Los comprobantes y las OC **pasan por la API** (`core/storage.py`, módulo `docu
 ### 8.7 Secretos, dependencias y datos
 
 - Los secretos viven solo en las variables de entorno de Render y Vercel. Hay `gitleaks` en CI, Dependabot, `pip-audit` y `pnpm audit`.
-- **Backups:** PITR de Neon (la retención depende del plan) más un `pg_dump` nocturno cifrado a S3 desde GitHub Actions. **Simulacro de restore mensual** documentado.
+- **Backups:** el restore de Neon (6 horas en el plan gratis) más un `pg_dump` **diario** cifrado al bucket desde GitHub Actions (`backup.yml`, 30 días). Cada corrida **restaura el dump en un Postgres vacío y compara las filas**: el simulacro de restore es automático y diario. Procedimiento de restore en DEPLOY §7.
 - **Datos personales:** se aplica la Ley 25.326 (Argentina). Hay exportación completa de datos por organización y baja de organización con borrado diferido. Sentry tiene scrubbing de PII **y de importes** (son datos comerciales sensibles).
 
 ### 8.8 Audit log

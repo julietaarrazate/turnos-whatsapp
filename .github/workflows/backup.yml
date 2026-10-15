@@ -1,0 +1,73 @@
+name: Backup
+
+# Backup diario de la base (DEPLOY §7). Neon gratis solo deja volver 6 horas atrás: esto guarda
+# 30 días en el bucket, cifrado, y antes de subirlo prueba restaurarlo en un Postgres vacío.
+# Gratis: ~1-2 min de Actions por día (el repo privado tiene 2.000 min/mes).
+on:
+  schedule:
+    - cron: "17 6 * * *" # 03:17 en Argentina
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-retries 20
+    env:
+      BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+      S3_REGION: auto
+      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+      # El restore de prueba: con los mismos roles que la base real y contando como superusuario.
+      RESTORE_CHECK_URL: postgresql://postgres@localhost:5432/app
+      RESTORE_CHECK_ROLE: app_migrator
+      PG_BINDIR: /usr/lib/postgresql/16/bin
+    steps:
+      - name: ¿Está configurado?
+        id: configured
+        run: |
+          if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ] || [ -z "$S3_BUCKET" ]; then
+            echo "::warning::El backup no está configurado: faltan los secrets (docs/architecture/DEPLOY.md §7)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.configured.outputs.ready == 'true'
+      - name: Cliente de Postgres 16 (la versión de Neon)
+        if: steps.configured.outputs.ready == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-16
+      - name: Roles de la base (como en Neon)
+        if: steps.configured.outputs.ready == 'true'
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f infra/postgres/init.sql
+      - uses: astral-sh/setup-uv@v6
+        if: steps.configured.outputs.ready == 'true'
+        with:
+          enable-cache: true
+      - name: Backup
+        if: steps.configured.outputs.ready == 'true'
+        working-directory: backend
+        run: |
+          uv sync --frozen --no-dev
+          uv run --frozen --no-dev python scripts/backup.py
