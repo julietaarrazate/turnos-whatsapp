@@ -7,8 +7,10 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile
     region: virginia # co-ubicada con Neon AWS us-east-1 (D-18)
-    plan: free # D-18: duerme sin tráfico (~30-60 s para despertar). Starter para clientes reales.
-    healthCheckPath: /readyz
+    plan: free # D-18: todo en planes gratuitos. Duerme a los 15 min sin tráfico (DEPLOY §2b).
+    # /healthz no toca la base: si Render la consultara (/readyz), Neon no se dormiría nunca
+    # mientras la API está despierta y gastaría las horas de cómputo gratis del mes.
+    healthCheckPath: /healthz
     autoDeploy: true
     envVars:
       - key: ENV

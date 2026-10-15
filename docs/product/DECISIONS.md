@@ -129,15 +129,16 @@ Pendiente (Q1). Mientras tanto, los documentos usan "la plataforma". El código 
 - **Recomendación:** Cloudflare R2 (API S3, sin costo de egreso). Alternativa: AWS S3. El código usa la API S3 genérica (boto3) y se cambia de proveedor por configuración.
 - *Actualización (4.3b):* implementado con `STORAGE_BACKEND=s3` (R2 o S3) o, en desarrollo, disco local. Sin configurar, en staging y producción la función queda **apagada** (la app no muestra "adjuntar") en lugar de romper el deploy. Los archivos entran y salen por la API en vez de URLs presignadas (ARCHITECTURE §8.6). Falta elegir el proveedor y crear el bucket (pasos en DEPLOY.md).
 
-## D-18 · Hosting, región y costos — ✅ (planes gratuitos para staging y piloto)
+## D-18 · Hosting, región y costos — ✅ (todo en planes gratuitos)
 
 - Vercel (frontend), Render (API) y Neon (Postgres), con **API y DB en us-east, co-ubicadas**.
 - **Decisión:** se arranca con los **planes gratuitos** de los tres. Las consecuencias, aceptadas:
-  - **Render free "duerme" tras ~15 min sin tráfico:** el primer request después tarda ~30–60 s. Para el piloto interno es tolerable; para propuestas a clientes reales (Fase 3) conviene pasar a Starter (~US$ 7/mes) o mantenerla despierta.
+  - **Render free "duerme" tras ~15 min sin tráfico:** el primer request después tarda ~30–60 s. Se puede mantener despierta en horario de trabajo con un ping gratuito (DEPLOY §2b), sin pasarse de las 750 horas mensuales del workspace.
   - **Render free no tiene pre-deploy command:** las migraciones corren al arrancar el contenedor (`RUN_MIGRATIONS=true`), antes de levantar uvicorn. Si una migración falla, el contenedor no arranca y Render mantiene la versión anterior.
-  - **Neon free** suspende el cómputo sin uso (cold start ~0,5 s) y tiene límites de horas y almacenamiento holgados para el piloto.
+  - **Neon free** suspende el cómputo sin uso (cold start ~0,5 s), da 100 horas de cómputo por mes y permite volver solo 6 horas atrás. Por eso el health check de Render no toca la base y hay un backup diario propio (DEPLOY §7).
   - **Vercel Hobby** no permite uso comercial: alcanza para desarrollo y piloto; antes de cobrarle a una productora hay que pasar a Pro.
 - Se mide la latencia desde Argentina con el sistema desplegado.
+- *Actualización (2026-10):* la dueña confirmó que **todo tiene que quedar en planes gratuitos, también producción**. Se descarta pasar a planes pagos. Consecuencias: la primera visita fuera de horario tarda ~1 min; los archivos van a R2 (10 GB gratis); los emails a clientes necesitan un dominio verificado en Resend (pago, aunque barato) o un SMTP gratuito; la **IA (Fase 6) queda afuera** mientras rija esta regla, porque no hay API de modelos gratuita que sirva con datos de clientes.
 
 ## D-19 · Acceso a datos sincrónico — 🟡
 
