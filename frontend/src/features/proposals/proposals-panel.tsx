@@ -1,12 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Copy, ExternalLink, FileDown, Send } from "lucide-react";
+import { BadgeCheck, ExternalLink, FileDown, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { SelectField, TextAreaField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
+import { ShareLink } from "@/components/ui/share-link";
 import { useSession } from "@/features/auth/session";
 import { AttachmentField, AttachmentLink, type UploadedDocument, useUpload } from "@/features/documents/attachment";
 import { budgetKey, EVENTS_KEY } from "@/features/budgets/keys";
@@ -32,34 +33,16 @@ const STATUS: Record<Proposal["status"], { label: string; tone: string }> = {
 
 function ShareBox({ path, budget, emailedTo }: { path: string; budget: Budget; emailedTo: string[] }) {
   const url = typeof window === "undefined" ? path : `${window.location.origin}${path}`;
-  const [copied, setCopied] = useState(false);
   const message = `Hola! Te comparto la propuesta para ${budget.event.name}: ${url}`;
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-success/30 bg-success/10 p-4">
       <p className="text-sm font-medium">Propuesta lista. Compartí este link con el cliente:</p>
       {emailedTo.length ? <p className="text-sm">Se envió por email a {emailedTo.join(", ")}.</p> : null}
-      <input readOnly value={url} aria-label="Link de la propuesta" onFocus={(e) => e.currentTarget.select()} className="h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm" />
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          onClick={() => {
-            void navigator.clipboard?.writeText(url).then(() => setCopied(true));
-          }}
-        >
-          <Copy className="size-4" aria-hidden /> {copied ? "¡Copiado!" : "Copiar link"}
-        </Button>
-        <a
-          href={`https://wa.me/?text=${encodeURIComponent(message)}`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex h-8 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium"
-        >
-          <Send className="size-4" aria-hidden /> WhatsApp
-        </a>
+      <ShareLink url={url} inputLabel="Link de la propuesta" whatsappText={message}>
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-2 px-3 text-sm text-accent">
           <ExternalLink className="size-4" aria-hidden /> Ver como el cliente
         </a>
-      </div>
+      </ShareLink>
       <p className="text-xs text-ink-muted">
         Por seguridad, el link se muestra solo ahora. Si lo perdés, generá la propuesta de nuevo (la anterior queda reemplazada).
       </p>

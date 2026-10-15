@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 
+from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
@@ -12,6 +13,7 @@ from app.modules.organizations.schemas import (
     AuditLogOut,
     AuditLogPage,
     InvitationCreate,
+    InvitationCreated,
     InvitationOut,
     MemberOut,
     MemberUpdate,
@@ -88,15 +90,17 @@ def create_invitation(
     ctx: MembersManage,
     db: DbSession,
     background: BackgroundTasks,
-) -> InvitationOut:
-    invitation, message = service.invite(db, ctx, body.email, body.role)
+) -> InvitationCreated:
+    invitation, message, path = service.invite(db, ctx, body.email, body.role)
     background.add_task(send_email, message)
-    return InvitationOut(
+    return InvitationCreated(
         id=invitation.id,
         email=invitation.email,
         role=invitation.role,
         created_at=invitation.created_at,
         expires_at=invitation.expires_at,
+        invite_path=path,
+        emailed=get_settings().email_backend != "console",
     )
 
 

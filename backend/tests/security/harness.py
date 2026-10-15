@@ -73,7 +73,7 @@ def build_org(prefix: str) -> OrgWorld:
     target_email = f"target@{prefix}.example.com"
     target = add_member(org_id, create_user(target_email), target_email, Role.VIEWER)
     with session_scope(DbContext(organization_id=org_id)) as s:
-        invitation, _ = create_invitation(
+        invitation, _, _ = create_invitation(
             s, org_id, f"pending@{prefix}.example.com", Role.QUOTER, None
         )
         invitation_id = invitation.id

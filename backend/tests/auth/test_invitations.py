@@ -16,9 +16,10 @@ from tests.factories import DEFAULT_PASSWORD, create_member, create_org
 
 def invite(org_id: UUID, email: str, role: Role = Role.QUOTER) -> str:
     with session_scope(DbContext(organization_id=org_id)) as s:
-        _, message = create_invitation(s, org_id, email, role, invited_by_membership_id=None)
+        _, message, path = create_invitation(s, org_id, email, role, invited_by_membership_id=None)
     match = re.search(r"/invite/(\S+)", message.text)
     assert match
+    assert path == f"/invite/{match.group(1)}"  # el mismo token que el email
     return match.group(1)
 
 
