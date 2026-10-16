@@ -226,7 +226,9 @@ def list_invitations(db: AppSession, ctx: TenantContext) -> list[Invitation]:
     )
 
 
-def invite(db: AppSession, ctx: TenantContext, email: str, role: Role) -> tuple[Invitation, Email]:
+def invite(
+    db: AppSession, ctx: TenantContext, email: str, role: Role
+) -> tuple[Invitation, Email, str]:
     if role is Role.OWNER and ctx.role is not Role.OWNER:
         raise AppError(403, "owner_required", "Solo un OWNER puede invitar a otro OWNER")
     already = db.execute(
@@ -240,7 +242,7 @@ def invite(db: AppSession, ctx: TenantContext, email: str, role: Role) -> tuple[
     ).first()
     if already is not None:
         raise AppError(409, "already_member", "Esa persona ya es parte de la organización")
-    invitation, message = create_invitation(
+    invitation, message, path = create_invitation(
         db, ctx.organization_id, email, role, invited_by_membership_id=ctx.membership_id
     )
     _audit(
@@ -251,7 +253,7 @@ def invite(db: AppSession, ctx: TenantContext, email: str, role: Role) -> tuple[
         entity_id=invitation.id,
         after={"email": invitation.email, "role": invitation.role},
     )
-    return invitation, message
+    return invitation, message, path
 
 
 def revoke_invitation(db: AppSession, ctx: TenantContext, invitation_id: UUID) -> None:

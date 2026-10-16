@@ -2,13 +2,22 @@ import { expect, test } from "@playwright/test";
 
 import { login } from "./helpers";
 
-test("invitar y anular una invitación", async ({ page }) => {
+test("invitar y anular una invitación", async ({ page, browser }) => {
   const email = `e2e-${Date.now()}@example.com`;
   await login(page, "/settings/members");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Rol", { exact: true }).selectOption("PRODUCTION");
   await page.getByRole("button", { name: "Invitar" }).click();
-  await expect(page.getByRole("status").filter({ hasText: email })).toContainText("Invitación enviada");
+  // Sin email configurado, el link se muestra para mandarlo a mano (copiar o WhatsApp).
+  await expect(page.getByText(`Invitación creada para ${email}. Mandale este link:`)).toBeVisible();
+  const link = await page.getByLabel("Link de la invitación").inputValue();
+  expect(link).toMatch(/\/invite\/\S+$/);
+  await expect(page.getByRole("link", { name: "WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=.+%2Finvite%2F/);
+  // El link funciona para quien lo recibe (sin sesión).
+  const guest = await browser.newPage();
+  await guest.goto(link);
+  await expect(guest.getByText(`Invitación para ${email} como Producción.`)).toBeVisible();
+  await guest.close();
 
   const row = page.getByRole("listitem").filter({ hasText: email });
   await expect(row).toContainText("Producción");

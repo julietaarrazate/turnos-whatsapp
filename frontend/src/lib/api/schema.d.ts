@@ -3019,6 +3019,31 @@ export interface components {
             email: string;
             role: components["schemas"]["Role"];
         };
+        /** InvitationCreated */
+        InvitationCreated: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email */
+            email: string;
+            /** Emailed */
+            emailed: boolean;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Invite Path */
+            invite_path: string;
+            role: components["schemas"]["Role"];
+        };
         /** InvitationOut */
         InvitationOut: {
             /**
@@ -7245,7 +7270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvitationOut"];
+                    "application/json": components["schemas"]["InvitationCreated"];
                 };
             };
             /** @description Validation Error */

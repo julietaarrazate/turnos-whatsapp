@@ -315,8 +315,12 @@ def create_invitation(
     email: str,
     role: Role,
     invited_by_membership_id: UUID | None,
-) -> tuple[Invitation, Email]:
-    """Requiere contexto de la organización. Revoca invitaciones pendientes al mismo email."""
+) -> tuple[Invitation, Email, str]:
+    """Requiere contexto de la organización. Revoca invitaciones pendientes al mismo email.
+
+    Devuelve también el path con el token (``/invite/...``): es la única vez que existe en
+    claro (en la base queda el hash). Sin email configurado, quien invita lo comparte a mano.
+    """
     settings = get_settings()
     now = utcnow()
     normalized = email.strip().lower()
@@ -342,7 +346,8 @@ def create_invitation(
     db.add(invitation)
     org = db.get(Organization, organization_id)
     org_name = org.name if org else "la organización"
-    link = f"{settings.app_base_url}/invite/{raw}"
+    path = f"/invite/{raw}"
+    link = f"{settings.app_base_url}{path}"
     message = Email(
         to=normalized,
         subject=f"Te invitaron a {org_name}",
@@ -353,7 +358,7 @@ def create_invitation(
         template="invitation",
     )
     db.flush()
-    return invitation, message
+    return invitation, message, path
 
 
 def _pending_invitation(db: AppSession, raw_token: str) -> Invitation:

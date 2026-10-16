@@ -9,7 +9,7 @@
 | Base de datos | Neon, proyecto `productoras-staging` (aws-us-east-1, Postgres 16), base `app` | ✅ Roles `app_migrator`/`app_runtime` creados por SQL (sin privilegios de Neon). Migraciones en 0003. RLS forzada verificada. |
 | API | Render, `productoras-api-staging` (Virginia, free, Docker), https://productoras-api-staging.onrender.com | ✅ En línea. Migra al arrancar. Despliega la rama de trabajo (staging de lo último); `main` es la versión estable. |
 | Frontend | Vercel, `productoras-web` (Hobby, Root Directory `frontend`, Next.js), https://productoras-web.vercel.app | ✅ En línea. Despliega `main` a producción. |
-| Email | — | Consola (sin Resend): los links de invitación y reset quedan en los logs de Render. |
+| Email | — | Consola (sin Resend). Las invitaciones muestran su link en la app para mandarlo por WhatsApp; el de cambio de contraseña queda solo en los logs de Render. |
 | Archivos (comprobantes, OC) | — | Apagado hasta crear el bucket (sección 4b). La app no muestra "adjuntar". |
 | Backup diario | GitHub Actions → bucket | Apagado hasta cargar los secrets (sección 7). Mientras tanto, solo el restore de Neon (6 horas). |
 | Primera organización | "Productora piloto" (RI) | ✅ La titular aceptó la invitación de OWNER (verificado en logs: invitación → aceptación → /me, todo 200). |
@@ -82,6 +82,8 @@ El plan free de Render apaga la API a los 15 min sin tráfico y la primera visit
 ## 4. Email (Resend)
 
 Verificar tu dominio (SPF, DKIM y DMARC) y usar una dirección de ese dominio en `EMAIL_FROM`. Sin esto, los emails de invitación y reset caen en spam.
+
+**Sin dominio (todo gratis):** se queda `EMAIL_BACKEND=console`. Al invitar a alguien, la app muestra el link para copiarlo o mandarlo por WhatsApp (una sola vez; invitar de nuevo al mismo email anula el anterior). Las propuestas ya se comparten por link o WhatsApp. Lo que no tiene alternativa todavía es "olvidé mi contraseña": ese link queda solo en los logs de Render. **Gmail no sirve:** Render free bloquea los puertos de email (SMTP).
 
 ## 4b. Archivos: comprobantes y OC (Cloudflare R2)
 

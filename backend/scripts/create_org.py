@@ -5,8 +5,8 @@ Imprime el link de invitación y además lo envía por email (según EMAIL_BACKE
 """
 
 import argparse
-import re
 
+from app.core.config import get_settings
 from app.core.db import DbContext, session_scope
 from app.core.enums import Role
 from app.core.ids import uuid7
@@ -27,11 +27,10 @@ def main() -> None:
         s.add(Organization(id=org_id, name=args.name))
         s.flush()
         provision_organization(s, org_id)
-        _, message = create_invitation(s, org_id, args.owner_email, Role.OWNER, None)
+        _, message, path = create_invitation(s, org_id, args.owner_email, Role.OWNER, None)
     send_email(message)
-    link = re.search(r"https?://\S+", message.text)
     print(f"Organización creada: {args.name} ({org_id})")
-    print(f"Invitación OWNER para {args.owner_email}: {link.group(0) if link else '(ver email)'}")
+    print(f"Invitación OWNER para {args.owner_email}: {get_settings().app_base_url}{path}")
 
 
 if __name__ == "__main__":

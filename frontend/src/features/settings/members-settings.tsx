@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { SelectField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { PageHeader } from "@/components/ui/page-header";
+import { ShareLink } from "@/components/ui/share-link";
 import { ROLE_LABELS, ROLE_OPTIONS } from "@/features/auth/roles";
 import { useSession } from "@/features/auth/session";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import { formatDate } from "@/lib/format/date";
-import type { Member, Role } from "@/lib/api/types";
+import type { Member, Role, Schemas } from "@/lib/api/types";
 
 const MEMBERS_KEY = ["members"] as const;
 const INVITATIONS_KEY = ["invitations"] as const;
@@ -75,17 +76,41 @@ function MemberRow({ member, canManage, isSelf, isOwner }: { member: Member; can
   );
 }
 
+/** El link de la invitación, para mandarlo a mano (sin email configurado, es la única forma). */
+function InviteShare({ invitation, organization }: { invitation: Schemas["InvitationCreated"]; organization: string }) {
+  const url = typeof window === "undefined" ? invitation.invite_path : `${window.location.origin}${invitation.invite_path}`;
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-success/30 bg-success/10 p-4">
+      <p className="text-sm font-medium">
+        {invitation.emailed
+          ? `Invitación enviada por email a ${invitation.email}. También podés mandarle el link:`
+          : `Invitación creada para ${invitation.email}. Mandale este link:`}
+      </p>
+      <ShareLink
+        url={url}
+        inputLabel="Link de la invitación"
+        whatsappText={`Hola! Te invité a sumarte a ${organization}. Entrá a este link para crear tu cuenta: ${url}`}
+      />
+      <p className="text-xs text-ink-muted">
+        Vence el {formatDate(invitation.expires_at)} y sirve una sola vez. Por seguridad se muestra solo ahora: si lo perdés,
+        invitá de nuevo al mismo email (el anterior deja de funcionar).
+      </p>
+    </div>
+  );
+}
+
 function InviteForm() {
   const queryClient = useQueryClient();
   const { me } = useSession();
-  const [message, setMessage] = useState<string | null>(null);
+  const [created, setCreated] = useState<Schemas["InvitationCreated"] | null>(null);
   const invite = useMutation({
     mutationFn: async (body: { email: string; role: Role }) => unwrap(await api.POST("/api/v1/invitations", { body })),
     onSuccess: (data) => {
-      setMessage(`Invitación enviada a ${data.email}.`);
+      setCreated(data);
       void queryClient.invalidateQueries({ queryKey: INVITATIONS_KEY });
     },
   });
+  const organization = me.memberships.find((m) => m.organization_id === me.active_organization_id)?.organization_name ?? "la productora";
   const options = me.role === "OWNER" ? ROLE_OPTIONS : ROLE_OPTIONS.filter((o) => o.value !== "OWNER");
 
   return (
@@ -94,7 +119,7 @@ function InviteForm() {
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
-        setMessage(null);
+        setCreated(null);
         invite.mutate(
           { email: String(form.get("email")), role: String(form.get("role")) as Role },
           { onSuccess: () => (event.target as HTMLFormElement).reset() },
@@ -111,9 +136,9 @@ function InviteForm() {
           <Notice tone="error">{errorMessage(invite.error)}</Notice>
         </div>
       ) : null}
-      {message ? (
+      {created ? (
         <div className="sm:col-span-3">
-          <Notice tone="success">{message}</Notice>
+          <InviteShare invitation={created} organization={organization} />
         </div>
       ) : null}
     </form>

@@ -77,9 +77,17 @@ def test_invitation_lifecycle() -> None:
     assert created.status_code == 201
     assert created.json()["email"] == "nueva@example.com"
     assert [m.to for m in console_backend.sent] == ["nueva@example.com"]
+    # El link se devuelve una sola vez (sin email configurado, se comparte por WhatsApp) y es
+    # el mismo del email: sirve para aceptar la invitación.
+    path = created.json()["invite_path"]
+    assert created.json()["emailed"] is False  # EMAIL_BACKEND=console
+    assert path in console_backend.sent[0].text
+    preview = admin.get(f"/api/v1/auth/invitations/{path.removeprefix('/invite/')}")
+    assert (preview.status_code, preview.json()["email"]) == (200, "nueva@example.com")
 
-    pending = {i["email"] for i in admin.get("/api/v1/invitations").json()}
-    assert "nueva@example.com" in pending
+    listed = admin.get("/api/v1/invitations").json()
+    assert "nueva@example.com" in {i["email"] for i in listed}
+    assert all("invite_path" not in i for i in listed)  # la lista nunca lo muestra
 
     invitation_id = created.json()["id"]
     assert admin.delete(f"/api/v1/invitations/{invitation_id}").status_code == 204

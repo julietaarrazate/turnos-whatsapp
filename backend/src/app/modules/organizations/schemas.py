@@ -60,6 +60,13 @@ class InvitationOut(BaseModel):
     expires_at: datetime
 
 
+class InvitationCreated(InvitationOut):
+    # Solo se muestra al crear (en la base queda el hash), para compartirlo por WhatsApp si el
+    # email no está configurado o no llega. Invitar de nuevo al mismo email anula el anterior.
+    invite_path: str
+    emailed: bool  # False: no hay proveedor de email (EMAIL_BACKEND=console)
+
+
 class AuditLogOut(BaseModel):
     id: UUID
     action: str
