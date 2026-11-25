@@ -25,6 +25,9 @@ export const eventKey = (id: string) => [...EVENTS_KEY, "detail", id] as const;
 function useEvent(id: string) {
   return useQuery({
     queryKey: eventKey(id),
+    // La ficha (layout) y cada pestaña usan este query: sin staleTime, la pestaña montaba con el
+    // dato recién traído y lo volvía a pedir. Los cambios propios actualizan el cache al instante.
+    staleTime: 30_000,
     queryFn: async () => unwrap(await api.GET("/api/v1/events/{event_id}", { params: { path: { event_id: id } } })),
   });
 }
