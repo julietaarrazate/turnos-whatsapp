@@ -34,7 +34,7 @@ dev = [
     "mypy>=1.11",
     "import-linter>=2.1",
     "pypdf>=5",
-    "moto[s3]>=5.2.3",
+    "moto[s3]>=5.2.5",
 ]
 
 [build-system]
