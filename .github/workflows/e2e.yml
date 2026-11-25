@@ -28,7 +28,7 @@ jobs:
       COOKIE_SECURE: "false"
       RATE_LIMIT_ENABLED: "false"  # todos los tests ingresan con el mismo usuario
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f infra/postgres/init.sql
       - name: Librerías de WeasyPrint (PDF)
         run: |

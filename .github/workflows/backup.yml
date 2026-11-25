@@ -51,7 +51,7 @@ jobs:
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.configured.outputs.ready == 'true'
       - name: Cliente de Postgres 16 (la versión de Neon)
         if: steps.configured.outputs.ready == 'true'
