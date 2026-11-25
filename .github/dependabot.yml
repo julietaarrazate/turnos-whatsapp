@@ -1,24 +1,42 @@
-# Actualizaciones de dependencias (gratis, de GitHub). Semanal y agrupadas para no llenar de PR;
-# las de seguridad llegan aparte apenas se publican si están activadas en Settings → Code security.
+# Actualizaciones de dependencias (gratis, de GitHub). Pocas PR y agrupadas:
+# - una por semana con lo menor (minor/patch) de cada lado, y otra aparte con los saltos de versión
+#   mayor, que pueden romper y se revisan con más cuidado;
+# - las GitHub Actions, todas juntas una vez por mes.
+# Las de seguridad llegan aparte apenas se publican si están activadas en Settings → Code security.
+# Cada PR pasa por CI (incluido el job `audit`); se unen solo con CI en verde.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
     groups:
       frontend:
         patterns: ["*"]
         update-types: [minor, patch]
+      frontend-mayores:
+        patterns: ["*"]
+        update-types: [major]
   - package-ecosystem: uv
     directory: /backend
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
     groups:
+      # Los paquetes con extras (psycopg[binary], uvicorn[standard], …) se nombran explícitamente:
+      # con solo "*" Dependabot los abría en PR sueltas.
       backend:
-        patterns: ["*"]
+        patterns: ["*", "moto*", "psycopg*", "sentry-sdk*", "uvicorn*"]
         update-types: [minor, patch]
+      backend-mayores:
+        patterns: ["*", "moto*", "psycopg*", "sentry-sdk*", "uvicorn*"]
+        update-types: [major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      actions:
+        patterns: ["*"]
