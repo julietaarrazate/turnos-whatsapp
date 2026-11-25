@@ -133,3 +133,28 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  audit:
+    # Dependencias con vulnerabilidades conocidas (ARCHITECTURE §8.7). Lee los lockfiles, no instala
+    # nada. Falla con severidad alta o crítica en el frontend y con cualquiera en el backend
+    # (pip-audit no distingue severidad). Dependabot abre los PR de actualización.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Frontend (pnpm audit)
+        working-directory: frontend
+        run: pnpm audit --audit-level high
+      - name: Backend (pip-audit, incluye herramientas de desarrollo)
+        working-directory: backend
+        run: |
+          uv export --frozen --no-hashes --no-emit-project -o "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit==2.10.1 -r "$RUNNER_TEMP/requirements.txt" --no-deps --disable-pip --progress-spinner off

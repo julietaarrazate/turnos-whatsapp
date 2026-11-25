@@ -1,0 +1,24 @@
+# Actualizaciones de dependencias (gratis, de GitHub). Semanal y agrupadas para no llenar de PR;
+# las de seguridad llegan aparte apenas se publican si están activadas en Settings → Code security.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: uv
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      backend:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
