@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Trash2, X } from "lucide-react";
+import { Check, Send, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,13 @@ import { Notice } from "@/components/ui/notice";
 import { useSession } from "@/features/auth/session";
 import { EVENTS_KEY } from "@/features/budgets/keys";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
-import type { Schemas } from "@/lib/api/types";
+import type { EventDetail, Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
-import { formatDay } from "@/lib/format/date";
+import { formatDay, todayInArgentina } from "@/lib/format/date";
 import { formatMoney, formatQuantity } from "@/lib/format/number";
+
+import { useEvent } from "./event-detail";
+import { MESSAGE_LABELS, messageKind, supplierMessage, whatsappLink } from "./supplier-message";
 
 type Supplier = Schemas["EventSupplierOut"];
 type Task = Schemas["TaskOut"];
@@ -27,7 +30,36 @@ const HIRE: Record<Supplier["status"], { label: string; tone: string }> = {
   CANCELLED: { label: "Cancelado", tone: "bg-subtle text-ink-muted" },
 };
 
-function SupplierRow({ row, eventId, editable }: { row: Supplier; eventId: string; editable: boolean }) {
+/** WhatsApp al proveedor con el mensaje que corresponde a su estado (wa.me: gratis, sin API). */
+function MessageSupplier({ row, event, org }: { row: Supplier; event: EventDetail; org: string }) {
+  const kind = messageKind(row, event, todayInArgentina());
+  if (!kind || !row.supplier_id) return null;
+  return (
+    <a
+      href={whatsappLink(supplierMessage(kind, row, event, org), row.contact_phone)}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`WhatsApp a ${row.supplier_name ?? ""}: ${MESSAGE_LABELS[kind]}`}
+      className="inline-flex h-8 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm font-medium"
+    >
+      <Send className="size-4" aria-hidden /> {MESSAGE_LABELS[kind]}
+    </a>
+  );
+}
+
+function SupplierRow({
+  row,
+  eventId,
+  editable,
+  event,
+  org,
+}: {
+  row: Supplier;
+  eventId: string;
+  editable: boolean;
+  event: EventDetail | undefined;
+  org: string;
+}) {
   const queryClient = useQueryClient();
   const update = useMutation({
     mutationFn: async (body: Schemas["EventSupplierUpdate"]) =>
@@ -57,6 +89,12 @@ function SupplierRow({ row, eventId, editable }: { row: Supplier; eventId: strin
           </li>
         ))}
       </ul>
+      {row.contact_name ? (
+        <p className="text-sm text-ink-muted">
+          Contacto: {row.contact_name}
+          {row.contact_phone ? ` · ${row.contact_phone}` : " · sin teléfono cargado"}
+        </p>
+      ) : null}
       {row.notes ? <p className="text-sm">{row.notes}</p> : null}
       {row.invoice_number || row.payment_terms ? (
         <p className="text-sm text-ink-muted">
@@ -65,8 +103,14 @@ function SupplierRow({ row, eventId, editable }: { row: Supplier; eventId: strin
           {row.payment_terms ?? ""}
         </p>
       ) : null}
+      {editable && event && row.status === "PAID" ? (
+        <div className="flex flex-wrap gap-2">
+          <MessageSupplier row={row} event={event} org={org} />
+        </div>
+      ) : null}
       {editable && row.status !== "CANCELLED" && row.status !== "PAID" ? (
         <div className="flex flex-wrap gap-2">
+          {event ? <MessageSupplier row={row} event={event} org={org} /> : null}
           {row.status === "TO_HIRE" ? (
             <Button size="sm" loading={update.isPending} onClick={() => update.mutate({ status: "CONFIRMED" })}>
               <Check className="size-4" aria-hidden /> Confirmar {row.supplier_name ?? ""}
@@ -181,7 +225,9 @@ function TaskRow({ task, eventId, editable, members }: { task: Task; eventId: st
 
 /** Pestaña Producción: lista de contratación por proveedor y tareas (O-02, O-03). */
 export function EventProduction({ id }: { id: string }) {
-  const { can } = useSession();
+  const { can, me } = useSession();
+  const event = useEvent(id);
+  const org = me.memberships.find((m) => m.organization_id === me.active_organization_id)?.organization_name ?? "la productora";
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const production = useQuery({
@@ -230,7 +276,7 @@ export function EventProduction({ id }: { id: string }) {
         </div>
         <ul className="divide-y divide-line">
           {data.suppliers.map((row) => (
-            <SupplierRow key={row.id} row={row} eventId={id} editable={editable} />
+            <SupplierRow key={row.id} row={row} eventId={id} editable={editable} event={event.data} org={org} />
           ))}
         </ul>
       </section>

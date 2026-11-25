@@ -4,12 +4,14 @@ Todo sale de la versión aceptada (la baseline) sin volver a cargar nada (P1).
 """
 
 from collections import OrderedDict
-from datetime import timedelta
+from dataclasses import dataclass
+from datetime import date, timedelta
 from decimal import Decimal
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 
 from app.core.db import AppSession
 from app.core.errors import AppError, not_found
@@ -18,7 +20,8 @@ from app.core.security import utcnow
 from app.modules.audit import record
 from app.modules.auth import TenantContext
 from app.modules.budgets import BaselineLine, baseline_lines
-from app.modules.events import EventStatus, get_event, start_production
+from app.modules.catalog import SupplierContactInfo, primary_contacts
+from app.modules.events import Event, EventStatus, get_event, start_production
 from app.modules.identity import Membership, MembershipStatus, User
 from app.modules.production.models import EventSupplier, HireStatus, ProductionTask, TaskStatus
 from app.modules.production.schemas import (
@@ -158,19 +161,25 @@ def production(db: AppSession, ctx: TenantContext, event_id: UUID) -> Production
         .order_by(ProductionTask.sort, ProductionTask.created_at)
     ).all()
     active = [s for s in suppliers if s.status != HireStatus.CANCELLED]
+    contacts = primary_contacts(db, ctx, [s.supplier_id for s in suppliers if s.supplier_id])
     return ProductionOut(
         started=bool(suppliers) or bool(tasks),
-        suppliers=[_supplier_out(s, costs=costs) for s in suppliers],
+        suppliers=[_supplier_out(s, costs=costs, contacts=contacts) for s in suppliers],
         tasks=[_task_out(t, name) for t, name in tasks],
         budgeted_cost=sum((s.budgeted_cost for s in active), Decimal(0)) if costs else None,
     )
 
 
-def _supplier_out(row: EventSupplier, *, costs: bool) -> EventSupplierOut:
+def _supplier_out(
+    row: EventSupplier, *, costs: bool, contacts: dict[UUID, SupplierContactInfo]
+) -> EventSupplierOut:
+    contact = contacts.get(row.supplier_id) if row.supplier_id else None
     return EventSupplierOut(
         id=row.id,
         supplier_id=row.supplier_id,
         supplier_name=row.supplier_name,
+        contact_name=contact.name if contact else None,
+        contact_phone=contact.phone if contact else None,
         status=HireStatus(row.status),
         budgeted_cost=row.budgeted_cost if costs else None,
         items=[
@@ -246,7 +255,8 @@ def update_supplier(
         if field in body.model_fields_set:
             setattr(row, field, (getattr(body, field) or "").strip() or None)
     db.flush()
-    return _supplier_out(row, costs=ctx.can(Permission.COST_VIEW))
+    contacts = primary_contacts(db, ctx, [row.supplier_id] if row.supplier_id else [])
+    return _supplier_out(row, costs=ctx.can(Permission.COST_VIEW), contacts=contacts)
 
 
 def _check_assignee(db: AppSession, ctx: TenantContext, user_id: UUID | None) -> None:
@@ -330,3 +340,89 @@ def delete_task(db: AppSession, ctx: TenantContext, task_id: UUID) -> None:
     _editable_event(db, ctx, task.event_id)
     db.delete(task)
     db.flush()
+
+
+# --- Para hacer hoy (dashboard) ------------------------------------------------------------
+
+CONFIRM_HORIZON_DAYS = 7  # proveedores sin confirmar para eventos de la próxima semana
+_ACTIVE_EVENT = (EventStatus.APPROVED, EventStatus.IN_PRODUCTION, EventStatus.COMPLETED)
+
+
+class PendingKind(StrEnum):
+    TASKS_OVERDUE = "TASKS_OVERDUE"  # tareas sin hacer con fecha anterior a hoy
+    TASKS_TODAY = "TASKS_TODAY"
+    TO_CONFIRM = "TO_CONFIRM"  # proveedores cotizados, el evento es en los próximos días
+    TO_PAY = "TO_PAY"  # factura cargada, sin pagar
+
+
+@dataclass(frozen=True)
+class Pending:
+    kind: PendingKind
+    event_id: UUID
+    event_number: int
+    event_name: str
+    count: int
+    date: date | None  # vencimiento más viejo (tareas) o fecha del evento
+
+
+def pending_operations(db: AppSession, ctx: TenantContext, today: date) -> list[Pending]:
+    """Lo operativo que hay que resolver, agrupado por evento y ordenado por urgencia."""
+    org = ctx.organization_id
+    live = (
+        Event.organization_id == org,
+        Event.deleted_at.is_(None),
+        Event.status.in_([s.value for s in _ACTIVE_EVENT]),
+    )
+    out: list[Pending] = []
+
+    overdue = ProductionTask.due_date < today
+    tasks = db.execute(
+        select(
+            Event.id,
+            Event.number,
+            Event.name,
+            func.count().filter(overdue),
+            func.min(ProductionTask.due_date).filter(overdue),
+            func.count().filter(ProductionTask.due_date == today),
+        )
+        .join(Event, Event.id == ProductionTask.event_id)
+        .where(
+            *live,
+            ProductionTask.organization_id == org,
+            ProductionTask.status != TaskStatus.DONE.value,
+            ProductionTask.due_date <= today,
+        )
+        .group_by(Event.id, Event.number, Event.name)
+    ).all()
+    for event_id, number, name, late, oldest, due_today in tasks:
+        if late:
+            out.append(Pending(PendingKind.TASKS_OVERDUE, event_id, number, name, late, oldest))
+        if due_today:
+            out.append(Pending(PendingKind.TASKS_TODAY, event_id, number, name, due_today, today))
+
+    suppliers = db.execute(
+        select(
+            Event.id, Event.number, Event.name, Event.start_date, EventSupplier.status, func.count()
+        )
+        .join(Event, Event.id == EventSupplier.event_id)
+        .where(
+            *live,
+            EventSupplier.organization_id == org,
+            EventSupplier.supplier_id.is_not(None),  # lo propio no se confirma ni se paga
+            or_(
+                EventSupplier.status == HireStatus.INVOICED.value,
+                and_(
+                    EventSupplier.status == HireStatus.TO_HIRE.value,
+                    Event.start_date >= today,
+                    Event.start_date <= today + timedelta(days=CONFIRM_HORIZON_DAYS),
+                ),
+            ),
+        )
+        .group_by(Event.id, Event.number, Event.name, Event.start_date, EventSupplier.status)
+    ).all()
+    for event_id, number, name, start, status, count in suppliers:
+        kind = PendingKind.TO_PAY if status == HireStatus.INVOICED else PendingKind.TO_CONFIRM
+        out.append(Pending(kind, event_id, number, name, count, start))
+
+    order = list(PendingKind)
+    return sorted(out, key=lambda p: (order.index(p.kind), p.date or date.max, p.event_number))

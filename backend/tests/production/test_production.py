@@ -146,3 +146,42 @@ def test_closed_event_is_read_only() -> None:
     _ok(manager.post(f"{base}/close"))
     locked = manager.post(f"{base}/tasks", json={"title": "Algo"})
     assert (locked.status_code, locked.json()["code"]) == (409, "event_locked")
+
+
+def test_hire_list_has_who_to_message() -> None:
+    """Cada proveedor trae a quién escribirle: el contacto principal, o el primero con teléfono."""
+    world = build_org("a")
+    owner = _approved(world)
+    supplier_url = f"/api/v1/suppliers/{world.ids['supplier_id']}"
+    _ok(
+        owner.patch(
+            supplier_url,
+            json={
+                "contacts": [
+                    {"name": "Sin teléfono", "email": "a@x.com"},
+                    {"name": "Lucía", "phone": "+54 9 11 5555-0000"},
+                ]
+            },
+        )
+    )
+    started = _ok(owner.post(f"/api/v1/events/{world.ids['event_id']}/start-production"))
+    by_name = {s["supplier_name"]: s for s in started["suppliers"]}
+    assert by_name["Proveedor ejemplo"]["contact_name"] == "Lucía"
+    assert by_name["Proveedor ejemplo"]["contact_phone"] == "+54 9 11 5555-0000"
+    assert by_name[None]["contact_phone"] is None  # ítems propios: no hay a quién escribirle
+
+    # El principal gana aunque haya otro con teléfono; también al actualizar el estado.
+    _ok(
+        owner.patch(
+            supplier_url,
+            json={
+                "contacts": [
+                    {"name": "Lucía", "phone": "+54 9 11 5555-0000"},
+                    {"name": "Pedro", "phone": "11 4444-1111", "is_primary": True},
+                ]
+            },
+        )
+    )
+    row = by_name["Proveedor ejemplo"]
+    updated = _ok(owner.patch(f"/api/v1/event-suppliers/{row['id']}", json={"status": "CONFIRMED"}))
+    assert (updated["contact_name"], updated["contact_phone"]) == ("Pedro", "11 4444-1111")

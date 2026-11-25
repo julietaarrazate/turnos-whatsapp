@@ -20,6 +20,8 @@ class EventSupplierOut(BaseModel):
     id: UUID
     supplier_id: UUID | None
     supplier_name: str | None
+    contact_name: str | None  # a quién escribirle (contacto principal del proveedor)
+    contact_phone: str | None
     status: HireStatus
     budgeted_cost: Decimal | None  # solo con cost.view
     items: list[HireItem]

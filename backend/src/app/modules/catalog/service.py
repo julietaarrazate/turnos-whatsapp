@@ -855,6 +855,37 @@ def supplier_name(db: AppSession, ctx: TenantContext, supplier_id: UUID) -> str:
     return _supplier(db, ctx, supplier_id).name
 
 
+@dataclass(frozen=True)
+class SupplierContactInfo:
+    name: str
+    phone: str | None
+
+
+def primary_contacts(
+    db: AppSession, ctx: TenantContext, supplier_ids: list[UUID]
+) -> dict[UUID, SupplierContactInfo]:
+    """El contacto a quien escribirle de cada proveedor: el principal, o el primero con teléfono."""
+    if not supplier_ids:
+        return {}
+    rows = db.execute(
+        select(SupplierContact)
+        .where(
+            SupplierContact.organization_id == ctx.organization_id,
+            SupplierContact.supplier_id.in_(supplier_ids),
+        )
+        .order_by(
+            SupplierContact.supplier_id,
+            SupplierContact.is_primary.desc(),
+            SupplierContact.phone.is_(None),
+            SupplierContact.created_at,
+        )
+    ).scalars()
+    contacts: dict[UUID, SupplierContactInfo] = {}
+    for row in rows:
+        contacts.setdefault(row.supplier_id, SupplierContactInfo(name=row.name, phone=row.phone))
+    return contacts
+
+
 def category_info(
     db: AppSession, ctx: TenantContext, category_id: UUID
 ) -> tuple[Category, Decimal]:

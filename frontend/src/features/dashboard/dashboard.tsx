@@ -34,8 +34,31 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
+type Pending = Dashboard["todo"]["operations"][number];
+
+/** Lo operativo, por evento: lleva a la pestaña Producción, donde se resuelve (y está el WhatsApp). */
+function pendingText(p: Pending): string {
+  const event = `#${p.event_number} ${p.event_name}`;
+  switch (p.kind) {
+    case "TASKS_OVERDUE":
+      return `${plural(p.count, "tarea atrasada", "tareas atrasadas")} · ${event}`;
+    case "TASKS_TODAY":
+      return `${plural(p.count, "tarea", "tareas")} para hoy · ${event}`;
+    case "TO_CONFIRM":
+      return `${plural(p.count, "proveedor sin confirmar", "proveedores sin confirmar")} · ${event}${p.date ? ` (${formatDay(p.date)})` : ""}`;
+    case "TO_PAY":
+      return `${plural(p.count, "factura por pagar", "facturas por pagar")} · ${event}`;
+  }
+}
+
 function Todo({ data }: { data: Dashboard["todo"] }) {
   const items = [
+    ...data.operations.map((p) => ({
+      count: p.count,
+      text: pendingText(p),
+      href: `/events/${p.event_id}/production`,
+      urgent: p.kind === "TASKS_OVERDUE",
+    })),
     { count: data.no_response, text: `${plural(data.no_response, "propuesta", "propuestas")} sin respuesta hace +${data.follow_up_days} días`, href: "/budgets" },
     { count: data.viewed_no_answer, text: `${plural(data.viewed_no_answer, "propuesta vista", "propuestas vistas")} y no respondida${data.viewed_no_answer === 1 ? "" : "s"}`, href: "/budgets" },
     { count: data.expiring, text: `${plural(data.expiring, "propuesta vence", "propuestas vencen")} en menos de 48 h`, href: "/budgets" },
@@ -49,7 +72,7 @@ function Todo({ data }: { data: Dashboard["todo"] }) {
           {items.map((item) => (
             <li key={item.text}>
               <Link href={item.href} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-subtle">
-                <span className="size-2 shrink-0 rounded-full bg-warning" aria-hidden />
+                <span className={`size-2 shrink-0 rounded-full ${"urgent" in item && item.urgent ? "bg-danger" : "bg-warning"}`} aria-hidden />
                 <span className="min-w-0 flex-1">{item.text}</span>
                 <ChevronRight className="size-4 text-ink-muted" aria-hidden />
               </Link>

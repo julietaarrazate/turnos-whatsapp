@@ -2781,6 +2781,28 @@
             ],
             "title": "Confirmed At"
           },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2869,6 +2891,8 @@
           "id",
           "supplier_id",
           "supplier_name",
+          "contact_name",
+          "contact_phone",
           "status",
           "budgeted_cost",
           "items",
@@ -6573,6 +6597,63 @@
         "title": "PasswordResetRequest",
         "type": "object"
       },
+      "PendingKind": {
+        "enum": [
+          "TASKS_OVERDUE",
+          "TASKS_TODAY",
+          "TO_CONFIRM",
+          "TO_PAY"
+        ],
+        "title": "PendingKind",
+        "type": "string"
+      },
+      "PendingOut": {
+        "description": "Algo operativo para resolver en un evento (tareas, proveedores, pagos).",
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_name": {
+            "title": "Event Name",
+            "type": "string"
+          },
+          "event_number": {
+            "title": "Event Number",
+            "type": "integer"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PendingKind"
+          }
+        },
+        "required": [
+          "kind",
+          "event_id",
+          "event_number",
+          "event_name",
+          "count",
+          "date"
+        ],
+        "title": "PendingOut",
+        "type": "object"
+      },
       "Pipeline": {
         "properties": {
           "counts": {
@@ -9911,6 +9992,13 @@
             "title": "No Response",
             "type": "integer"
           },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/PendingOut"
+            },
+            "title": "Operations",
+            "type": "array"
+          },
           "stale_costs": {
             "title": "Stale Costs",
             "type": "integer"
@@ -9925,7 +10013,8 @@
           "viewed_no_answer",
           "expiring",
           "stale_costs",
-          "follow_up_days"
+          "follow_up_days",
+          "operations"
         ],
         "title": "TodoOut",
         "type": "object"
