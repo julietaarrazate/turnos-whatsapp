@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.modules.events import EventStatus
+from app.modules.production import PendingKind
 
 
 class AmountOut(BaseModel):
@@ -21,12 +22,24 @@ class ConversionOut(BaseModel):
     by_amount: Decimal | None
 
 
+class PendingOut(BaseModel):
+    """Algo operativo para resolver en un evento (tareas, proveedores, pagos)."""
+
+    kind: PendingKind
+    event_id: UUID
+    event_number: int
+    event_name: str
+    count: int
+    date: date | None  # vencimiento más viejo (tareas) o fecha del evento (proveedores)
+
+
 class TodoOut(BaseModel):
     no_response: int  # enviadas hace más de N días sin decisión
     viewed_no_answer: int  # vistas hace más de 48 h, sin respuesta
     expiring: int  # vencen en menos de 48 h
     stale_costs: int  # líneas de borradores con costos desactualizados
     follow_up_days: int
+    operations: list[PendingOut]  # solo con production.manage
 
 
 class UpcomingEvent(BaseModel):

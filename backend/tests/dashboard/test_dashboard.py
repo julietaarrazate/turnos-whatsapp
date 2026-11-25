@@ -87,3 +87,74 @@ def test_quoter_sees_only_their_own_budgets_and_permissions() -> None:
     bad = owner.get("/api/v1/dashboard", params={"month": "2026-13"})
     assert (bad.status_code, bad.json()["code"]) == (422, "invalid_month")
     assert owner.get("/api/v1/dashboard", params={"month": "octubre"}).status_code == 422
+
+
+def _ops(client: TestClient) -> list[dict[str, Any]]:
+    return list(_dashboard(client)["todo"]["operations"])
+
+
+def test_todo_lists_overdue_tasks_suppliers_to_confirm_and_invoices_to_pay() -> None:
+    world = build_org("a")
+    owner = _approved(world)
+    event_id = world.ids["event_id"]
+    soon = (today_ar() + timedelta(days=3)).isoformat()
+    _ok(owner.patch(f"/api/v1/events/{event_id}", json={"start_date": soon}))
+    started = _ok(owner.post(f"/api/v1/events/{event_id}/start-production"))
+    yesterday = (today_ar() - timedelta(days=1)).isoformat()
+    for title, due in (
+        ("Atrasada 1", yesterday),
+        ("Atrasada 2", yesterday),
+        ("Hoy", today_ar().isoformat()),
+    ):
+        _ok(
+            owner.post(f"/api/v1/events/{event_id}/tasks", json={"title": title, "due_date": due}),
+            201,
+        )
+    _ok(owner.post(f"/api/v1/events/{event_id}/tasks", json={"title": "Sin fecha"}), 201)
+
+    ops = {o["kind"]: o for o in _ops(owner)}
+    assert ops["TASKS_OVERDUE"]["count"] == 2
+    assert ops["TASKS_OVERDUE"]["date"] == yesterday
+    assert ops["TASKS_TODAY"]["count"] == 1
+    # Solo los proveedores reales: lo propio (sin proveedor) no se confirma.
+    real = [s for s in started["suppliers"] if s["supplier_id"]]
+    assert len(real) == 2
+    assert len(started["suppliers"]) == 3
+    assert (ops["TO_CONFIRM"]["count"], ops["TO_CONFIRM"]["date"]) == (2, soon)
+    assert ops["TO_CONFIRM"]["event_id"] == str(event_id)
+    assert "TO_PAY" not in ops
+    assert [o["kind"] for o in _ops(owner)] == ["TASKS_OVERDUE", "TASKS_TODAY", "TO_CONFIRM"]
+
+    invoiced, other = real
+    _ok(
+        owner.patch(
+            f"/api/v1/event-suppliers/{invoiced['id']}",
+            json={"status": "INVOICED", "invoice_number": "A-1"},
+        )
+    )
+    ops = {o["kind"]: o for o in _ops(owner)}
+    assert (ops["TO_CONFIRM"]["count"], ops["TO_PAY"]["count"]) == (1, 1)
+
+    _ok(owner.patch(f"/api/v1/event-suppliers/{invoiced['id']}", json={"status": "PAID"}))
+    _ok(owner.patch(f"/api/v1/event-suppliers/{other['id']}", json={"status": "CONFIRMED"}))
+    for task in _ok(owner.get(f"/api/v1/events/{event_id}/production"))["tasks"]:
+        _ok(owner.patch(f"/api/v1/tasks/{task['id']}", json={"status": "DONE"}))
+    assert _ops(owner) == []
+
+
+def test_todo_operations_need_production_permission_and_ignore_far_events() -> None:
+    world = build_org("a")
+    owner = _approved(world)
+    far = (today_ar() + timedelta(days=30)).isoformat()
+    _ok(owner.patch(f"/api/v1/events/{world.ids['event_id']}", json={"start_date": far}))
+    _ok(owner.post(f"/api/v1/events/{world.ids['event_id']}/start-production"))
+    assert _ops(owner) == []  # falta un mes: todavía no hace falta confirmar
+
+    soon = (today_ar() + timedelta(days=2)).isoformat()
+    _ok(owner.patch(f"/api/v1/events/{world.ids['event_id']}", json={"start_date": soon}))
+    assert [o["kind"] for o in _ops(owner)] == ["TO_CONFIRM"]
+    # Quien no gestiona producción no ve lo operativo (VIEWER solo mira el tablero).
+    assert _ops(logged_in(world.members[Role.VIEWER])) == []
+    # Y otra organización no ve nada de esta.
+    other = build_org("b")
+    assert _ops(logged_in(other.members[Role.OWNER])) == []

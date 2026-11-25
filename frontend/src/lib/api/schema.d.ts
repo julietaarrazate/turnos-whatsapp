@@ -2605,6 +2605,10 @@ export interface components {
             budgeted_cost: string | null;
             /** Confirmed At */
             confirmed_at: string | null;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
             /**
              * Id
              * Format: uuid
@@ -3702,6 +3706,31 @@ export interface components {
              */
             email: string;
         };
+        /**
+         * PendingKind
+         * @enum {string}
+         */
+        PendingKind: "TASKS_OVERDUE" | "TASKS_TODAY" | "TO_CONFIRM" | "TO_PAY";
+        /**
+         * PendingOut
+         * @description Algo operativo para resolver en un evento (tareas, proveedores, pagos).
+         */
+        PendingOut: {
+            /** Count */
+            count: number;
+            /** Date */
+            date: string | null;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Event Name */
+            event_name: string;
+            /** Event Number */
+            event_number: number;
+            kind: components["schemas"]["PendingKind"];
+        };
         /** Pipeline */
         Pipeline: {
             /** Counts */
@@ -4689,6 +4718,8 @@ export interface components {
             follow_up_days: number;
             /** No Response */
             no_response: number;
+            /** Operations */
+            operations: components["schemas"]["PendingOut"][];
             /** Stale Costs */
             stale_costs: number;
             /** Viewed No Answer */

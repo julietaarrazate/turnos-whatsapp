@@ -22,11 +22,13 @@ from app.modules.dashboard.schemas import (
     AmountOut,
     ConversionOut,
     DashboardOut,
+    PendingOut,
     TodoOut,
     UpcomingEvent,
 )
 from app.modules.events import Event, EventStatus
 from app.modules.identity import Organization
+from app.modules.production import pending_operations
 from app.modules.proposals import Amount, FollowUp, commercial_metrics
 
 AR = ZoneInfo("America/Argentina/Buenos_Aires")
@@ -132,6 +134,19 @@ def dashboard(db: AppSession, ctx: TenantContext, month: str | None) -> Dashboar
             if ctx.can(Permission.COST_VIEW)
             else 0,
             follow_up_days=org.follow_up_days if org else 5,
+            operations=[
+                PendingOut(
+                    kind=p.kind,
+                    event_id=p.event_id,
+                    event_number=p.event_number,
+                    event_name=p.event_name,
+                    count=p.count,
+                    date=p.date,
+                )
+                for p in pending_operations(db, ctx, today_ar())
+            ]
+            if ctx.can(Permission.PRODUCTION_MANAGE)
+            else [],
         ),
         upcoming=_upcoming(db, ctx),
     )

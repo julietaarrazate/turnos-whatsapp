@@ -22,7 +22,7 @@ import { EVENT_STATUS_LABELS, EventStatusBadge } from "./status";
 
 export const eventKey = (id: string) => [...EVENTS_KEY, "detail", id] as const;
 
-function useEvent(id: string) {
+export function useEvent(id: string) {
   return useQuery({
     queryKey: eventKey(id),
     // La ficha (layout) y cada pestaña usan este query: sin staleTime, la pestaña montaba con el

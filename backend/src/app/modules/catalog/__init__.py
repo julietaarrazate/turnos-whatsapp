@@ -7,9 +7,11 @@ from app.modules.catalog.packages import PackageLine, package_spec
 from app.modules.catalog.router import router
 from app.modules.catalog.service import (
     LineSource,
+    SupplierContactInfo,
     category_info,
     current_prices,
     line_source,
+    primary_contacts,
     supplier_name,
 )
 
@@ -20,10 +22,12 @@ __all__ = [
     "LineSource",
     "PackageLine",
     "Product",
+    "SupplierContactInfo",
     "category_info",
     "current_prices",
     "line_source",
     "package_spec",
+    "primary_contacts",
     "router",
     "seed_catalog_defaults",
     "supplier_name",
