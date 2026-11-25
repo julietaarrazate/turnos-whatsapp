@@ -17,6 +17,11 @@ test("invitar y anular una invitación", async ({ page, browser }) => {
   const guest = await browser.newPage();
   await guest.goto(link);
   await expect(guest.getByText(`Invitación para ${email} como Producción.`)).toBeVisible();
+  // La contraseña nueva se puede mostrar para revisarla antes de aceptar.
+  const password = guest.getByLabel("Elegí una contraseña", { exact: true });
+  await password.fill("clave-larga-123");
+  await guest.getByRole("button", { name: "Mostrar contraseña" }).click();
+  await expect(password).toHaveAttribute("type", "text");
   await guest.close();
 
   const row = page.getByRole("listitem").filter({ hasText: email });

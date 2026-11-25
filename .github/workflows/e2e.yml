@@ -51,7 +51,9 @@ jobs:
           uv sync --frozen
           uv run alembic upgrade head
           uv run python scripts/seed_dev.py
-          nohup uv run uvicorn app.main:app --port 8000 > ../api.log 2>&1 &
+          # Con el binario del venv y no `uv run`: `uv run` retiene el lock del cache de uv mientras
+          # vive el proceso, y el post-step de setup-uv (cache prune) esperaba 5 min y fallaba el job.
+          nohup .venv/bin/uvicorn app.main:app --port 8000 > ../api.log 2>&1 &
       - name: Frontend
         working-directory: frontend
         run: |

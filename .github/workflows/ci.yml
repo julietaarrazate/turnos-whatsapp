@@ -11,7 +11,8 @@ concurrency:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    # Fijo como en backup.yml: ubuntu-latest pasó a 26.04, que ya no trae postgresql-client-16.
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend

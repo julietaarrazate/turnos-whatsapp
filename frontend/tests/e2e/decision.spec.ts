@@ -162,6 +162,8 @@ test("el cliente rechaza y la productora aprueba otra con OC", async ({ page, br
 
   // Nueva versión, se reenvía y el cliente confirma por mail con una OC.
   await page.getByRole("button", { name: "Nueva versión" }).click();
+  // Esperar el borrador: si se genera antes, la propuesta sale sin If-Match contra un borrador nuevo.
+  await expect(page.getByText("v2 · borrador")).toBeVisible();
   await page.getByRole("button", { name: "Generar propuesta" }).click();
   await page.getByRole("dialog", { name: "Generar propuesta" }).getByRole("button", { name: "Generar" }).click();
   await expect(page.getByLabel("Link de la propuesta")).toBeVisible();
