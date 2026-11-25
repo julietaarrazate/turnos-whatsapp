@@ -357,6 +357,7 @@ Cada versión congelada guarda `pricing_engine_version` y **todos** los inputs y
 
 - Cookies `SameSite=Lax` + mismo origen + **verificación de `Origin`** + header custom obligatorio en mutaciones (`X-Requested-With`).
 - Headers: HSTS, CSP estricta (sin `unsafe-inline` en scripts), `X-Content-Type-Options`, `frame-ancestors 'none'` y `Referrer-Policy: strict-origin-when-cross-origin` (`no-referrer` en `/p/*`).
+- **CSP con nonce por request** (`frontend/src/proxy.ts` y `src/lib/csp.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic'`, estilos con el mismo nonce, `connect-src` solo al mismo origen (y al ingest de Sentry si hay DSN). Next le pone el nonce a sus scripts al renderizar, así que **todas las páginas se renderizan por request** (`connection()` en el layout raíz). Se descartó SRI (experimental): no cubre los scripts inline de Next y la app no carga. El e2e `csp.spec.ts` falla si alguna pantalla viola la política y verifica que un script inyectado no corre.
 
 ### 8.4 Propuestas públicas
 
