@@ -61,7 +61,7 @@ jobs:
       - name: Roles de la base (como en Neon)
         if: steps.configured.outputs.ready == 'true'
         run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f infra/postgres/init.sql
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         if: steps.configured.outputs.ready == 'true'
         with:
           enable-cache: true
