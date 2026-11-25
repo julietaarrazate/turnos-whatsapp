@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/field";
+import { PasswordField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 
@@ -46,7 +46,7 @@ export function LoginForm() {
       </div>
       {error ? <Notice tone="error">{error}</Notice> : null}
       <TextField label="Email" name="email" type="email" autoComplete="email" inputMode="email" required />
-      <TextField label="Contraseña" name="password" type="password" autoComplete="current-password" required />
+      <PasswordField label="Contraseña" name="password" autoComplete="current-password" required />
       <Button type="submit" size="lg" loading={pending}>
         Ingresar
       </Button>

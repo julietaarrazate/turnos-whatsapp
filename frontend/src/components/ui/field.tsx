@@ -1,6 +1,8 @@
+import { Eye, EyeOff } from "lucide-react";
 import {
   forwardRef,
   useId,
+  useState,
   type InputHTMLAttributes,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
@@ -65,6 +67,44 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
         aria-describedby={error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined}
         {...props}
       />
+    </FieldShell>
+  );
+});
+
+export type PasswordFieldProps = Omit<TextFieldProps, "type">;
+
+/** Contraseña con botón para mostrarla (en el celular es fácil equivocarse al tipear). */
+export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(function PasswordField(
+  { label, hideLabel, hint, error, className, id, ...props },
+  ref,
+) {
+  const autoId = useId();
+  const fieldId = id ?? autoId;
+  const [visible, setVisible] = useState(false);
+  const Icon = visible ? EyeOff : Eye;
+  return (
+    <FieldShell label={label} hideLabel={hideLabel} hint={hint} error={error} id={fieldId}>
+      <div className="relative">
+        <input
+          ref={ref}
+          id={fieldId}
+          type={visible ? "text" : "password"}
+          className={cn(control, "h-11 pr-11 sm:h-10", error && "border-danger", className)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label="Mostrar contraseña"
+          aria-pressed={visible}
+          aria-controls={fieldId}
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent/30"
+        >
+          <Icon className="size-4" aria-hidden />
+        </button>
+      </div>
     </FieldShell>
   );
 });
