@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/field";
+import { PasswordField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 
@@ -65,14 +65,13 @@ export function AcceptInvitation({ token }: { token: string }) {
       </div>
       {error ? <Notice tone="error">{error}</Notice> : null}
       {invitation.user_exists ? (
-        <TextField label="Tu contraseña actual" name="password" type="password" autoComplete="current-password" required />
+        <PasswordField label="Tu contraseña actual" name="password" autoComplete="current-password" required />
       ) : (
         <>
           <TextField label="Nombre y apellido" name="name" autoComplete="name" required />
-          <TextField
+          <PasswordField
             label="Elegí una contraseña"
             name="password"
-            type="password"
             autoComplete="new-password"
             minLength={10}
             hint="Mínimo 10 caracteres."

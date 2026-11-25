@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/field";
+import { PasswordField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 
@@ -99,8 +99,8 @@ export function ConfirmPasswordReset({ token }: { token: string }) {
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold">Elegí una contraseña nueva</h1>
       {error ? <Notice tone="error">{error}</Notice> : null}
-      <TextField label="Contraseña nueva" name="password" type="password" autoComplete="new-password" minLength={10} hint="Mínimo 10 caracteres." required />
-      <TextField label="Repetila" name="confirm" type="password" autoComplete="new-password" required />
+      <PasswordField label="Contraseña nueva" name="password" autoComplete="new-password" minLength={10} hint="Mínimo 10 caracteres." required />
+      <PasswordField label="Repetila" name="confirm" autoComplete="new-password" required />
       <Button type="submit" size="lg" loading={pending}>
         Guardar
       </Button>
