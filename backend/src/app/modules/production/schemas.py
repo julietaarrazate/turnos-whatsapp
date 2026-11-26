@@ -310,6 +310,7 @@ class FileItem(BaseModel):
     created_at: datetime
     event: FileEvent
     can_delete: bool
+    approval: "ApprovalOut | None" = None  # el último pedido al cliente (solo archivos y links)
 
 
 class ExpectedFileOut(BaseModel):
@@ -334,3 +335,42 @@ class ExpectedTemplateIn(BaseModel):
     """Lista base según el tipo de evento: STAND, BTL (activación), EVENT o VISUAL."""
 
     template: Literal["STAND", "BTL", "EVENT", "VISUAL"]
+
+
+class ApprovalOut(BaseModel):
+    """El último pedido de aprobación de un archivo (lo que muestra la pestaña Archivos)."""
+
+    id: UUID
+    status: str  # PENDING | APPROVED | CHANGES
+    requested_at: datetime
+    decided_at: datetime | None
+    decided_by_name: str | None
+    comment: str | None
+    rounds: int  # cuántas veces se pidió (1 = primera vuelta)
+
+
+class ApprovalLinkOut(BaseModel):
+    """El link para mandarle al cliente. El token existe en claro solo en esta respuesta."""
+
+    approval: ApprovalOut
+    path: str  # /a/{token}
+
+
+class PublicApproval(BaseModel):
+    """Lo que ve el cliente en el link: el diseño y su respuesta, nada de plata ni del resto."""
+
+    organization_name: str
+    event_name: str
+    title: str
+    kind: str  # IMAGE | PDF | LINK
+    url: str | None  # el link externo (Drive…) si no es un archivo subido
+    status: str  # PENDING | APPROVED | CHANGES | REPLACED | EXPIRED
+    decided_at: datetime | None
+    decided_by_name: str | None
+    comment: str | None
+
+
+class ApprovalDecisionIn(BaseModel):
+    decision: Literal["APPROVED", "CHANGES"]
+    name: str = Field(min_length=2, max_length=120)
+    comment: str | None = Field(default=None, max_length=1000)

@@ -27,6 +27,7 @@ KINDS = (
     "piece.plan_uploaded",
     "production.started",
     "production.supplier_status",
+    "file.approval_decided",  # el cliente respondió el link de aprobación
 )
 PAGE = 30
 UNREAD_CAP = 99
@@ -126,7 +127,8 @@ def feed(
             ActivityOut(
                 id=log.id,
                 kind=log.action,
-                actor_name=actor,
+                # El cliente que respondió un link no es usuario: su nombre viene en el registro.
+                actor_name=actor or _text(after, "by"),
                 event=ActivityEvent(id=event.id, number=event.number, name=event.name),
                 piece=_text(after, "piece"),
                 status=_text(after, "status"),

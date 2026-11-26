@@ -10,19 +10,21 @@ import {
   Image as ImageIcon,
   Link2,
   Plus,
+  Send,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
+import { ShareLink } from "@/components/ui/share-link";
 import { useSession } from "@/features/auth/session";
 import { ApiError, api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
-import { formatDate } from "@/lib/format/date";
+import { formatDate, formatDateTime } from "@/lib/format/date";
 import { MAX_DOC_BYTES, TOO_HEAVY, shrinkImage, toBase64, uploadName } from "@/lib/files";
 import { LIVE } from "@/lib/live";
 
@@ -62,6 +64,82 @@ function FileIcon({ item }: { item: Item }) {
   return <Icon className="size-5 shrink-0 text-brand" aria-hidden />;
 }
 
+type Approval = NonNullable<Item["approval"]>;
+
+/** "✓ Aprobado por Laura" / "Pidió cambios" / "Esperando al cliente": lo último del link. */
+export function approvalLabel(approval: Approval): { text: string; tone: string } {
+  const round = approval.rounds > 1 ? ` (vuelta ${approval.rounds})` : "";
+  if (approval.status === "APPROVED") {
+    return {
+      text: `✓ Aprobado por ${approval.decided_by_name}${approval.decided_at ? ` · ${formatDateTime(approval.decided_at)}` : ""}${round}`,
+      tone: "text-success",
+    };
+  }
+  if (approval.status === "CHANGES") {
+    return { text: `Pidió cambios${round}: “${approval.comment ?? ""}”`, tone: "text-warning" };
+  }
+  return { text: `Esperando respuesta del cliente${round}`, tone: "text-ink-muted" };
+}
+
+function AskApproval({ item, eventId }: { item: Item; eventId: string }) {
+  const queryClient = useQueryClient();
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  const ask = useMutation({
+    mutationFn: async () =>
+      unwrap(await api.POST("/api/v1/event-files/{file_id}/approval", { params: { path: { file_id: item.id } } })),
+    onSuccess: (link) => {
+      setUrl(`${window.location.origin}${link.path}`);
+      void queryClient.invalidateQueries({ queryKey: filesKey(eventId) });
+    },
+  });
+  useEffect(() => {
+    if (url) dialog.current?.showModal();
+  }, [url]);
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={`Pedir aprobación de ${item.title}`}
+        title="Pedir aprobación al cliente"
+        disabled={ask.isPending}
+        onClick={() => {
+          const pending = item.approval?.status === "PENDING";
+          if (!pending || window.confirm("Ya hay un link esperando respuesta. ¿Armar uno nuevo? El anterior deja de servir.")) ask.mutate();
+        }}
+        className="flex size-10 shrink-0 items-center justify-center rounded-full text-brand hover:bg-subtle"
+      >
+        <Send className="size-4" aria-hidden />
+      </button>
+      {ask.isError ? <span className="sr-only">{errorMessage(ask.error)}</span> : null}
+      <dialog
+        ref={dialog}
+        aria-label="Link de aprobación"
+        onClose={() => setUrl(null)}
+        className="m-auto w-[min(28rem,calc(100%-2rem))] rounded-2xl border-0 bg-surface p-4 backdrop:bg-black/40"
+      >
+        <div className="flex flex-col gap-3">
+          <h2 className="text-lg font-bold">Pedir aprobación</h2>
+          <p className="text-sm text-ink-muted">
+            Mandale este link al cliente: ve “{item.title}” y responde “Aprobado” o “Pido cambios” desde el teléfono, sin cuenta.
+          </p>
+          {url ? (
+            <ShareLink
+              url={url}
+              inputLabel="Link de aprobación"
+              whatsappText={`Hola! Te paso el diseño "${item.title}" para que lo apruebes o nos pidas cambios: ${url}`}
+            >
+              <Button size="sm" variant="ghost" onClick={() => dialog.current?.close()}>
+                Listo
+              </Button>
+            </ShareLink>
+          ) : null}
+        </div>
+      </dialog>
+    </>
+  );
+}
+
 function FileRow({ item, eventId }: { item: Item; eventId: string }) {
   const queryClient = useQueryClient();
   const remove = useMutation({
@@ -80,6 +158,11 @@ function FileRow({ item, eventId }: { item: Item; eventId: string }) {
         <span className="block truncate text-xs text-ink-muted">
           {[item.piece_name, item.author_name, formatDate(item.created_at)].filter(Boolean).join(" · ")}
         </span>
+        {item.approval ? (
+          <span className={cn("mt-0.5 block truncate text-xs font-semibold", approvalLabel(item.approval).tone)}>
+            {approvalLabel(item.approval).text}
+          </span>
+        ) : null}
         {item.expires_soon ? (
           <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-warning">
             <AlertTriangle className="size-3.5" aria-hidden /> WeTransfer se vence en días: bajalo y subilo acá.
@@ -97,6 +180,7 @@ function FileRow({ item, eventId }: { item: Item; eventId: string }) {
           {item.current ? " vigente" : ""}
         </span>
       ) : null}
+      {item.can_delete && (item.source === "FILE" || item.source === "LINK") ? <AskApproval item={item} eventId={eventId} /> : null}
       {item.can_delete ? (
         <button
           type="button"

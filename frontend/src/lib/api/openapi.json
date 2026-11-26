@@ -337,6 +337,60 @@
         "title": "AmountOut",
         "type": "object"
       },
+      "ApprovalDecisionIn": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "decision": {
+            "enum": [
+              "APPROVED",
+              "CHANGES"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "name"
+        ],
+        "title": "ApprovalDecisionIn",
+        "type": "object"
+      },
+      "ApprovalLinkOut": {
+        "description": "El link para mandarle al cliente. El token existe en claro solo en esta respuesta.",
+        "properties": {
+          "approval": {
+            "$ref": "#/components/schemas/ApprovalOut"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approval",
+          "path"
+        ],
+        "title": "ApprovalLinkOut",
+        "type": "object"
+      },
       "ApprovalMethod": {
         "enum": [
           "ONLINE",
@@ -344,6 +398,74 @@
         ],
         "title": "ApprovalMethod",
         "type": "string"
+      },
+      "ApprovalOut": {
+        "description": "El último pedido de aprobación de un archivo (lo que muestra la pestaña Archivos).",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "rounds": {
+            "title": "Rounds",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "requested_at",
+          "decided_at",
+          "decided_by_name",
+          "comment",
+          "rounds"
+        ],
+        "title": "ApprovalOut",
+        "type": "object"
       },
       "ApproveIn": {
         "description": "Aprobación manual (P-06): el cliente confirmó por otro canal, típicamente con una OC.",
@@ -4131,6 +4253,16 @@
       "FileItem": {
         "description": "Un archivo en la pestaña Archivos o en el buscador, venga de donde venga.",
         "properties": {
+          "approval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovalOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "author_name": {
             "title": "Author Name",
             "type": "string"
@@ -9246,6 +9378,89 @@
         ],
         "title": "ProposalStatus",
         "type": "string"
+      },
+      "PublicApproval": {
+        "description": "Lo que ve el cliente en el link: el diseño y su respuesta, nada de plata ni del resto.",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Name"
+          },
+          "event_name": {
+            "title": "Event Name",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "organization_name",
+          "event_name",
+          "title",
+          "kind",
+          "url",
+          "status",
+          "decided_at",
+          "decided_by_name",
+          "comment"
+        ],
+        "title": "PublicApproval",
+        "type": "object"
       },
       "PublicDecision": {
         "additionalProperties": false,
@@ -15142,6 +15357,50 @@
         ]
       }
     },
+    "/api/v1/event-files/{file_id}/approval": {
+      "post": {
+        "description": "Arma el link para que el cliente apruebe el diseño (el anterior sin responder se anula).",
+        "operationId": "request_approval_api_v1_event_files__file_id__approval_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalLinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Approval",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/event-files/{file_id}/file": {
       "get": {
         "operationId": "open_event_file_api_v1_event_files__file_id__file_get",
@@ -18758,6 +19017,143 @@
         "summary": "Revoke",
         "tags": [
           "proposals"
+        ]
+      }
+    },
+    "/api/v1/public/approvals/{token}": {
+      "get": {
+        "description": "Lo que ve el cliente: el título y el diseño, nada más del evento.",
+        "operationId": "public_approval_api_v1_public_approvals__token__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 20,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApproval"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Approval",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/public/approvals/{token}/decision": {
+      "post": {
+        "description": "\"Aprobado\" o \"Pido cambios\" (con comentario). Queda quién, cuándo y desde dónde.",
+        "operationId": "public_approval_decision_api_v1_public_approvals__token__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 20,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicApproval"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Approval Decision",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/v1/public/approvals/{token}/file": {
+      "get": {
+        "operationId": "public_approval_file_api_v1_public_approvals__token__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 20,
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Approval File",
+        "tags": [
+          "public"
         ]
       }
     },

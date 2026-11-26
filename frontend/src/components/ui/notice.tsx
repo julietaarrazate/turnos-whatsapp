@@ -1,10 +1,11 @@
 import { cn } from "@/lib/cn";
 
-type Tone = "info" | "success" | "error";
+type Tone = "info" | "success" | "warning" | "error";
 
 const tones: Record<Tone, string> = {
   info: "border-line bg-subtle text-ink",
   success: "border-success/30 bg-success/10 text-ink",
+  warning: "border-warning/40 bg-warning/10 text-ink",
   error: "border-danger/30 bg-danger/10 text-danger",
 };
 
