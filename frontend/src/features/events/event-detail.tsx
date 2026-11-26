@@ -212,6 +212,7 @@ function ProductionActions({ event }: { event: EventDetail }) {
 
 const TABS: { segment: string; label: string; permission?: Permission }[] = [
   { segment: "", label: "Resumen" },
+  { segment: "/pieces", label: "Piezas" },
   { segment: "/budgets", label: "Presupuestos" },
   { segment: "/production", label: "Producción" },
   { segment: "/expenses", label: "Gastos", permission: "cost.view" }, // los gastos son costos
@@ -250,7 +251,8 @@ export function EventShell({ id, children }: { id: string; children: React.React
         <ul className="flex gap-1">
           {TABS.filter((tab) => !tab.permission || can(tab.permission)).map((tab) => {
             const href = `/events/${id}${tab.segment}`;
-            const current = pathname === href;
+            // La ficha de una pieza sigue marcando la pestaña Piezas.
+            const current = pathname === href || (tab.segment !== "" && pathname.startsWith(`${href}/`));
             return (
               <li key={tab.label}>
                 <Link

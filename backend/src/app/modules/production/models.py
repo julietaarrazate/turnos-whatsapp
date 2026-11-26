@@ -79,3 +79,45 @@ class ProductionTask(IdMixin, TimestampMixin, Base):
     category_id: Mapped[UUID | None]
     line_key: Mapped[UUID | None]
     sort: Mapped[int] = mapped_column(default=0)
+
+
+class PieceArea(StrEnum):
+    """Área de fabricación de una pieza (filtro del tablero)."""
+
+    CARPENTRY = "CARPENTRY"  # carpintería
+    METAL = "METAL"  # herrería
+    GRAPHICS = "GRAPHICS"  # gráfica, corpóreos, pantallas
+    OTHER = "OTHER"
+
+
+class PieceStatus(StrEnum):
+    """Fases de una pieza a medida. Se puede ir y volver (un plano rechazado vuelve a diseño)."""
+
+    DESIGN = "DESIGN"  # pendiente diseño
+    TO_BUY = "TO_BUY"  # aprobado / a comprar
+    IN_WORKSHOP = "IN_WORKSHOP"
+    READY = "READY"  # listo para carga
+    MOUNTED = "MOUNTED"  # en predio / montado
+
+
+class EventPiece(IdMixin, TimestampMixin, Base):
+    """Una pieza que se fabrica para el evento (mostrador, corpóreo, tarima…)."""
+
+    __tablename__ = "event_pieces"
+    __table_args__ = (
+        tenant_unique(),
+        tenant_fk("event_id", "events", ondelete="CASCADE"),
+        CheckConstraint(check_in("area", PieceArea), name="area"),
+        CheckConstraint(check_in("status", PieceStatus), name="status"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    event_id: Mapped[UUID] = mapped_column(index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    area: Mapped[str] = mapped_column(String(10), default=PieceArea.OTHER.value)
+    status: Mapped[str] = mapped_column(String(12), default=PieceStatus.DESIGN.value)
+    assignee_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    due_date: Mapped[date | None]
+    notes: Mapped[str | None] = mapped_column(Text)
+    status_changed_at: Mapped[datetime | None]
+    sort: Mapped[int] = mapped_column(default=0)

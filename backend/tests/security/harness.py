@@ -48,7 +48,7 @@ from app.modules.clients import Client
 from app.modules.events import EventIn
 from app.modules.finance.models import Expense
 from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
-from app.modules.production.models import EventSupplier, ProductionTask
+from app.modules.production.models import EventPiece, EventSupplier, ProductionTask
 from app.modules.proposals import service as proposals
 from app.modules.proposals.schemas import ProposalIn
 from tests.factories import DEFAULT_PASSWORD, Member, add_member, create_org, create_user
@@ -170,6 +170,9 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
     task = ProductionTask(
         organization_id=owner.organization_id, event_id=budget.event.id, title="Tarea ejemplo"
     )
+    piece = EventPiece(
+        organization_id=owner.organization_id, event_id=budget.event.id, name="Pieza ejemplo"
+    )
     # Un gasto real (fila directa por lo mismo).
     expense = Expense(
         organization_id=owner.organization_id,
@@ -182,7 +185,7 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         created_by=owner.user_id,
     )
     package = Package(organization_id=owner.organization_id, name="Paquete ejemplo")
-    s.add_all([hire, task, expense, package])
+    s.add_all([hire, task, piece, expense, package])
     s.flush()
     s.add(
         PackageItem(
@@ -198,6 +201,7 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         "expense_id": expense.id,
         "event_supplier_id": hire.id,
         "task_id": task.id,
+        "piece_id": piece.id,
         "proposal_id": created.proposal.id,
         "sent_budget_id": sent.id,
         "event_id": budget.event.id,
@@ -236,6 +240,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "proposal_id": lambda w: w.ids["proposal_id"],
     "event_supplier_id": lambda w: w.ids["event_supplier_id"],
     "task_id": lambda w: w.ids["task_id"],
+    "piece_id": lambda w: w.ids["piece_id"],
     "expense_id": lambda w: w.ids["expense_id"],
     "package_id": lambda w: w.ids["package_id"],
 }
@@ -330,6 +335,8 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/event-suppliers/{event_supplier_id}"): {"notes": "Llamar el lunes"},
     ("POST", "/api/v1/events/{event_id}/tasks"): {"title": "Pedir planos"},
     ("PATCH", "/api/v1/tasks/{task_id}"): {"status": "DONE"},
+    ("POST", "/api/v1/events/{event_id}/pieces"): {"name": "Mostrador", "area": "CARPENTRY"},
+    ("PATCH", "/api/v1/pieces/{piece_id}"): {"status": "IN_WORKSHOP"},
     ("POST", "/api/v1/events/{event_id}/expenses"): lambda w: {
         "description": "Flete extra",
         "amount": "15000",

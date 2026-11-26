@@ -906,6 +906,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/pieces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Pieces
+         * @description Las piezas a medida del evento y su avance (% promedio de fases, cuántas listas).
+         */
+        get: operations["list_pieces_api_v1_events__event_id__pieces_get"];
+        put?: never;
+        /** Add Piece */
+        post: operations["add_piece_api_v1_events__event_id__pieces_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/production": {
         parameters: {
             query?: never;
@@ -1239,6 +1260,27 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pieces/{piece_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Piece */
+        delete: operations["delete_piece_api_v1_pieces__piece_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Piece
+         * @description Cambiar la fase (diseño → a comprar → taller → listo → montado, o volver), el responsable…
+         */
+        patch: operations["update_piece_api_v1_pieces__piece_id__patch"];
         trace?: never;
     };
     "/api/v1/pipeline": {
@@ -3730,6 +3772,84 @@ export interface components {
             /** Event Number */
             event_number: number;
             kind: components["schemas"]["PendingKind"];
+        };
+        /**
+         * PieceArea
+         * @description Área de fabricación de una pieza (filtro del tablero).
+         * @enum {string}
+         */
+        PieceArea: "CARPENTRY" | "METAL" | "GRAPHICS" | "OTHER";
+        /** PieceIn */
+        PieceIn: {
+            /** @default OTHER */
+            area?: components["schemas"]["PieceArea"];
+            /** Assignee User Id */
+            assignee_user_id?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** PieceOut */
+        PieceOut: {
+            area: components["schemas"]["PieceArea"];
+            /** Assignee Name */
+            assignee_name: string | null;
+            /** Assignee User Id */
+            assignee_user_id: string | null;
+            /** Due Date */
+            due_date: string | null;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Late */
+            late: boolean;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes: string | null;
+            status: components["schemas"]["PieceStatus"];
+            /** Status Changed At */
+            status_changed_at: string | null;
+        };
+        /**
+         * PieceStatus
+         * @description Fases de una pieza a medida. Se puede ir y volver (un plano rechazado vuelve a diseño).
+         * @enum {string}
+         */
+        PieceStatus: "DESIGN" | "TO_BUY" | "IN_WORKSHOP" | "READY" | "MOUNTED";
+        /** PieceUpdate */
+        PieceUpdate: {
+            area?: components["schemas"]["PieceArea"] | null;
+            /** Assignee User Id */
+            assignee_user_id?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Notes */
+            notes?: string | null;
+            status?: components["schemas"]["PieceStatus"] | null;
+        };
+        /** PiecesOut */
+        PiecesOut: {
+            /** Pieces */
+            pieces: components["schemas"]["PieceOut"][];
+            /** Progress */
+            progress: number;
+            /** Ready */
+            ready: number;
+            /** Total */
+            total: number;
         };
         /** Pipeline */
         Pipeline: {
@@ -6966,6 +7086,72 @@ export interface operations {
             };
         };
     };
+    list_pieces_api_v1_events__event_id__pieces_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PiecesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_piece_api_v1_events__event_id__pieces_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PieceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PieceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_production_api_v1_events__event_id__production_get: {
         parameters: {
             query?: never;
@@ -7733,6 +7919,70 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_piece_api_v1_pieces__piece_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                piece_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_piece_api_v1_pieces__piece_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                piece_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PieceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PieceOut"];
+                };
             };
             /** @description Validation Error */
             422: {

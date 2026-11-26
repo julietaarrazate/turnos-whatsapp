@@ -131,6 +131,7 @@ flowchart LR
 |---|---|---|
 | `event_suppliers` 🏢 | `event_id`, `supplier_id`, `status` (`TO_HIRE` / `CONFIRMED` / `CANCELLED`), `budgeted_cost` (derivado de las líneas aceptadas, guardado al iniciar producción), `notes`, `confirmed_at` | La "lista de contratación". En V2 evoluciona a `purchase_orders`. |
 | `production_tasks` 🏢 | `event_id`, `title`, `status` (`TODO` / `IN_PROGRESS` / `DONE`), `assignee_user_id`, `due_date`, `category_id?`, `line_key?`, `sort` | |
+| `event_pieces` 🏢 | `event_id`, `name`, `area` (`CARPENTRY` / `METAL` / `GRAPHICS` / `OTHER`), `status` (`DESIGN` / `TO_BUY` / `IN_WORKSHOP` / `READY` / `MOUNTED`), `assignee_user_id?`, `due_date?`, `notes?`, `status_changed_at`, `sort` | Las piezas a medida que se fabrican para el evento (mostrador, corpóreo, tarima). El avance del evento es el promedio de la fase de cada pieza (diseño 0 %, a comprar 25 %, taller 50 %, listo 75 %, montado 100 %). |
 | `expenses` 🏢 | `event_id`, `supplier_id?`, `category_id`, `line_key?` (vincula con una línea de la versión aceptada), `description`, `amount`, `currency`, `amount_includes_iva`, `iva_rate`, `fx_rate`, `amount_base` (efectivo, en moneda base), `expense_date`, `receipt_document_id?`, `created_by` | Costo real. El monto efectivo se normaliza igual que en el motor (§5.2, L1–L2). |
 | `documents` 🏢 | `kind` (`RECEIPT` / `PURCHASE_ORDER`), `storage_key`, `filename`, `mime` (detectado por contenido), `size`, `sha256`, `created_by`, `created_at` | Inmutable (solo `SELECT, INSERT`). La entidad dueña lo referencia con FK compuesta (`expenses.receipt_document_id`, `proposals.po_document_id`) y su permiso decide quién lo descarga. Más tipos (logo, PDF cacheado) se agregan cuando hagan falta. |
 | *(V2)* `purchase_orders`, `supplier_invoices`, `payments`, `receivables` | | Fuera del MVP |
@@ -221,6 +222,7 @@ stateDiagram-v2
 
 - `event_suppliers`: `TO_HIRE → CONFIRMED`, `TO_HIRE | CONFIRMED → CANCELLED`.
 - `production_tasks`: `TODO → IN_PROGRESS → DONE` (libre, sin restricciones).
+- `event_pieces`: `DESIGN → TO_BUY → IN_WORKSHOP → READY → MOUNTED`, en cualquier sentido (un plano rechazado vuelve a diseño). Atrasada: vencida y todavía no `READY`/`MOUNTED`. Con el evento cerrado o cancelado no se edita.
 
 ---
 
@@ -276,6 +278,8 @@ erDiagram
     EVENT ||--o{ EVENT_SUPPLIER : "a contratar"
     SUPPLIER ||--o{ EVENT_SUPPLIER : ""
     EVENT ||--o{ PRODUCTION_TASK : ""
+    EVENT ||--o{ EVENT_PIECE : "piezas a medida"
+    USER ||--o{ EVENT_PIECE : "responsable"
     USER ||--o{ PRODUCTION_TASK : "asignada a"
     EVENT ||--o{ EXPENSE : "costo real"
     SUPPLIER ||--o{ EXPENSE : ""
@@ -421,6 +425,7 @@ Los handlers corren **en la misma transacción** cuando cambian estado, y vía *
 | Presupuestos | `budget.created`, `budget.version_created`, `budget.line_added`/`updated`/`removed` (borrador: con diff), `budget.markup_overridden`, `budget.costs_refreshed`, `budget.fx_updated`, `budget.version_frozen`, `budget.exported` |
 | Propuestas | `proposal.sent`, `proposal.viewed`, `proposal.pdf_downloaded`, `proposal.accepted` (online/manual), `proposal.rejected`, `proposal.revoked`, `proposal.expired` |
 | Eventos | `event.created`, `event.status_changed`, `event.production_started`, `event.closed`, `event.reopened` |
+| Producción | `production.supplier_status`, `piece.created`, `piece.status_changed`, `piece.deleted` |
 | Finanzas | `expense.created`/`updated`/`deleted` |
 | Acceso | `auth.login`, `auth.login_failed`, `auth.password_changed`, `membership.invited`, `membership.role_changed`, `membership.disabled` |
 
