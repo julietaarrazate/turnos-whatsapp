@@ -31,10 +31,10 @@ test("archivos del evento: link de Drive, PDF del cliente, planos solos y el bus
   await page.getByRole("button", { name: "Agregar archivo o link" }).click();
   const form = page.getByRole("form", { name: "Agregar archivo" });
   await form.getByRole("button", { name: "Pegar link (Drive…)" }).click();
-  await form.getByLabel("Tipo", { exact: true }).selectOption("DESIGN");
-  await form.getByLabel("Pieza (opcional)").selectOption({ label: `Mostrador ${suffix}` });
-  await form.getByLabel("Nombre", { exact: true }).fill(`Render ${suffix}`);
-  await form.getByLabel("Link", { exact: true }).fill("https://drive.google.com/file/d/render-ejemplo");
+  await form.getByRole("combobox", { name: "Tipo", exact: true }).selectOption("DESIGN");
+  await form.getByRole("combobox", { name: "Pieza (opcional)", exact: true }).selectOption({ label: `Mostrador ${suffix}` });
+  await form.getByRole("textbox", { name: "Nombre", exact: true }).fill(`Render ${suffix}`);
+  await form.getByRole("textbox", { name: "Link", exact: true }).fill("https://drive.google.com/file/d/render-ejemplo");
   await form.getByRole("button", { name: "Agregar" }).click();
   const design = page.getByRole("region", { name: "Diseño" });
   const render = design.getByRole("link", { name: new RegExp(`Render ${suffix}`) });
@@ -42,9 +42,9 @@ test("archivos del evento: link de Drive, PDF del cliente, planos solos y el bus
   await expect(render).toContainText(`Mostrador ${suffix}`);
 
   await form.getByRole("button", { name: "Subir archivo" }).click();
-  await form.getByLabel("Tipo", { exact: true }).selectOption("CLIENT");
-  await form.getByLabel("Pieza (opcional)").selectOption("");
-  await form.getByLabel("Nombre", { exact: true }).fill(`Manual de marca ${suffix}`);
+  await form.getByRole("combobox", { name: "Tipo", exact: true }).selectOption("CLIENT");
+  await form.getByRole("combobox", { name: "Pieza (opcional)", exact: true }).selectOption("");
+  await form.getByRole("textbox", { name: "Nombre", exact: true }).fill(`Manual de marca ${suffix}`);
   await form.getByLabel("Archivo", { exact: true }).setInputFiles({ name: "manual.pdf", mimeType: "application/pdf", buffer: PDF });
   await form.getByRole("button", { name: "Agregar" }).click();
   const client = page.getByRole("region", { name: "Del cliente" });
