@@ -6,11 +6,13 @@ import { usePathname } from "next/navigation";
 import { useSession, type Permission } from "@/features/auth/session";
 import { cn } from "@/lib/cn";
 
-const TABS: { href: string; label: string; permission: Permission }[] = [
+const TABS: { href: string; label: string; permission?: Permission }[] = [
   { href: "/settings/organization", label: "Organización", permission: "org.view" },
   { href: "/settings/pricing", label: "Precios", permission: "margin.view" },
   { href: "/settings/members", label: "Usuarios y roles", permission: "members.view" },
   { href: "/settings/audit", label: "Auditoría", permission: "audit.view" },
+  // Lo propio de cada persona (huella, cara): todos lo ven.
+  { href: "/settings/account", label: "Mi cuenta" },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +22,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     <>
       <nav aria-label="Configuración" className="-mx-4 mb-6 overflow-x-auto border-b border-line px-4 lg:mx-0 lg:px-0">
         <ul className="flex gap-1">
-          {TABS.filter((tab) => can(tab.permission)).map((tab) => (
+          {TABS.filter((tab) => !tab.permission || can(tab.permission)).map((tab) => (
             <li key={tab.href}>
               <Link
                 href={tab.href}

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ROLE_LABELS } from "@/features/auth/roles";
+import { PasskeyOffer } from "@/features/account/passkey-settings";
 import { useSession } from "@/features/auth/session";
 import { cn } from "@/lib/cn";
 
@@ -81,7 +82,10 @@ function CrewShell({ children }: { children: React.ReactNode }) {
           <LogOut className="size-5" aria-hidden />
         </button>
       </header>
-      <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-10">{children}</main>
+      <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-10">
+        <PasskeyOffer />
+        {children}
+      </main>
     </div>
   );
 }
@@ -195,7 +199,10 @@ function FullShell({ children }: { children: React.ReactNode }) {
         </button>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28 lg:px-8 lg:pb-10">{children}</main>
+      <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28 lg:px-8 lg:pb-10">
+        <PasskeyOffer />
+        {children}
+      </main>
 
       {/* Barra inferior (mobile): al alcance del pulgar */}
       <nav

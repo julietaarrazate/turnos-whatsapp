@@ -17,7 +17,7 @@ export class ApiError extends Error {
 
 const CSRF_HEADERS = { "X-Requested-With": "fetch" };
 // Endpoints donde un 401 es una respuesta legítima, no una sesión vencida.
-const NO_REFRESH = ["/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout"];
+const NO_REFRESH = ["/api/v1/auth/login", "/api/v1/auth/passkeys/login", "/api/v1/auth/refresh", "/api/v1/auth/logout"];
 
 export type RefreshResult = "ok" | "expired" | "unavailable";
 

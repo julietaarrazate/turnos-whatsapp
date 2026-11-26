@@ -11,6 +11,9 @@ importers:
       '@sentry/nextjs':
         specifier: ^11.18.0
         version: 11.18.0(next@16.4.6(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(vite@7.3.8(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.32.0))
+      '@simplewebauthn/browser':
+        specifier: ^13.3.0
+        version: 13.3.0
       '@tanstack/react-query':
         specifier: ^5.104.1
         version: 5.104.1(react@19.2.8)
@@ -1148,6 +1151,9 @@ packages:
   '@sentry/vercel-edge@11.18.0':
     resolution: {integrity: sha512-9Cie8o1SOJReGW+BulCj7njx7lBubfOQz2vnD1A/6qqndIo2M8wQ1pIuKT/+AR4ByW/TJeov63nIOnKOs6sr8w==}
     engines: {node: '>=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0'}
+
+  '@simplewebauthn/browser@13.3.0':
+    resolution: {integrity: sha512-BE/UWv6FOToAdVk0EokzkqQQDOWtNydYlY6+OrmiZ5SCNmb41VehttboTetUM3T/fr6EAFYVXjz4My2wg230rQ==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -3939,6 +3945,8 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@sentry/core': 11.18.0
       '@sentry/server-utils': 11.18.0
+
+  '@simplewebauthn/browser@13.3.0': {}
 
   '@standard-schema/spec@1.1.0': {}
 

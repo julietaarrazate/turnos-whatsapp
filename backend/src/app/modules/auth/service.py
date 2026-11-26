@@ -132,6 +132,11 @@ def login(db: AppSession, email: str, password: str, client: ClientInfo) -> Issu
         raise _unauthorized("invalid_credentials", "Email o contraseña incorrectos")
     if password_needs_rehash(ensure(user.password_hash, "password_hash")):
         user.password_hash = hash_password(password)
+    return login_user(db, user, client)
+
+
+def login_user(db: AppSession, user: User, client: ClientInfo) -> IssuedTokens:
+    """Abre una sesión para alguien ya verificado (contraseña o llave de acceso)."""
     user.last_login_at = utcnow()
     memberships = active_memberships(db, user.id)
     organization_id = memberships[0][0].organization_id if memberships else None

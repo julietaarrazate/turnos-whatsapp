@@ -12,6 +12,9 @@ PUBLIC_ROUTES = {
     "POST /api/v1/auth/password-reset/confirm",
     "GET /api/v1/auth/invitations/{token}",
     "POST /api/v1/auth/invitations/accept",
+    # Entrar con huella/cara: desafío de un solo uso + firma verificada contra la clave pública.
+    "POST /api/v1/auth/passkeys/login/options",
+    "POST /api/v1/auth/passkeys/login",
     # Propuesta pública: solo con el token, lista blanca del snapshot (ARCHITECTURE §8.4).
     "GET /api/v1/public/proposals/{token}",
     # Aceptar / rechazar: solo con el token, hash del contenido visto y rate limit por IP.

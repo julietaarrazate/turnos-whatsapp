@@ -103,7 +103,7 @@ flowchart LR
 | ORM | SQLAlchemy 2.0 (tipado `Mapped[]`) | **Sincrónico + psycopg 3** en el threadpool de FastAPI (D-19). Evita los problemas del async ORM (lazy loads, `MissingGreenlet`) y el throughput sobra para B2B. |
 | Migraciones | Alembic | Con convenciones de nombres para constraints |
 | Dinero | `decimal.Decimal` + tipos propios (`Money`, `Rate`) | Ver DOMAIN_MODEL §5 |
-| Auth | Implementación propia (argon2id + JWT corto + refresh rotativo) | D-13 |
+| Auth | Implementación propia (argon2id + JWT corto + refresh rotativo) + llaves de acceso WebAuthn (huella/cara, `py_webauthn`) | D-13 |
 | PDF | WeasyPrint (HTML/CSS → PDF) | D-16 |
 | Logs | structlog (JSON) | Con `request_id`, `org_id`, `user_id` |
 | Tooling | uv, ruff (lint + format), mypy `--strict`, pytest, hypothesis, import-linter | |
@@ -114,7 +114,7 @@ flowchart LR
 core/            config, db, seguridad, tenancy, errores, logging, ids, money, audit
 domain/pricing/  MOTOR DE PRICING PURO (sin FastAPI, sin SQLAlchemy, sin I/O)
 modules/
-  auth            login, refresh, logout, reset de contraseña, invitaciones
+  auth            login, refresh, logout, reset de contraseña, invitaciones, llaves de acceso
   organizations   organización, datos fiscales, marca, configuración
   users           usuarios, membresías, roles
   clients         clientes, contactos, historial comercial (lectura)

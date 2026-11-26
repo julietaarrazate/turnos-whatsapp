@@ -1,4 +1,6 @@
 import contextlib
+from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response, status
 
@@ -7,7 +9,7 @@ from app.core.db import AppSession, DbSession
 from app.core.errors import AppError, ensure
 from app.core.rate_limit import enforce
 from app.core.storage import get_storage
-from app.modules.auth import service
+from app.modules.auth import passkeys, service
 from app.modules.auth.dependencies import (
     ACCESS_COOKIE,
     REFRESH_COOKIE,
@@ -23,6 +25,8 @@ from app.modules.auth.schemas import (
     LoginRequest,
     MembershipOut,
     MeResponse,
+    PasskeyCredential,
+    PasskeyOut,
     PasswordResetConfirm,
     PasswordResetRequest,
     SwitchOrganizationRequest,
@@ -182,3 +186,47 @@ def invitation_accept(
     tokens = service.accept_invitation(db, body.token, body.password, body.name, client)
     _set_cookies(response, tokens)
     return _me_for_tokens(db, tokens)
+
+
+# --- Llaves de acceso: entrar con huella, cara o el bloqueo del teléfono ---------------
+
+
+@router.post("/passkeys/login/options", dependencies=[Public])
+def passkey_login_options(db: DbSession, client: Client) -> dict[str, Any]:
+    enforce(f"passkey:ip:{client.ip}", limit=30, window_seconds=60)
+    return passkeys.login_options(db)
+
+
+@router.post("/passkeys/login", dependencies=[Public])
+def passkey_login(
+    body: PasskeyCredential, response: Response, db: DbSession, client: Client
+) -> MeResponse:
+    enforce(f"passkey:ip:{client.ip}", limit=30, window_seconds=60)
+    tokens = passkeys.login(db, body.credential, client)
+    _set_cookies(response, tokens)
+    return _me_for_tokens(db, tokens)
+
+
+@router.get("/passkeys")
+def passkey_list(auth: CurrentAuth, db: DbSession) -> list[PasskeyOut]:
+    return [
+        PasskeyOut.model_validate(p, from_attributes=True) for p in passkeys.list_passkeys(db, auth)
+    ]
+
+
+@router.post("/passkeys/register/options")
+def passkey_register_options(auth: CurrentAuth, db: DbSession) -> dict[str, Any]:
+    return passkeys.registration_options(db, auth)
+
+
+@router.post("/passkeys", status_code=status.HTTP_201_CREATED)
+def passkey_register(
+    body: PasskeyCredential, auth: CurrentAuth, db: DbSession, client: Client
+) -> PasskeyOut:
+    passkey = passkeys.register(db, auth, body.credential, client)
+    return PasskeyOut.model_validate(passkey, from_attributes=True)
+
+
+@router.delete("/passkeys/{passkey_id}", status_code=status.HTTP_204_NO_CONTENT)
+def passkey_delete(passkey_id: UUID, auth: CurrentAuth, db: DbSession) -> None:
+    passkeys.delete_passkey(db, auth, passkey_id)
