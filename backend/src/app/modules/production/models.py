@@ -4,7 +4,16 @@ from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, Numeric, String, Text, func
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -144,4 +153,29 @@ class PieceProgress(IdMixin, Base):
     author_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     note: Mapped[str | None] = mapped_column(Text)
     photo_document_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class PiecePlan(IdMixin, Base):
+    """Un plano de la pieza (corte y medidas, render, archivo para CNC…). Subir otro con el mismo
+    título es una versión nueva: la vigente es la de número más alto. No se edita ni se borra:
+    así siempre se sabe con qué plano se fabricó."""
+
+    __tablename__ = "piece_plans"
+    __table_args__ = (
+        tenant_unique(),
+        tenant_fk("piece_id", "event_pieces", ondelete="CASCADE"),
+        tenant_fk("event_id", "events", ondelete="CASCADE"),
+        tenant_fk("document_id", "documents"),
+        UniqueConstraint("piece_id", "title", "version"),
+        CheckConstraint("version >= 1", name="version_positive"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    event_id: Mapped[UUID]
+    piece_id: Mapped[UUID] = mapped_column(index=True)
+    title: Mapped[str] = mapped_column(String(120))
+    version: Mapped[int]
+    document_id: Mapped[UUID]
+    uploaded_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

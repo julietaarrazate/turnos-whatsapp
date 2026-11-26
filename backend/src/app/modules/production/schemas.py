@@ -116,6 +116,14 @@ class WorkEvent(BaseModel):
     mount_date: date | None  # inicio menos días de armado; None = fecha a confirmar
 
 
+class PlanRef(BaseModel):
+    """Un plano vigente de la pieza (para "Ver plano")."""
+
+    id: UUID
+    title: str
+    version: int
+
+
 class MyPiece(BaseModel):
     id: UUID
     name: str
@@ -125,6 +133,13 @@ class MyPiece(BaseModel):
     late: bool
     notes: str | None
     event: WorkEvent
+    plans: list[PlanRef]  # los vigentes (en Mis tareas; vacío en otras listas)
+
+
+class OpenPiece(MyPiece):
+    """Una pieza a la que se le puede subir un avance (para elegirla después de la foto)."""
+
+    mine: bool  # asignada a quien consulta: va primero
 
 
 class MyTask(BaseModel):
@@ -173,3 +188,58 @@ class PieceUpdateOut(BaseModel):
     note: str | None
     has_photo: bool
     created_at: datetime
+
+
+# --- Planos de una pieza (con versiones) -----------------------------------------------------
+
+
+class PlanIn(BaseModel):
+    """Un plano: PDF o imagen (JPG, PNG, WEBP, HEIC), ≤ 10 MB. Mismo título = versión nueva."""
+
+    title: str = Field(min_length=1, max_length=120)
+    filename: str = Field(min_length=1, max_length=255)
+    file_base64: str = Field(min_length=4, max_length=14_000_000)
+
+
+class PlanOut(BaseModel):
+    id: UUID
+    piece_id: UUID
+    title: str
+    version: int
+    current: bool  # la versión más nueva de ese título
+    filename: str
+    mime: str
+    uploaded_by_name: str
+    created_at: datetime
+
+
+# --- Actividad (lo que pasa en producción, lo más nuevo primero) -------------------------------
+
+
+class ActivityEvent(BaseModel):
+    id: UUID
+    number: int
+    name: str
+
+
+class ActivityOut(BaseModel):
+    """Un movimiento: quién, qué y en qué evento. El texto lo arma la pantalla según ``kind``."""
+
+    id: UUID
+    kind: str  # piece.status_changed | piece.update_posted | piece.plan_uploaded | …
+    actor_name: str | None
+    event: ActivityEvent
+    piece: str | None
+    status: str | None  # fase nueva de la pieza o estado nuevo del proveedor
+    supplier: str | None
+    title: str | None  # título del plano
+    version: int | None
+    note: str | None
+    update_id: UUID | None  # para mostrar la foto del avance
+    has_photo: bool
+    created_at: datetime
+
+
+class ActivityPage(BaseModel):
+    items: list[ActivityOut]
+    next_before: datetime | None  # para pedir los anteriores
