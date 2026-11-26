@@ -17,11 +17,11 @@ const RESIZABLE = ["image/jpeg", "image/png", "image/webp"];
  * Una foto del celular pesa 3–6 MB: se achica a 2000 px de lado en JPEG antes de subirla (en
  * campo la señal es mala). Si el navegador no puede, o no conviene, se sube el original.
  */
-export async function shrinkImage(file: File): Promise<Blob> {
-  if (!RESIZABLE.includes(file.type) || file.size < 600 * 1024) return file;
+export async function shrinkImage(file: File, { maxSide = MAX_SIDE, minBytes = 600 * 1024 } = {}): Promise<Blob> {
+  if (!RESIZABLE.includes(file.type) || file.size < minBytes) return file;
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);

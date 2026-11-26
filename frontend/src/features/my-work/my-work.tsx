@@ -1,10 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Camera } from "lucide-react";
+import { useState } from "react";
 
 import { Notice } from "@/components/ui/notice";
 import { EVENTS_KEY } from "@/features/budgets/keys";
 import { PIECE_AREA, PIECE_STATUS } from "@/features/events/event-pieces";
+import { ProgressForm } from "@/features/pieces/piece-progress";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
@@ -49,6 +52,7 @@ function PieceCard({ piece }: { piece: MyPiece }) {
   // Optimista: el botón tocado se marca al instante.
   const current = move.isPending && move.variables ? move.variables : piece.status;
   const due = dueLine(piece.due_date, piece.late);
+  const [reporting, setReporting] = useState(false);
   return (
     <li>
       <article aria-label={piece.name} className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
@@ -80,6 +84,17 @@ function PieceCard({ piece }: { piece: MyPiece }) {
           })}
         </div>
         {move.isError ? <Notice tone="error">{errorMessage(move.error)}</Notice> : null}
+        {reporting ? (
+          <ProgressForm pieceId={piece.id} pieceName={piece.name} />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setReporting(true)}
+            className="flex h-14 items-center justify-center gap-2 rounded-xl bg-magenta text-base font-bold text-white"
+          >
+            <Camera className="size-5" aria-hidden /> Foto de avance
+          </button>
+        )}
       </article>
     </li>
   );

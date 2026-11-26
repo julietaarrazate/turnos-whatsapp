@@ -786,6 +786,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Storage Usage
+         * @description Cuánto ocupan los archivos de la organización y el tope (para avisar antes de llenarse).
+         */
+        get: operations["get_storage_usage_api_v1_documents_storage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-suppliers/{event_supplier_id}": {
         parameters: {
             query?: never;
@@ -1322,6 +1342,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/piece-updates/{update_id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Piece Update Photo
+         * @description La foto de un avance (para verla en la ficha o en Mis tareas).
+         */
+        get: operations["get_piece_update_photo_api_v1_piece_updates__update_id__photo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pieces/{piece_id}": {
         parameters: {
             query?: never;
@@ -1341,6 +1381,30 @@ export interface paths {
          * @description Cambiar la fase (diseño → a comprar → taller → listo → montado, o volver), el responsable…
          */
         patch: operations["update_piece_api_v1_pieces__piece_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/pieces/{piece_id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Piece Updates
+         * @description Los avances de la pieza (lo más nuevo primero). Los ve quien ve el evento o la tiene.
+         */
+        get: operations["list_piece_updates_api_v1_pieces__piece_id__updates_get"];
+        put?: never;
+        /**
+         * Add Piece Update
+         * @description Subir un avance: foto y/o nota. Producción, o quien tiene la pieza asignada.
+         */
+        post: operations["add_piece_update_api_v1_pieces__piece_id__updates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/pipeline": {
@@ -2553,7 +2617,7 @@ export interface components {
          * DocumentKind
          * @enum {string}
          */
-        DocumentKind: "RECEIPT" | "PURCHASE_ORDER";
+        DocumentKind: "RECEIPT" | "PURCHASE_ORDER" | "PROGRESS_PHOTO";
         /** DocumentOut */
         DocumentOut: {
             /**
@@ -3919,6 +3983,16 @@ export interface components {
             kind: components["schemas"]["PendingKind"];
         };
         /**
+         * PhotoIn
+         * @description La foto en base64, ya achicada en el teléfono (JPG, PNG, WEBP o HEIC; ≤ 10 MB).
+         */
+        PhotoIn: {
+            /** File Base64 */
+            file_base64: string;
+            /** Filename */
+            filename: string;
+        };
+        /**
          * PieceArea
          * @description Área de fabricación de una pieza (filtro del tablero).
          * @enum {string}
@@ -3984,6 +4058,36 @@ export interface components {
             /** Notes */
             notes?: string | null;
             status?: components["schemas"]["PieceStatus"] | null;
+        };
+        /** PieceUpdateIn */
+        PieceUpdateIn: {
+            /** Note */
+            note?: string | null;
+            photo?: components["schemas"]["PhotoIn"] | null;
+        };
+        /** PieceUpdateOut */
+        PieceUpdateOut: {
+            /** Author Name */
+            author_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Has Photo */
+            has_photo: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note: string | null;
+            /**
+             * Piece Id
+             * Format: uuid
+             */
+            piece_id: string;
         };
         /** PiecesOut */
         PiecesOut: {
@@ -4779,6 +4883,18 @@ export interface components {
             /** Reason */
             reason: string | null;
             to_status: components["schemas"]["EventStatus"];
+        };
+        /**
+         * StorageOut
+         * @description Espacio de archivos de la organización, en bytes. ``enabled`` = hay dónde guardarlos.
+         */
+        StorageOut: {
+            /** Enabled */
+            enabled: boolean;
+            /** Limit */
+            limit: number;
+            /** Used */
+            used: number;
         };
         /** SupplierContactIn */
         SupplierContactIn: {
@@ -6946,6 +7062,26 @@ export interface operations {
             };
         };
     };
+    get_storage_usage_api_v1_documents_storage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageOut"];
+                };
+            };
+        };
+    };
     update_supplier_api_v1_event_suppliers__event_supplier_id__patch: {
         parameters: {
             query?: never;
@@ -8180,6 +8316,37 @@ export interface operations {
             };
         };
     };
+    get_piece_update_photo_api_v1_piece_updates__update_id__photo_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                update_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_piece_api_v1_pieces__piece_id__delete: {
         parameters: {
             query?: never;
@@ -8231,6 +8398,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PieceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_piece_updates_api_v1_pieces__piece_id__updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                piece_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PieceUpdateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_piece_update_api_v1_pieces__piece_id__updates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                piece_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PieceUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PieceUpdateOut"];
                 };
             };
             /** @description Validation Error */

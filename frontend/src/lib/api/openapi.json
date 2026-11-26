@@ -2214,7 +2214,8 @@
       "DocumentKind": {
         "enum": [
           "RECEIPT",
-          "PURCHASE_ORDER"
+          "PURCHASE_ORDER",
+          "PROGRESS_PHOTO"
         ],
         "title": "DocumentKind",
         "type": "string"
@@ -6792,6 +6793,29 @@
         "title": "PendingOut",
         "type": "object"
       },
+      "PhotoIn": {
+        "description": "La foto en base64, ya achicada en el teléfono (JPG, PNG, WEBP o HEIC; ≤ 10 MB).",
+        "properties": {
+          "file_base64": {
+            "maxLength": 14000000,
+            "minLength": 4,
+            "title": "File Base64",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "file_base64"
+        ],
+        "title": "PhotoIn",
+        "type": "object"
+      },
       "PieceArea": {
         "description": "Área de fabricación de una pieza (filtro del tablero).",
         "enum": [
@@ -7044,6 +7068,82 @@
           }
         },
         "title": "PieceUpdate",
+        "type": "object"
+      },
+      "PieceUpdateIn": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PhotoIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PieceUpdateIn",
+        "type": "object"
+      },
+      "PieceUpdateOut": {
+        "properties": {
+          "author_name": {
+            "title": "Author Name",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_photo": {
+            "title": "Has Photo",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "piece_id": {
+            "format": "uuid",
+            "title": "Piece Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "piece_id",
+          "author_name",
+          "note",
+          "has_photo",
+          "created_at"
+        ],
+        "title": "PieceUpdateOut",
         "type": "object"
       },
       "PiecesOut": {
@@ -9610,6 +9710,30 @@
           "at"
         ],
         "title": "StatusChangeOut",
+        "type": "object"
+      },
+      "StorageOut": {
+        "description": "Espacio de archivos de la organización, en bytes. ``enabled`` = hay dónde guardarlos.",
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "used",
+          "limit",
+          "enabled"
+        ],
+        "title": "StorageOut",
         "type": "object"
       },
       "SupplierContactIn": {
@@ -13809,6 +13933,28 @@
         ]
       }
     },
+    "/api/v1/documents/storage": {
+      "get": {
+        "description": "Cuánto ocupan los archivos de la organización y el tope (para avisar antes de llenarse).",
+        "operationId": "get_storage_usage_api_v1_documents_storage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Storage Usage",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
     "/api/v1/event-suppliers/{event_supplier_id}": {
       "patch": {
         "description": "Marcar un proveedor como confirmado o cancelado, o anotar algo.",
@@ -15617,6 +15763,48 @@
         ]
       }
     },
+    "/api/v1/piece-updates/{update_id}/photo": {
+      "get": {
+        "description": "La foto de un avance (para verla en la ficha o en Mis tareas).",
+        "operationId": "get_piece_update_photo_api_v1_piece_updates__update_id__photo_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "update_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Update Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Piece Update Photo",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/pieces/{piece_id}": {
       "delete": {
         "operationId": "delete_piece_api_v1_pieces__piece_id__delete",
@@ -15700,6 +15888,106 @@
           }
         },
         "summary": "Update Piece",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/pieces/{piece_id}/updates": {
+      "get": {
+        "description": "Los avances de la pieza (lo más nuevo primero). Los ve quien ve el evento o la tiene.",
+        "operationId": "list_piece_updates_api_v1_pieces__piece_id__updates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "piece_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Piece Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PieceUpdateOut"
+                  },
+                  "title": "Response List Piece Updates Api V1 Pieces  Piece Id  Updates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Piece Updates",
+        "tags": [
+          "production"
+        ]
+      },
+      "post": {
+        "description": "Subir un avance: foto y/o nota. Producción, o quien tiene la pieza asignada.",
+        "operationId": "add_piece_update_api_v1_pieces__piece_id__updates_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "piece_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Piece Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PieceUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PieceUpdateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Piece Update",
         "tags": [
           "production"
         ]

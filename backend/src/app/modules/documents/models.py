@@ -12,6 +12,7 @@ from app.core.enums import check_in
 class DocumentKind(StrEnum):
     RECEIPT = "RECEIPT"  # comprobante de un gasto (O-04)
     PURCHASE_ORDER = "PURCHASE_ORDER"  # OC de una aprobación manual (P-06)
+    PROGRESS_PHOTO = "PROGRESS_PHOTO"  # foto de avance de una pieza (taller, montaje)
 
 
 class Document(IdMixin, Base):

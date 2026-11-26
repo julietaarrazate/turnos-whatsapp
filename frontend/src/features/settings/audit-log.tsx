@@ -50,6 +50,7 @@ const ACTION_LABELS: Record<string, string> = {
   "piece.created": "Agregó una pieza",
   "piece.status_changed": "Cambió la fase de una pieza",
   "piece.deleted": "Borró una pieza",
+  "piece.update_posted": "Subió un avance de una pieza",
   "expense.created": "Cargó un gasto",
   "expense.updated": "Cambió un gasto",
   "expense.deleted": "Borró un gasto",

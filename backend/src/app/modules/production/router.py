@@ -1,12 +1,12 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.production import my_work, pieces, service
+from app.modules.production import my_work, pieces, service, updates
 from app.modules.production.schemas import (
     EventSupplierOut,
     EventSupplierUpdate,
@@ -17,6 +17,8 @@ from app.modules.production.schemas import (
     PieceOut,
     PiecesOut,
     PieceUpdate,
+    PieceUpdateIn,
+    PieceUpdateOut,
     ProductionOut,
     TaskIn,
     TaskOut,
@@ -103,3 +105,23 @@ def move_my_piece(piece_id: UUID, body: MyPieceUpdate, ctx: OwnWork, db: DbSessi
 def move_my_task(task_id: UUID, body: MyTaskUpdate, ctx: OwnWork, db: DbSession) -> TaskOut:
     """Marcar una tarea propia en curso o hecha. La de otra persona responde 404."""
     return my_work.move_my_task(db, ctx, task_id, body.status)
+
+
+@router.get("/pieces/{piece_id}/updates")
+def list_piece_updates(piece_id: UUID, ctx: OwnWork, db: DbSession) -> list[PieceUpdateOut]:
+    """Los avances de la pieza (lo más nuevo primero). Los ve quien ve el evento o la tiene."""
+    return updates.list_updates(db, ctx, piece_id)
+
+
+@router.post("/pieces/{piece_id}/updates", status_code=status.HTTP_201_CREATED)
+def add_piece_update(
+    piece_id: UUID, body: PieceUpdateIn, ctx: OwnWork, db: DbSession
+) -> PieceUpdateOut:
+    """Subir un avance: foto y/o nota. Producción, o quien tiene la pieza asignada."""
+    return updates.add_update(db, ctx, piece_id, body)
+
+
+@router.get("/piece-updates/{update_id}/photo")
+def get_piece_update_photo(update_id: UUID, ctx: OwnWork, db: DbSession) -> Response:
+    """La foto de un avance (para verla en la ficha o en Mis tareas)."""
+    return updates.update_photo(db, ctx, update_id)

@@ -48,7 +48,12 @@ from app.modules.clients import Client
 from app.modules.events import EventIn
 from app.modules.finance.models import Expense
 from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
-from app.modules.production.models import EventPiece, EventSupplier, ProductionTask
+from app.modules.production.models import (
+    EventPiece,
+    EventSupplier,
+    PieceProgress,
+    ProductionTask,
+)
 from app.modules.proposals import service as proposals
 from app.modules.proposals.schemas import ProposalIn
 from tests.factories import DEFAULT_PASSWORD, Member, add_member, create_org, create_user
@@ -187,6 +192,16 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
     package = Package(organization_id=owner.organization_id, name="Paquete ejemplo")
     s.add_all([hire, task, piece, expense, package])
     s.flush()
+    # Un avance de la pieza (solo nota: sin archivo en el storage).
+    progress = PieceProgress(
+        organization_id=owner.organization_id,
+        event_id=budget.event.id,
+        piece_id=piece.id,
+        author_user_id=owner.user_id,
+        note="Avance ejemplo",
+    )
+    s.add(progress)
+    s.flush()
     s.add(
         PackageItem(
             organization_id=owner.organization_id,
@@ -202,6 +217,7 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         "event_supplier_id": hire.id,
         "task_id": task.id,
         "piece_id": piece.id,
+        "update_id": progress.id,
         "proposal_id": created.proposal.id,
         "sent_budget_id": sent.id,
         "event_id": budget.event.id,
@@ -241,6 +257,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "event_supplier_id": lambda w: w.ids["event_supplier_id"],
     "task_id": lambda w: w.ids["task_id"],
     "piece_id": lambda w: w.ids["piece_id"],
+    "update_id": lambda w: w.ids["update_id"],
     "expense_id": lambda w: w.ids["expense_id"],
     "package_id": lambda w: w.ids["package_id"],
 }
@@ -339,6 +356,7 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/pieces/{piece_id}"): {"status": "IN_WORKSHOP"},
     ("PATCH", "/api/v1/my-work/pieces/{piece_id}"): {"status": "IN_WORKSHOP"},
     ("PATCH", "/api/v1/my-work/tasks/{task_id}"): {"status": "DONE"},
+    ("POST", "/api/v1/pieces/{piece_id}/updates"): {"note": "Letras cortadas"},
     ("POST", "/api/v1/events/{event_id}/expenses"): lambda w: {
         "description": "Flete extra",
         "amount": "15000",

@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, ForeignKey, Numeric, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -121,3 +121,27 @@ class EventPiece(IdMixin, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
     status_changed_at: Mapped[datetime | None]
     sort: Mapped[int] = mapped_column(default=0)
+
+
+class PieceProgress(IdMixin, Base):
+    """Un avance de una pieza: foto y/o nota de quien la está haciendo. Inmutable (como una
+    bitácora): no se edita; si algo estuvo mal se sube otro avance."""
+
+    __tablename__ = "piece_updates"
+    __table_args__ = (
+        tenant_unique(),
+        tenant_fk("piece_id", "event_pieces", ondelete="CASCADE"),
+        tenant_fk("event_id", "events", ondelete="CASCADE"),
+        tenant_fk("photo_document_id", "documents"),
+        CheckConstraint("note IS NOT NULL OR photo_document_id IS NOT NULL", name="has_content"),
+        Index("ix_piece_updates_piece_created", "piece_id", "created_at"),
+        Index("ix_piece_updates_event_created", "event_id", "created_at"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    event_id: Mapped[UUID]
+    piece_id: Mapped[UUID]
+    author_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    note: Mapped[str | None] = mapped_column(Text)
+    photo_document_id: Mapped[UUID | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
