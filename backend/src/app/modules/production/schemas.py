@@ -211,3 +211,35 @@ class PlanOut(BaseModel):
     mime: str
     uploaded_by_name: str
     created_at: datetime
+
+
+# --- Actividad (lo que pasa en producción, lo más nuevo primero) -------------------------------
+
+
+class ActivityEvent(BaseModel):
+    id: UUID
+    number: int
+    name: str
+
+
+class ActivityOut(BaseModel):
+    """Un movimiento: quién, qué y en qué evento. El texto lo arma la pantalla según ``kind``."""
+
+    id: UUID
+    kind: str  # piece.status_changed | piece.update_posted | piece.plan_uploaded | …
+    actor_name: str | None
+    event: ActivityEvent
+    piece: str | None
+    status: str | None  # fase nueva de la pieza o estado nuevo del proveedor
+    supplier: str | None
+    title: str | None  # título del plano
+    version: int | None
+    note: str | None
+    update_id: UUID | None  # para mostrar la foto del avance
+    has_photo: bool
+    created_at: datetime
+
+
+class ActivityPage(BaseModel):
+    items: list[ActivityOut]
+    next_before: datetime | None  # para pedir los anteriores

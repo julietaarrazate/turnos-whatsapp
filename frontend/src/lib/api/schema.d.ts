@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/api/v1/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Activity
+         * @description Lo que pasa en producción, lo más nuevo primero (de a 30; ``before`` trae los anteriores).
+         *     Con ``event_id``, solo ese evento.
+         */
+        get: operations["get_activity_api_v1_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-logs": {
         parameters: {
             query?: never;
@@ -2036,6 +2057,62 @@ export interface components {
             /** Start Date */
             start_date: string | null;
             status: components["schemas"]["EventStatus"];
+        };
+        /** ActivityEvent */
+        ActivityEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+        };
+        /**
+         * ActivityOut
+         * @description Un movimiento: quién, qué y en qué evento. El texto lo arma la pantalla según ``kind``.
+         */
+        ActivityOut: {
+            /** Actor Name */
+            actor_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            event: components["schemas"]["ActivityEvent"];
+            /** Has Photo */
+            has_photo: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Note */
+            note: string | null;
+            /** Piece */
+            piece: string | null;
+            /** Status */
+            status: string | null;
+            /** Supplier */
+            supplier: string | null;
+            /** Title */
+            title: string | null;
+            /** Update Id */
+            update_id: string | null;
+            /** Version */
+            version: number | null;
+        };
+        /** ActivityPage */
+        ActivityPage: {
+            /** Items */
+            items: components["schemas"]["ActivityOut"][];
+            /** Next Before */
+            next_before: string | null;
         };
         /** AmountOut */
         AmountOut: {
@@ -5493,6 +5570,38 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_activity_api_v1_activity_get: {
+        parameters: {
+            query?: {
+                before?: string | null;
+                event_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_audit_logs_api_v1_audit_logs_get: {
         parameters: {
             query?: {

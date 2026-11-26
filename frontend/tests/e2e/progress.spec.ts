@@ -68,9 +68,10 @@ test("producción: la cámara está a un toque (en el celular, el botón del med
   const production = await context.newPage();
   await login(production, "/", PRODUCTION);
   if (isMobile) {
-    // Barra de producción: Inicio · Eventos · [cámara] · Mis tareas · Más.
+    // Barra de producción (como la maqueta): Inicio · Eventos · [cámara] · Actividad · Mis tareas.
     const bar = production.getByRole("navigation", { name: "Principal" }).last();
     await expect(bar.getByRole("link", { name: "Mis tareas" })).toBeVisible();
+    await expect(bar.getByRole("link", { name: "Actividad" })).toBeVisible();
     await expect(bar.getByRole("link", { name: "Presupuestos" })).toHaveCount(0);
   }
   // Uno solo visible: el del medio de la barra (celular) o el del menú lateral (computadora).
@@ -82,6 +83,13 @@ test("producción: la cámara está a un toque (en el celular, el botón del med
   await sheet.getByLabel("Nota (opcional)").fill("Impreso, falta laminar");
   await sheet.getByRole("button", { name: "Enviar avance" }).click();
   await expect(production.getByRole("status").filter({ hasText: "Avance enviado" })).toBeVisible();
+
+  // Y queda en Actividad, con la foto.
+  await production.goto("/activity");
+  const moves = production.getByRole("region", { name: "Movimientos" });
+  await expect(moves.getByText(`subió una foto de avance de Tótem ${suffix}`)).toBeVisible();
+  await expect(moves.getByText("“Impreso, falta laminar”")).toBeVisible();
+  await expect(moves.getByRole("img", { name: `Foto de avance de Tótem ${suffix}` })).toBeVisible();
   await context.close();
 
   const updates = await json<{ note: string; has_photo: boolean }[]>(

@@ -97,7 +97,12 @@ def add_update(
         ctx,
         "piece.update_posted",
         piece.event_id,
-        after={"piece": piece.name, "photo": photo_id is not None},
+        after={
+            "piece": piece.name,
+            "photo": photo_id is not None,
+            "update_id": str(update.id),
+            "note": note[:140] if note else None,
+        },
     )
     author = db.execute(select(User.name).where(User.id == ctx.user_id)).scalar_one()
     return _out(update, author)

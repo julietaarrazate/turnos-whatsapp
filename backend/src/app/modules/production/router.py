@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -6,8 +7,9 @@ from fastapi import APIRouter, Depends, Response, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.production import my_work, pieces, plans, service, updates
+from app.modules.production import activity, my_work, pieces, plans, service, updates
 from app.modules.production.schemas import (
+    ActivityPage,
     EventSupplierOut,
     EventSupplierUpdate,
     MyPieceUpdate,
@@ -153,3 +155,12 @@ def add_piece_plan(piece_id: UUID, body: PlanIn, ctx: Manage, db: DbSession) -> 
 def get_piece_plan_file(plan_id: UUID, ctx: OwnWork, db: DbSession) -> Response:
     """El archivo del plano. Lo ve quien ve el evento o tiene la pieza asignada."""
     return plans.plan_file(db, ctx, plan_id)
+
+
+@router.get("/activity")
+def get_activity(
+    ctx: View, db: DbSession, before: datetime | None = None, event_id: UUID | None = None
+) -> ActivityPage:
+    """Lo que pasa en producción, lo más nuevo primero (de a 30; ``before`` trae los anteriores).
+    Con ``event_id``, solo ese evento."""
+    return activity.feed(db, ctx, before, event_id)

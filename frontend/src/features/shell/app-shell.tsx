@@ -223,7 +223,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
               </button>
             )}
           </li>
-          {[byHref(bar.right), { href: "/settings", label: "Más", icon: NAV_ITEMS.at(-1)!.icon }].map(
+          {bar.right.map((href) => (href === "/settings" ? { ...byHref(href), label: "Más" } : byHref(href))).map(
             ({ href, label, icon: Icon }) => (
               <li key={href}>
                 <Link
