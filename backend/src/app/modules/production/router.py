@@ -11,6 +11,7 @@ from app.modules.auth import Client, Public, TenantContext, require
 from app.modules.production import (
     activity,
     approvals,
+    bundle,
     files,
     my_work,
     pieces,
@@ -285,3 +286,13 @@ def public_approval_decision(
     """ "Aprobado" o "Pido cambios" (con comentario). Queda quién, cuándo y desde dónde."""
     enforce(f"approval-decision:ip:{client.ip}", limit=20, window_seconds=600)
     return approvals.decide(db, token, body, client)
+
+
+@router.get(
+    "/events/{event_id}/download",
+    response_class=Response,
+    responses={200: {"content": {"application/zip": {}}}},
+)
+def download_event(event_id: UUID, ctx: View, db: DbSession) -> Response:
+    """Todo el evento en un .zip ordenado en carpetas (los comprobantes, solo si ve costos)."""
+    return bundle.download(db, ctx, event_id)
