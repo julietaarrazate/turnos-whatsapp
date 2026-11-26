@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { useSession } from "@/features/auth/session";
 import { EVENTS_KEY } from "@/features/budgets/keys";
+import { PieceProgress } from "@/features/pieces/piece-progress";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
@@ -271,6 +272,8 @@ export function PieceDetail({ eventId, pieceId }: { eventId: string; pieceId: st
         </div>
         <p className="text-sm text-ink-muted">{PIECE_STATUS[current].label}</p>
       </section>
+
+      <PieceProgress pieceId={pieceId} pieceName={piece.name} canPost={editable} />
 
       {editable ? (
         <section aria-label="Datos de la pieza" className="grid gap-3 sm:grid-cols-2">

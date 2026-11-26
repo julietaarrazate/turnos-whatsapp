@@ -149,3 +149,27 @@ class MyPieceUpdate(BaseModel):
 
 class MyTaskUpdate(BaseModel):
     status: TaskStatus
+
+
+# --- Avances de una pieza (foto y/o nota) ------------------------------------------------------
+
+
+class PhotoIn(BaseModel):
+    """La foto en base64, ya achicada en el teléfono (JPG, PNG, WEBP o HEIC; ≤ 10 MB)."""
+
+    filename: str = Field(min_length=1, max_length=255)
+    file_base64: str = Field(min_length=4, max_length=14_000_000)
+
+
+class PieceUpdateIn(BaseModel):
+    note: str | None = Field(default=None, max_length=1000)
+    photo: PhotoIn | None = None
+
+
+class PieceUpdateOut(BaseModel):
+    id: UUID
+    piece_id: UUID
+    author_name: str
+    note: str | None
+    has_photo: bool
+    created_at: datetime

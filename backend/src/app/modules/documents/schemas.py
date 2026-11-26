@@ -20,3 +20,11 @@ class DocumentOut(BaseModel):
     mime: str
     size: int
     created_at: datetime
+
+
+class StorageOut(BaseModel):
+    """Espacio de archivos de la organización, en bytes. ``enabled`` = hay dónde guardarlos."""
+
+    used: int
+    limit: int
+    enabled: bool

@@ -12,8 +12,9 @@ from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 
+from app.core.config import get_settings
 from app.core.db import AppSession
 from app.core.errors import AppError, not_found
 from app.core.ids import uuid7
@@ -65,6 +66,30 @@ def uploads_enabled() -> bool:
     return get_storage() is not None
 
 
+def storage_used(db: AppSession, organization_id: UUID) -> int:
+    """Bytes que ocupan los archivos de la organización."""
+    total = db.execute(
+        select(func.coalesce(func.sum(Document.size), 0)).where(
+            Document.organization_id == organization_id
+        )
+    ).scalar_one()
+    return int(total)
+
+
+def storage_quota() -> int:
+    return get_settings().storage_quota_bytes
+
+
+def _check_quota(db: AppSession, organization_id: UUID, size: int) -> None:
+    if storage_used(db, organization_id) + size > storage_quota():
+        raise AppError(
+            409,
+            "storage_full",
+            "Se llenó el espacio de archivos de la organización. Pedile a quien administra que "
+            "libere lugar descargando y borrando fotos de eventos cerrados.",
+        )
+
+
 def upload(
     db: AppSession, ctx: TenantContext, kind: DocumentKind, body: DocumentUploadIn
 ) -> DocumentOut:
@@ -76,6 +101,7 @@ def upload(
         raise AppError(422, "upload_invalid", "El archivo llegó dañado. Probá de nuevo.") from exc
     if len(data) > MAX_BYTES:
         raise AppError(413, "upload_too_large", "El archivo pesa más de 10 MB")
+    _check_quota(db, ctx.organization_id, len(data))
     mime = sniff(data)
     if mime is None:
         raise AppError(
@@ -112,6 +138,19 @@ def upload(
         after={"kind": kind.value, "filename": document.filename, "size": document.size},
     )
     return document_out(document)
+
+
+def upload_image(
+    db: AppSession, ctx: TenantContext, kind: DocumentKind, body: DocumentUploadIn
+) -> DocumentOut:
+    """Como ``upload`` pero solo fotos (sin PDF): lo que se muestra en una galería."""
+    try:
+        head = b64decode(body.file_base64[:64], validate=False)
+    except (binascii.Error, ValueError):
+        head = b""
+    if (sniff(head) or "").startswith("application/"):
+        raise AppError(415, "upload_unsupported", "Solo se aceptan fotos (JPG, PNG, WEBP o HEIC)")
+    return upload(db, ctx, kind, body)
 
 
 def get_document(
