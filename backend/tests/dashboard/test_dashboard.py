@@ -158,3 +158,54 @@ def test_todo_operations_need_production_permission_and_ignore_far_events() -> N
     # Y otra organización no ve nada de esta.
     other = build_org("b")
     assert _ops(logged_in(other.members[Role.OWNER])) == []
+
+
+def test_active_events_show_pieces_progress_mount_date_and_delays() -> None:
+    world = build_org("a")
+    owner = _approved(world)
+    event_id = world.ids["event_id"]
+    start = today_ar() + timedelta(days=5)
+    _ok(
+        owner.patch(
+            f"/api/v1/events/{event_id}", json={"start_date": start.isoformat(), "setup_days": 2}
+        )
+    )
+    base = f"/api/v1/events/{event_id}"
+    late_piece = _ok(
+        owner.post(
+            f"{base}/pieces",
+            json={"name": "Tótem", "due_date": (today_ar() - timedelta(days=1)).isoformat()},
+        ),
+        201,
+    )
+    mounted = _ok(owner.post(f"{base}/pieces", json={"name": "Vinilos"}), 201)
+    _ok(owner.patch(f"/api/v1/pieces/{mounted['id']}", json={"status": "MOUNTED"}))
+    _ok(
+        owner.post(
+            f"{base}/tasks",
+            json={
+                "title": "Pedir planos",
+                "due_date": (today_ar() - timedelta(days=2)).isoformat(),
+            },
+        ),
+        201,
+    )
+
+    [active] = _dashboard(owner)["active"]
+    assert active["id"] == str(event_id)
+    assert active["status"] == "APPROVED"
+    assert active["mount_date"] == (start - timedelta(days=2)).isoformat()
+    # Harness: 1 pieza en diseño + tótem (diseño, vencido) + vinilos (montado) → 33 %.
+    assert (active["pieces_total"], active["pieces_ready"], active["progress"]) == (3, 1, 33)
+    assert active["late"] == 2  # el tótem vencido + la tarea vencida
+
+    _ok(owner.patch(f"/api/v1/pieces/{late_piece['id']}", json={"status": "READY"}))
+    assert _dashboard(owner)["active"][0]["late"] == 1
+
+    # Otra organización no ve este evento.
+    assert _dashboard(logged_in(build_org("b").members[Role.OWNER]))["active"] == []
+
+    # Un evento que pasó hace semanas y nadie cerró no ocupa el pulso.
+    forgotten = (today_ar() - timedelta(days=30)).isoformat()
+    _ok(owner.patch(f"/api/v1/events/{event_id}", json={"start_date": forgotten}))
+    assert _dashboard(owner)["active"] == []

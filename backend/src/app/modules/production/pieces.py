@@ -1,5 +1,6 @@
 """Piezas a medida del evento (mostrador, corpóreo, tarima…) y sus fases de fabricación."""
 
+from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
@@ -12,7 +13,13 @@ from app.modules.auth import TenantContext
 from app.modules.catalog import today_ar
 from app.modules.events import get_event
 from app.modules.identity import User
-from app.modules.production.models import EventPiece, PieceArea, PieceStatus
+from app.modules.production.models import (
+    EventPiece,
+    PieceArea,
+    PieceStatus,
+    ProductionTask,
+    TaskStatus,
+)
 from app.modules.production.schemas import PieceIn, PieceOut, PiecesOut, PieceUpdate
 from app.modules.production.service import _audit, _check_assignee, _editable_event
 
@@ -145,3 +152,47 @@ def delete_piece(db: AppSession, ctx: TenantContext, piece_id: UUID) -> None:
     _audit(db, ctx, "piece.deleted", piece.event_id, before={"piece": piece.name})
     db.delete(piece)
     db.flush()
+
+
+@dataclass(frozen=True)
+class EventHealth:
+    total: int  # piezas
+    ready: int
+    progress: int  # 0 a 100
+    late: int  # piezas vencidas sin terminar + tareas vencidas sin hacer
+
+
+def events_health(
+    db: AppSession, ctx: TenantContext, event_ids: list[UUID], today: date
+) -> dict[UUID, EventHealth]:
+    """Avance y atrasos de varios eventos, con una consulta por tipo (sin N+1)."""
+    if not event_ids:
+        return {}
+    org = ctx.organization_id
+    statuses: dict[UUID, list[PieceStatus]] = {e: [] for e in event_ids}
+    late: dict[UUID, int] = dict.fromkeys(event_ids, 0)
+    for event_id, status, due in db.execute(
+        select(EventPiece.event_id, EventPiece.status, EventPiece.due_date).where(
+            EventPiece.organization_id == org, EventPiece.event_id.in_(event_ids)
+        )
+    ).all():
+        phase = PieceStatus(status)
+        statuses[event_id].append(phase)
+        if due and due < today and phase not in _DONE:
+            late[event_id] += 1
+    for event_id, count in db.execute(
+        select(ProductionTask.event_id, func.count())
+        .where(
+            ProductionTask.organization_id == org,
+            ProductionTask.event_id.in_(event_ids),
+            ProductionTask.status != TaskStatus.DONE.value,
+            ProductionTask.due_date < today,
+        )
+        .group_by(ProductionTask.event_id)
+    ).all():
+        late[event_id] += count
+    out = {}
+    for event_id in event_ids:
+        total, ready, progress = summary(statuses[event_id])
+        out[event_id] = EventHealth(total, ready, progress, late[event_id])
+    return out
