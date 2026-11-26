@@ -8,8 +8,10 @@ por la extensión ni por el content-type que declara el navegador. Se descarga c
 import binascii
 import hashlib
 from base64 import b64decode
+from datetime import date, datetime, time
 from urllib.parse import quote
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import Response
 from sqlalchemy import func, select
@@ -25,7 +27,22 @@ from app.modules.auth import TenantContext
 from app.modules.documents.models import Document, DocumentKind
 from app.modules.documents.schemas import DocumentOut, DocumentUploadIn
 
+AR_TZ = ZoneInfo("America/Argentina/Buenos_Aires")
+
+
+def _today_ar() -> date:
+    return datetime.now(AR_TZ).date()
+
+
 MAX_BYTES = 10 * 1024 * 1024
+# Planos y archivos del evento: 5 MB alcanzan para un PDF o un render; lo pesado va como link.
+_MAX_BY_KIND = {"PIECE_PLAN": 5 * 1024 * 1024, "EVENT_FILE": 5 * 1024 * 1024}
+
+
+def max_bytes(kind: DocumentKind) -> int:
+    return _MAX_BY_KIND.get(kind.value, MAX_BYTES)
+
+
 MAX_AUDIO_BYTES = 2 * 1024 * 1024  # 1 minuto de voz comprimida pesa ~0,5 MB: sobra margen
 _HEIF_BRANDS = {b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"mif1", b"msf1"}
 # Lo que graban los navegadores: Chrome/Android WebM (Opus), Firefox Ogg, Safari/iPhone MP4 (AAC).
@@ -94,7 +111,25 @@ def storage_quota() -> int:
     return get_settings().storage_quota_bytes
 
 
+def storage_used_today(db: AppSession, organization_id: UUID) -> int:
+    """Bytes subidos hoy (día de Argentina) por la organización."""
+    start = datetime.combine(_today_ar(), time.min, tzinfo=AR_TZ)
+    total = db.execute(
+        select(func.coalesce(func.sum(Document.size), 0)).where(
+            Document.organization_id == organization_id, Document.created_at >= start
+        )
+    ).scalar_one()
+    return int(total)
+
+
 def _check_quota(db: AppSession, organization_id: UUID, size: int) -> None:
+    if storage_used_today(db, organization_id) + size > get_settings().storage_daily_bytes:
+        raise AppError(
+            409,
+            "daily_upload_limit",
+            "Hoy ya se subió mucho a la app. Para cuidar el espacio, seguí mañana o pegá links "
+            "de Drive.",
+        )
     if storage_used(db, organization_id) + size > storage_quota():
         raise AppError(
             409,
@@ -113,8 +148,13 @@ def upload(
         data = b64decode(body.file_base64, validate=True)
     except (binascii.Error, ValueError) as exc:
         raise AppError(422, "upload_invalid", "El archivo llegó dañado. Probá de nuevo.") from exc
-    if len(data) > MAX_BYTES:
-        raise AppError(413, "upload_too_large", "El archivo pesa más de 10 MB")
+    limit = max_bytes(kind)
+    if len(data) > limit:
+        raise AppError(
+            413,
+            "upload_too_large",
+            f"El archivo pesa más de {limit // (1024 * 1024)} MB: dejalo en Drive y pegá el link",
+        )
     _check_quota(db, ctx.organization_id, len(data))
     mime = sniff(data)
     if mime is None:

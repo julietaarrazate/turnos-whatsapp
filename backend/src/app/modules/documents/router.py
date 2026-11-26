@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
+from app.core.config import get_settings
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
@@ -33,8 +34,13 @@ def upload_purchase_order(body: DocumentUploadIn, ctx: Decide, db: DbSession) ->
 @router.get("/documents/storage")
 def get_storage_usage(ctx: View, db: DbSession) -> StorageOut:
     """Cuánto ocupan los archivos de la organización y el tope (para avisar antes de llenarse)."""
+    used = service.storage_used(db, ctx.organization_id)
+    limit = service.storage_quota()
     return StorageOut(
-        used=service.storage_used(db, ctx.organization_id),
-        limit=service.storage_quota(),
+        used=used,
+        limit=limit,
         enabled=service.uploads_enabled(),
+        today_used=service.storage_used_today(db, ctx.organization_id),
+        today_limit=get_settings().storage_daily_bytes,
+        warn=used >= limit * 0.8,
     )

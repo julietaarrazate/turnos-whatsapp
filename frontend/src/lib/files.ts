@@ -1,6 +1,9 @@
 /** Archivos que se suben a la API (planillas, comprobantes, OC). */
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+/** Planos y archivos del evento: lo que pese más va como link de Drive (el servidor también lo frena). */
+export const MAX_DOC_BYTES = 5 * 1024 * 1024;
+export const TOO_HEAVY = "Pesa más de 5 MB: dejalo en Drive y pegá el link acá.";
 
 /** El contenido en base64 (la API recibe los archivos así, dentro del JSON). */
 export async function toBase64(file: Blob): Promise<string> {
@@ -41,8 +44,9 @@ export function uploadName(name: string, blob: Blob): string {
   return blob.type === "image/jpeg" && !/\.jpe?g$/i.test(name) ? `${name.replace(/\.[^.]*$/, "")}.jpg` : name;
 }
 
-/** "1,5 MB" / "320 KB". */
+/** "1,2 GB" / "1,5 MB" / "320 KB". */
 export function formatSize(bytes: number): string {
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1).replace(".", ",")} GB`;
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }

@@ -5359,8 +5359,14 @@ export interface components {
             enabled: boolean;
             /** Limit */
             limit: number;
+            /** Today Limit */
+            today_limit: number;
+            /** Today Used */
+            today_used: number;
             /** Used */
             used: number;
+            /** Warn */
+            warn: boolean;
         };
         /** SupplierContactIn */
         SupplierContactIn: {

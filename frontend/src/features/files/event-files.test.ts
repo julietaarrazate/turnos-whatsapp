@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { usedPercent } from "@/features/settings/storage-meter";
+
 import { groupFiles } from "./event-files";
 
 const item = (over: Record<string, unknown>) =>
@@ -39,5 +41,13 @@ describe("archivos del evento", () => {
       item({ id: "v2", category: "DESIGN", source: "PLAN", version: 2, current: true }),
     ]);
     expect(design.items.map((i) => i.id)).toEqual(["render", "v2", "v1"]);
+  });
+});
+
+describe("espacio de archivos", () => {
+  it("calcula el porcentaje usado sin pasarse de 100", () => {
+    expect(usedPercent(2, 8)).toBe(25);
+    expect(usedPercent(9, 8)).toBe(100);
+    expect(usedPercent(1, 0)).toBe(0);
   });
 });

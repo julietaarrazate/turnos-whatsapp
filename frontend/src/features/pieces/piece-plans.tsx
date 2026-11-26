@@ -10,7 +10,7 @@ import { ApiError, api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format/date";
-import { MAX_UPLOAD_BYTES, shrinkImage, toBase64, uploadName } from "@/lib/files";
+import { MAX_DOC_BYTES, TOO_HEAVY, shrinkImage, toBase64, uploadName } from "@/lib/files";
 
 type Plan = Schemas["PlanOut"];
 
@@ -58,7 +58,8 @@ function UploadPlan({ pieceId, titles }: { pieceId: string; titles: string[] }) 
   const add = useMutation({
     mutationFn: async ({ file, title }: { file: File; title: string }) => {
       const blob = file.type.startsWith("image/") ? await shrinkImage(file) : file;
-      if (blob.size > MAX_UPLOAD_BYTES) throw new ApiError(413, "upload_too_large", "El archivo pesa más de 10 MB");
+      // Se mira antes de mandar: no se gastan datos ni se espera para enterarse.
+      if (blob.size > MAX_DOC_BYTES) throw new ApiError(413, "upload_too_large", TOO_HEAVY);
       return unwrap(
         await api.POST("/api/v1/pieces/{piece_id}/plans", {
           params: { path: { piece_id: pieceId } },
@@ -98,7 +99,7 @@ function UploadPlan({ pieceId, titles }: { pieceId: string; titles: string[] }) 
         )}
       >
         <Upload className="size-4" aria-hidden />
-        {add.isPending ? "Subiendo…" : "Elegir archivo (PDF o imagen)"}
+        {add.isPending ? "Subiendo…" : "Elegir archivo (PDF o imagen, hasta 5 MB)"}
         <input
           type="file"
           accept="application/pdf,image/*"

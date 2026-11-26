@@ -28,3 +28,6 @@ class StorageOut(BaseModel):
     used: int
     limit: int
     enabled: bool
+    today_used: int  # subido hoy (día de Argentina)
+    today_limit: int  # freno diario
+    warn: bool  # ≥ 80 % del tope: avisar antes de que se llene

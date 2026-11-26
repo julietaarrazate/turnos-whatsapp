@@ -43,6 +43,7 @@ describe("uploadName", () => {
 describe("formatSize", () => {
   it("muestra KB o MB con coma decimal", () => {
     expect(formatSize(320 * 1024)).toBe("320 KB");
+    expect(formatSize(1.2 * 1024 * 1024 * 1024)).toBe("1,2 GB");
     expect(formatSize(100)).toBe("1 KB");
     expect(formatSize(1.5 * 1024 * 1024)).toBe("1,5 MB");
   });

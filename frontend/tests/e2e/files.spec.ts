@@ -53,6 +53,15 @@ test("archivos del evento: link de Drive, PDF del cliente, planos solos y el bus
   const served = await page.request.get((await manual.getAttribute("href")) ?? "");
   expect(served.headers()["content-type"]).toBe("application/pdf");
 
+  // Un PDF de más de 5 MB no se sube: pasa a "pegar link" con el nombre puesto, sin gastar datos.
+  await form.getByRole("button", { name: "Subir archivo" }).click();
+  await form.getByLabel("Nombre").fill("");
+  const heavy = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(5 * 1024 * 1024 + 100)]);
+  await form.getByLabel("Archivo").setInputFiles({ name: "planimetria-predio.pdf", mimeType: "application/pdf", buffer: heavy });
+  await expect(form.getByText("“planimetria-predio.pdf” pesa más de 5 MB")).toBeVisible();
+  await expect(form.getByRole("button", { name: "Pegar link (Drive…)" })).toHaveAttribute("aria-pressed", "true");
+  await expect(form.getByLabel("Nombre")).toHaveValue("planimetria-predio");
+
   // Buscador: en todos los eventos.
   await page.goto("/files");
   await page.getByLabel("Buscar archivos").fill(`manual ${suffix}`);

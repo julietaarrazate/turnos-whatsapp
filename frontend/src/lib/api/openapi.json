@@ -10385,15 +10385,30 @@
             "title": "Limit",
             "type": "integer"
           },
+          "today_limit": {
+            "title": "Today Limit",
+            "type": "integer"
+          },
+          "today_used": {
+            "title": "Today Used",
+            "type": "integer"
+          },
           "used": {
             "title": "Used",
             "type": "integer"
+          },
+          "warn": {
+            "title": "Warn",
+            "type": "boolean"
           }
         },
         "required": [
           "used",
           "limit",
-          "enabled"
+          "enabled",
+          "today_used",
+          "today_limit",
+          "warn"
         ],
         "title": "StorageOut",
         "type": "object"

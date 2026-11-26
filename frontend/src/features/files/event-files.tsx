@@ -11,7 +11,7 @@ import { ApiError, api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format/date";
-import { MAX_UPLOAD_BYTES, shrinkImage, toBase64, uploadName } from "@/lib/files";
+import { MAX_DOC_BYTES, TOO_HEAVY, shrinkImage, toBase64, uploadName } from "@/lib/files";
 import { LIVE } from "@/lib/live";
 
 type Item = Schemas["FileItem"];
@@ -109,12 +109,13 @@ function AddFile({ eventId, pieces }: { eventId: string; pieces: { id: string; n
   const [pieceId, setPieceId] = useState("");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [heavy, setHeavy] = useState<string | null>(null);
   const add = useMutation({
     mutationFn: async () => {
       let upload: Schemas["PhotoIn"] | null = null;
       if (mode === "file" && file) {
         const blob = file.type.startsWith("image/") ? await shrinkImage(file) : file;
-        if (blob.size > MAX_UPLOAD_BYTES) throw new ApiError(413, "upload_too_large", "El archivo pesa más de 10 MB: pegá el link de Drive");
+        if (blob.size > MAX_DOC_BYTES) throw new ApiError(413, "upload_too_large", TOO_HEAVY);
         upload = { filename: uploadName(file.name, blob), file_base64: await toBase64(blob) };
       }
       return unwrap(
@@ -210,6 +211,11 @@ function AddFile({ eventId, pieces }: { eventId: string; pieces: { id: string; n
           className="h-11 rounded-lg border border-line bg-surface px-3 text-base font-normal sm:text-sm"
         />
       </label>
+      {heavy && mode === "link" ? (
+        <Notice tone="info">
+          “{heavy}” pesa más de 5 MB. Subilo a Drive y pegá el link acá: queda igual de a mano y no llena el espacio.
+        </Notice>
+      ) : null}
       {mode === "link" ? (
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           Link
@@ -224,15 +230,26 @@ function AddFile({ eventId, pieces }: { eventId: string; pieces: { id: string; n
       ) : (
         <label className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-line px-3 text-sm focus-within:outline-2 focus-within:outline-accent">
           <Upload className="size-4 shrink-0 text-brand" aria-hidden />
-          <span className="truncate">{file ? file.name : "Elegir PDF o imagen (hasta 10 MB)"}</span>
+          <span className="truncate">{file ? file.name : "Elegir PDF o imagen (hasta 5 MB)"}</span>
           <input
             type="file"
             accept="application/pdf,image/*"
             aria-label="Archivo"
             className="sr-only"
             onChange={(e) => {
-              setFile(e.currentTarget.files?.[0] ?? null);
+              const next = e.currentTarget.files?.[0] ?? null;
               e.currentTarget.value = "";
+              // Un PDF pesado no se sube: se pasa directo a "pegar link", con el nombre puesto.
+              // (Las imágenes se achican antes de mandar, así que casi siempre entran.)
+              if (next && !next.type.startsWith("image/") && next.size > MAX_DOC_BYTES) {
+                setFile(null);
+                setHeavy(next.name);
+                if (!title.trim()) setTitle(next.name.replace(/\.[^.]+$/, ""));
+                setMode("link");
+                return;
+              }
+              setHeavy(null);
+              setFile(next);
             }}
           />
         </label>
