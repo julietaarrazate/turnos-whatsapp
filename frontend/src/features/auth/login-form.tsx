@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Fingerprint } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { PasswordField, TextField } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
+import { loginWithPasskey, passkeyHere, passkeysAvailable, wasCancelled } from "@/features/account/passkeys";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 
 /** Solo rutas internas: evita redirecciones abiertas con ?next=https://otro-sitio. */
@@ -19,6 +21,28 @@ export function LoginForm() {
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [canPasskey, setCanPasskey] = useState(false);
+  const [registeredHere, setRegisteredHere] = useState(false);
+  const [passkeyPending, setPasskeyPending] = useState(false);
+
+  useEffect(() => {
+    void passkeysAvailable().then((available) => {
+      setCanPasskey(available);
+      setRegisteredHere(passkeyHere());
+    });
+  }, []);
+
+  async function onPasskey() {
+    setPasskeyPending(true);
+    setError(null);
+    try {
+      await loginWithPasskey();
+      router.replace(safeNext(params.get("next")));
+    } catch (err) {
+      if (!wasCancelled(err)) setError(errorMessage(err));
+      setPasskeyPending(false);
+    }
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +69,20 @@ export function LoginForm() {
         <p className="mt-1 text-sm text-ink-muted">Usá tu email y contraseña.</p>
       </div>
       {error ? <Notice tone="error">{error}</Notice> : null}
+      {canPasskey ? (
+        <>
+          <Button
+            type="button"
+            size="lg"
+            variant={registeredHere ? "primary" : "secondary"}
+            loading={passkeyPending}
+            onClick={() => void onPasskey()}
+          >
+            <Fingerprint className="size-5" aria-hidden /> Entrar con huella o cara
+          </Button>
+          <p className="-mt-2 text-center text-xs text-ink-muted">o con tu email y contraseña</p>
+        </>
+      ) : null}
       <TextField label="Email" name="email" type="email" autoComplete="email" inputMode="email" required />
       <PasswordField label="Contraseña" name="password" autoComplete="current-password" required />
       <Button type="submit" size="lg" loading={pending}>

@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
@@ -59,3 +61,16 @@ class MeResponse(BaseModel):
     permissions: list[str]
     memberships: list[MembershipOut]
     uploads_enabled: bool  # hay dónde guardar archivos (comprobantes, OC)
+
+
+class PasskeyCredential(BaseModel):
+    """Lo que devuelve el navegador (``PublicKeyCredential.toJSON()``); lo valida la librería."""
+
+    credential: dict[str, Any]
+
+
+class PasskeyOut(BaseModel):
+    id: UUID
+    name: str
+    created_at: datetime
+    last_used_at: datetime | None

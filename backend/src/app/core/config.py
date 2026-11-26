@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     invitation_ttl_hours: int = 72
     password_reset_ttl_minutes: int = 60
     cookie_secure: bool = True
+    # Llaves de acceso (huella/cara): el dominio del frontend. Vacío = el de app_base_url.
+    webauthn_rp_id: str | None = None
 
     # Email
     email_backend: Literal["console", "resend"] = "console"
