@@ -140,7 +140,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
           </label>
         )
       ) : (
-        <p className="text-sm text-ink-muted">Las fotos se activan cuando se configure el espacio de archivos. Mientras, podés dejar una nota.</p>
+        <p className="text-sm text-ink-muted">Las fotos y las notas de voz se activan cuando se conecte el espacio de archivos. Mientras, podés dejar una nota escrita.</p>
       )}
       {me.uploads_enabled ? <VoiceRecorder value={audio} onChange={setAudio} /> : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">

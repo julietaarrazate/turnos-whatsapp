@@ -84,7 +84,7 @@ function QuickPhoto({ onClose, onSent }: { onClose: () => void; onSent: () => vo
       </div>
 
       {!me.uploads_enabled ? (
-        <p className="text-sm text-ink-muted">Las fotos se activan cuando se configure el espacio de archivos. Mientras, podés dejar una nota.</p>
+        <p className="text-sm text-ink-muted">Las fotos y las notas de voz se activan cuando se conecte el espacio de archivos. Mientras, podés dejar una nota escrita.</p>
       ) : preview ? (
         // eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:)
         <img src={preview} alt="Foto elegida" className="max-h-56 w-full rounded-xl object-cover" />
