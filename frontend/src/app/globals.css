@@ -23,6 +23,15 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  /* Nada puede ensanchar la pantalla y hacer que el teléfono la achique. */
+  overflow-x: clip; /* clip y no hidden: hidden rompe los encabezados y pies fijos (sticky) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: clip;
+  overflow-wrap: break-word; /* una palabra o código larguísimo corta línea en vez de salirse */
 }
 
 body {

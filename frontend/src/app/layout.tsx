@@ -19,6 +19,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Se usa como app instalada: sin zoom con dos dedos ni al tocar un campo.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
   themeColor: "#2b2fa8",
 };
