@@ -30,3 +30,21 @@ body {
   color: var(--color-ink);
   font-feature-settings: "tnum" 1; /* números tabulares: los importes se alinean */
 }
+
+/* En pantallas táctiles la app se usa como app, no como página: mantener el dedo sobre un
+   texto no lo marca ni abre "Copiar / Seleccionar todo". Donde se escribe, sí. */
+@media (pointer: coarse) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+}

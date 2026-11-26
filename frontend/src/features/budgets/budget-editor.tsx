@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, ChevronUp, FileSpreadsheet, Lock, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, FileSpreadsheet, Lock, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -10,6 +10,7 @@ import { useSession } from "@/features/auth/session";
 import { EventStatusBadge } from "@/features/events/status";
 import { pct } from "@/features/pricing/shared";
 import type { Budget, BudgetLine, BudgetSection, BudgetVersion } from "@/lib/api/types";
+import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format/date";
 import { formatMoney } from "@/lib/format/number";
 
@@ -39,7 +40,7 @@ function LineRow({
   return (
     <li className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_6rem_4.5rem_8rem_5rem_8rem]">
       <button type="button" onClick={onOpen} className="min-w-0 text-left" aria-label={`Abrir ${line.name_internal}`}>
-        <span className="flex items-center gap-1.5 truncate font-medium">
+        <span className="flex items-center gap-1.5 truncate font-semibold text-ink">
           {line.name_internal}
           {line.is_locked ? <Lock className="size-3.5 shrink-0 text-ink-muted" aria-label="Bloqueada" /> : null}
         </span>
@@ -49,7 +50,7 @@ function LineRow({
           {!line.show_on_proposal ? " · oculto en la propuesta" : null}
         </span>
       </button>
-      <span className="text-right font-medium tabular-nums lg:order-last">{formatMoney(line.sale_total)}</span>
+      <span className="text-right font-bold text-ink tabular-nums lg:order-last">{formatMoney(line.sale_total)}</span>
       <div className="col-span-2 flex items-center gap-2 lg:contents">
         <CommitField
           label={`Cantidad de ${line.name_internal}`}
@@ -75,10 +76,20 @@ function LineRow({
           <span className="hidden text-center text-xs text-ink-muted lg:block">—</span>
         )}
         <span className="flex-1 text-right text-xs text-ink-muted tabular-nums lg:text-sm">
-          {line.cost ? formatMoney(line.cost.cost_total) : null}
+          {line.cost ? (
+            <>
+              <span className="lg:hidden">costo </span>
+              {formatMoney(line.cost.cost_total)}
+            </>
+          ) : null}
         </span>
-        <span className="w-14 text-right text-xs text-ink-muted tabular-nums lg:w-auto lg:text-sm">
-          {line.margin?.markup_applied ? pct(line.margin.markup_applied) : line.margin ? "—" : null}
+        <span className="text-right text-xs text-ink-muted tabular-nums lg:w-auto lg:text-sm">
+          {line.margin ? (
+            <>
+              <span className="lg:hidden">markup </span>
+              {line.margin.markup_applied ? pct(line.margin.markup_applied) : "—"}
+            </>
+          ) : null}
         </span>
       </div>
     </li>
@@ -104,9 +115,21 @@ function SectionBlock({
 }) {
   const showCost = Boolean(version.costs);
   const showMargin = Boolean(version.margins);
+  // Una versión guardada se mira, no se edita: arranca plegada para ver todo de un vistazo.
+  const [open, setOpen] = useState(version.status === "DRAFT");
+  const items = section.lines.length;
   return (
-    <section aria-label={`Sección ${section.title_client}`} className="mb-4 rounded-xl border border-line bg-surface">
-      <header className="flex items-center gap-2 border-b border-line px-4 py-2">
+    <section aria-label={`Sección ${section.title_client}`} className="mb-3 overflow-hidden rounded-xl border border-line bg-surface">
+      <header className={cn("flex items-center gap-2 bg-brand/[0.06] px-3 py-2", open && "border-b border-line")}>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={`${open ? "Plegar" : "Desplegar"} ${section.title_client}`}
+          onClick={() => setOpen((v) => !v)}
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-brand hover:bg-brand/10"
+        >
+          <ChevronRight className={cn("size-5 transition-transform", open && "rotate-90")} aria-hidden />
+        </button>
         {editable ? (
           <CommitField
             label="Nombre de la sección"
@@ -114,51 +137,24 @@ function SectionBlock({
             display={(v) => v}
             parse={(t) => (t.trim() ? t.trim() : undefined)}
             inputMode="text"
-            className="flex-1 [&_input]:border-transparent [&_input]:text-left [&_input]:font-semibold"
+            className="min-w-0 flex-1 [&_input]:border-transparent [&_input]:bg-transparent [&_input]:text-left [&_input]:font-bold [&_input]:text-brand"
             onCommit={(title_client) => void editor.updateSection(section.id, { title_client })}
           />
         ) : (
-          <h2 className="flex-1 font-semibold">{section.title_client}</h2>
+          <h2 className="min-w-0 flex-1 truncate font-bold text-brand">
+            <button type="button" onClick={() => setOpen((v) => !v)} className="max-w-full truncate text-left">
+              {section.title_client}
+            </button>
+          </h2>
         )}
-        <span className="text-sm font-medium tabular-nums">{formatMoney(section.sale_total)}</span>
-        {editable ? (
-          <span className="flex">
-            <button
-              type="button"
-              aria-label="Subir sección"
-              disabled={index === 0}
-              onClick={() => void editor.updateSection(section.id, { position: index - 1 })}
-              className="rounded p-1 text-ink-muted hover:bg-subtle disabled:opacity-30"
-            >
-              <ChevronUp className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              aria-label="Bajar sección"
-              disabled={index === count - 1}
-              onClick={() => void editor.updateSection(section.id, { position: index + 1 })}
-              className="rounded p-1 text-ink-muted hover:bg-subtle disabled:opacity-30"
-            >
-              <ChevronDown className="size-4" aria-hidden />
-            </button>
-            {count > 1 ? (
-              <button
-                type="button"
-                aria-label={`Borrar sección ${section.title_client}`}
-                onClick={() => {
-                  if (section.lines.length === 0 || window.confirm(`¿Borrar "${section.title_client}" y sus ${section.lines.length} ítems?`)) {
-                    void editor.deleteSection(section.id);
-                  }
-                }}
-                className="rounded p-1 text-ink-muted hover:bg-subtle"
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </button>
-            ) : null}
+        <span className="flex flex-col items-end leading-tight">
+          <span className="font-bold text-brand tabular-nums">{formatMoney(section.sale_total)}</span>
+          <span className="text-[11px] text-ink-muted">
+            {items} {items === 1 ? "ítem" : "ítems"}
           </span>
-        ) : null}
+        </span>
       </header>
-      {section.lines.length ? (
+      {!open ? null : section.lines.length ? (
         <>
           <div className="hidden px-4 pt-2 text-[11px] uppercase tracking-wide text-ink-muted lg:grid lg:grid-cols-[minmax(0,1fr)_6rem_4.5rem_8rem_5rem_8rem] lg:gap-x-3">
             <span>Ítem</span>
@@ -177,13 +173,48 @@ function SectionBlock({
       ) : (
         <p className="px-4 py-3 text-sm text-ink-muted">Sin ítems todavía.</p>
       )}
-      {editable ? (
-        <div className="border-t border-line px-4 py-3">
+      {editable && open ? (
+        <div className="flex flex-col gap-2 border-t border-line px-4 py-3">
           <ProductSearch
             onPick={(product) => void editor.addLine({ section_id: section.id, product_id: product.id })}
             onPackage={(pkg) => void editor.addPackage({ package_id: pkg.id, section_id: section.id })}
             onFree={(name) => void editor.addLine({ section_id: section.id, name })}
           />
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-ink-muted">
+            Mover o borrar la sección
+            <button
+              type="button"
+              aria-label="Subir sección"
+              disabled={index === 0}
+              onClick={() => void editor.updateSection(section.id, { position: index - 1 })}
+              className="rounded-lg p-2 text-ink-muted hover:bg-subtle disabled:opacity-30"
+            >
+              <ChevronUp className="size-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              aria-label="Bajar sección"
+              disabled={index === count - 1}
+              onClick={() => void editor.updateSection(section.id, { position: index + 1 })}
+              className="rounded-lg p-2 text-ink-muted hover:bg-subtle disabled:opacity-30"
+            >
+              <ChevronDown className="size-4" aria-hidden />
+            </button>
+            {count > 1 ? (
+              <button
+                type="button"
+                aria-label={`Borrar sección ${section.title_client}`}
+                onClick={() => {
+                  if (section.lines.length === 0 || window.confirm(`¿Borrar "${section.title_client}" y sus ${section.lines.length} ítems?`)) {
+                    void editor.deleteSection(section.id);
+                  }
+                }}
+                className="rounded-lg p-2 text-ink-muted hover:bg-subtle hover:text-danger"
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </button>
+            ) : null}
+          </span>
         </div>
       ) : null}
     </section>
