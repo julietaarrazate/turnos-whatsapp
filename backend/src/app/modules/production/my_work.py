@@ -22,6 +22,7 @@ from app.modules.production.models import (
     ProductionTask,
     TaskStatus,
 )
+from app.modules.production.plans import current_plans
 from app.modules.production.schemas import (
     MyPiece,
     MyTask,
@@ -82,6 +83,7 @@ def my_work(db: AppSession, ctx: TenantContext) -> MyWorkOut:
                 late=pieces.is_late(piece.due_date, status, today),
                 notes=piece.notes,
                 event=_event(event),
+                plans=[],
             )
         )
     task_rows = db.execute(
@@ -105,6 +107,9 @@ def my_work(db: AppSession, ctx: TenantContext) -> MyWorkOut:
         )
         for task, event in task_rows
     ]
+    plans = current_plans(db, ctx.organization_id, [p.id for p in my_pieces])
+    for p in my_pieces:
+        p.plans = plans.get(p.id, [])
     my_pieces.sort(key=lambda p: _key(p.due_date, p.late, p.event))
     my_tasks.sort(key=lambda t: _key(t.due_date, t.late, t.event))
     return MyWorkOut(pieces=my_pieces, tasks=my_tasks)
@@ -143,6 +148,7 @@ def open_pieces(db: AppSession, ctx: TenantContext) -> list[OpenPiece]:
                 late=pieces.is_late(piece.due_date, status, today),
                 notes=piece.notes,
                 event=_event(event),
+                plans=[],
                 mine=piece.assignee_user_id == ctx.user_id,
             )
         )

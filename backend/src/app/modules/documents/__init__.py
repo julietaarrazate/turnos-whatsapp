@@ -9,6 +9,7 @@ from app.modules.documents.service import (
     get_document,
     storage_quota,
     storage_used,
+    upload_file,
     upload_image,
     uploads_enabled,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "router",
     "storage_quota",
     "storage_used",
+    "upload_file",
     "upload_image",
     "uploads_enabled",
 ]

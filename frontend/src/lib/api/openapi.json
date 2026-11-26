@@ -2215,7 +2215,8 @@
         "enum": [
           "RECEIPT",
           "PURCHASE_ORDER",
-          "PROGRESS_PHOTO"
+          "PROGRESS_PHOTO",
+          "PIECE_PLAN"
         ],
         "title": "DocumentKind",
         "type": "string"
@@ -5933,6 +5934,13 @@
             ],
             "title": "Notes"
           },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/PlanRef"
+            },
+            "title": "Plans",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/PieceStatus"
           }
@@ -5945,7 +5953,8 @@
           "due_date",
           "late",
           "notes",
-          "event"
+          "event",
+          "plans"
         ],
         "title": "MyPiece",
         "type": "object"
@@ -6296,6 +6305,13 @@
             ],
             "title": "Notes"
           },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/PlanRef"
+            },
+            "title": "Plans",
+            "type": "array"
+          },
           "status": {
             "$ref": "#/components/schemas/PieceStatus"
           }
@@ -6309,6 +6325,7 @@
           "late",
           "notes",
           "event",
+          "plans",
           "mine"
         ],
         "title": "OpenPiece",
@@ -7408,6 +7425,117 @@
         ],
         "title": "PipelineStatus",
         "type": "string"
+      },
+      "PlanIn": {
+        "description": "Un plano: PDF o imagen (JPG, PNG, WEBP, HEIC), ≤ 10 MB. Mismo título = versión nueva.",
+        "properties": {
+          "file_base64": {
+            "maxLength": 14000000,
+            "minLength": 4,
+            "title": "File Base64",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "filename",
+          "file_base64"
+        ],
+        "title": "PlanIn",
+        "type": "object"
+      },
+      "PlanOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "current": {
+            "title": "Current",
+            "type": "boolean"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "piece_id": {
+            "format": "uuid",
+            "title": "Piece Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uploaded_by_name": {
+            "title": "Uploaded By Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "piece_id",
+          "title",
+          "version",
+          "current",
+          "filename",
+          "mime",
+          "uploaded_by_name",
+          "created_at"
+        ],
+        "title": "PlanOut",
+        "type": "object"
+      },
+      "PlanRef": {
+        "description": "Un plano vigente de la pieza (para \"Ver plano\").",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "version"
+        ],
+        "title": "PlanRef",
+        "type": "object"
       },
       "PreferredOffer": {
         "properties": {
@@ -15830,6 +15958,48 @@
         ]
       }
     },
+    "/api/v1/piece-plans/{plan_id}/file": {
+      "get": {
+        "description": "El archivo del plano. Lo ve quien ve el evento o tiene la pieza asignada.",
+        "operationId": "get_piece_plan_file_api_v1_piece_plans__plan_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Piece Plan File",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/piece-updates/{update_id}/photo": {
       "get": {
         "description": "La foto de un avance (para verla en la ficha o en Mis tareas).",
@@ -15981,6 +16151,106 @@
           }
         },
         "summary": "Update Piece",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/pieces/{piece_id}/plans": {
+      "get": {
+        "description": "Los planos de la pieza: por título, la versión vigente primero.",
+        "operationId": "list_piece_plans_api_v1_pieces__piece_id__plans_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "piece_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Piece Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlanOut"
+                  },
+                  "title": "Response List Piece Plans Api V1 Pieces  Piece Id  Plans Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Piece Plans",
+        "tags": [
+          "production"
+        ]
+      },
+      "post": {
+        "description": "Subir un plano (PDF o imagen). Con un título que ya existe es la versión siguiente.",
+        "operationId": "add_piece_plan_api_v1_pieces__piece_id__plans_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "piece_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Piece Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Piece Plan",
         "tags": [
           "production"
         ]

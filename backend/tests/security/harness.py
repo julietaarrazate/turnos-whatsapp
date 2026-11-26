@@ -218,6 +218,8 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         "task_id": task.id,
         "piece_id": piece.id,
         "update_id": progress.id,
+        # Sin plano real (necesitaría el archivo en el storage): un ID que no existe da 404.
+        "plan_id": uuid7(),
         "proposal_id": created.proposal.id,
         "sent_budget_id": sent.id,
         "event_id": budget.event.id,
@@ -258,6 +260,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "task_id": lambda w: w.ids["task_id"],
     "piece_id": lambda w: w.ids["piece_id"],
     "update_id": lambda w: w.ids["update_id"],
+    "plan_id": lambda w: w.ids["plan_id"],
     "expense_id": lambda w: w.ids["expense_id"],
     "package_id": lambda w: w.ids["package_id"],
 }
@@ -357,6 +360,11 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/my-work/pieces/{piece_id}"): {"status": "IN_WORKSHOP"},
     ("PATCH", "/api/v1/my-work/tasks/{task_id}"): {"status": "DONE"},
     ("POST", "/api/v1/pieces/{piece_id}/updates"): {"note": "Letras cortadas"},
+    ("POST", "/api/v1/pieces/{piece_id}/plans"): {
+        "title": "Plano de corte",
+        "filename": "plano.pdf",
+        "file_base64": b64encode(b"%PDF-1.4 plano").decode(),
+    },
     ("POST", "/api/v1/events/{event_id}/expenses"): lambda w: {
         "description": "Flete extra",
         "amount": "15000",

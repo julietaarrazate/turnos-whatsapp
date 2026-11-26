@@ -1,12 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera } from "lucide-react";
+import { Camera, FileText } from "lucide-react";
 import { useState } from "react";
 
 import { Notice } from "@/components/ui/notice";
 import { EVENTS_KEY } from "@/features/budgets/keys";
 import { PIECE_AREA, PIECE_STATUS } from "@/features/events/event-pieces";
+import { planUrl } from "@/features/pieces/piece-plans";
 import { ProgressForm } from "@/features/pieces/piece-progress";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
@@ -84,6 +85,23 @@ function PieceCard({ piece }: { piece: MyPiece }) {
           })}
         </div>
         {move.isError ? <Notice tone="error">{errorMessage(move.error)}</Notice> : null}
+        {piece.plans.length ? (
+          <div className="flex flex-wrap gap-2">
+            {piece.plans.map((plan) => (
+              <a
+                key={plan.id}
+                href={planUrl(plan.id)}
+                target="_blank"
+                rel="noopener"
+                className="flex h-12 min-w-0 flex-1 basis-40 items-center justify-center gap-2 rounded-xl border border-line px-3 text-sm font-bold text-ink"
+              >
+                <FileText className="size-5 shrink-0 text-brand" aria-hidden />
+                <span className="truncate">Ver {plan.title.toLowerCase()}</span>
+                <span className="shrink-0 text-xs font-semibold text-ink-muted">v{plan.version}</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
         {reporting ? (
           <ProgressForm pieceId={piece.id} pieceName={piece.name} />
         ) : (

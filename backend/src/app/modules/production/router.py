@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Response, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.production import my_work, pieces, service, updates
+from app.modules.production import my_work, pieces, plans, service, updates
 from app.modules.production.schemas import (
     EventSupplierOut,
     EventSupplierUpdate,
@@ -20,6 +20,8 @@ from app.modules.production.schemas import (
     PieceUpdate,
     PieceUpdateIn,
     PieceUpdateOut,
+    PlanIn,
+    PlanOut,
     ProductionOut,
     TaskIn,
     TaskOut,
@@ -133,3 +135,21 @@ def list_open_pieces(ctx: View, db: DbSession) -> list[OpenPiece]:
     """Piezas sin montar de eventos aprobados o en producción (las propias primero): para elegir
     a qué pieza va una foto de avance."""
     return my_work.open_pieces(db, ctx)
+
+
+@router.get("/pieces/{piece_id}/plans")
+def list_piece_plans(piece_id: UUID, ctx: OwnWork, db: DbSession) -> list[PlanOut]:
+    """Los planos de la pieza: por título, la versión vigente primero."""
+    return plans.list_plans(db, ctx, piece_id)
+
+
+@router.post("/pieces/{piece_id}/plans", status_code=status.HTTP_201_CREATED)
+def add_piece_plan(piece_id: UUID, body: PlanIn, ctx: Manage, db: DbSession) -> PlanOut:
+    """Subir un plano (PDF o imagen). Con un título que ya existe es la versión siguiente."""
+    return plans.add_plan(db, ctx, piece_id, body)
+
+
+@router.get("/piece-plans/{plan_id}/file")
+def get_piece_plan_file(plan_id: UUID, ctx: OwnWork, db: DbSession) -> Response:
+    """El archivo del plano. Lo ve quien ve el evento o tiene la pieza asignada."""
+    return plans.plan_file(db, ctx, plan_id)

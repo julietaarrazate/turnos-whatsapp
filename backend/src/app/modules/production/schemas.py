@@ -116,6 +116,14 @@ class WorkEvent(BaseModel):
     mount_date: date | None  # inicio menos días de armado; None = fecha a confirmar
 
 
+class PlanRef(BaseModel):
+    """Un plano vigente de la pieza (para "Ver plano")."""
+
+    id: UUID
+    title: str
+    version: int
+
+
 class MyPiece(BaseModel):
     id: UUID
     name: str
@@ -125,6 +133,7 @@ class MyPiece(BaseModel):
     late: bool
     notes: str | None
     event: WorkEvent
+    plans: list[PlanRef]  # los vigentes (en Mis tareas; vacío en otras listas)
 
 
 class OpenPiece(MyPiece):
@@ -178,4 +187,27 @@ class PieceUpdateOut(BaseModel):
     author_name: str
     note: str | None
     has_photo: bool
+    created_at: datetime
+
+
+# --- Planos de una pieza (con versiones) -----------------------------------------------------
+
+
+class PlanIn(BaseModel):
+    """Un plano: PDF o imagen (JPG, PNG, WEBP, HEIC), ≤ 10 MB. Mismo título = versión nueva."""
+
+    title: str = Field(min_length=1, max_length=120)
+    filename: str = Field(min_length=1, max_length=255)
+    file_base64: str = Field(min_length=4, max_length=14_000_000)
+
+
+class PlanOut(BaseModel):
+    id: UUID
+    piece_id: UUID
+    title: str
+    version: int
+    current: bool  # la versión más nueva de ese título
+    filename: str
+    mime: str
+    uploaded_by_name: str
     created_at: datetime

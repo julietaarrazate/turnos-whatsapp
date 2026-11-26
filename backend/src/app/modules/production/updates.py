@@ -23,7 +23,7 @@ from app.modules.production.schemas import PieceUpdateIn, PieceUpdateOut
 from app.modules.production.service import _audit, _editable_event
 
 
-def _visible_piece(db: AppSession, ctx: TenantContext, piece_id: UUID) -> EventPiece:
+def visible_piece(db: AppSession, ctx: TenantContext, piece_id: UUID) -> EventPiece:
     """La pieza, si quien consulta puede verla: ve el evento, o la tiene asignada. Si no, 404."""
     piece = db.execute(
         select(EventPiece).where(
@@ -53,7 +53,7 @@ def _out(update: PieceProgress, author: str) -> PieceUpdateOut:
 
 
 def list_updates(db: AppSession, ctx: TenantContext, piece_id: UUID) -> list[PieceUpdateOut]:
-    piece = _visible_piece(db, ctx, piece_id)
+    piece = visible_piece(db, ctx, piece_id)
     rows = db.execute(
         select(PieceProgress, User.name)
         .join(User, User.id == PieceProgress.author_user_id)
@@ -69,7 +69,7 @@ def list_updates(db: AppSession, ctx: TenantContext, piece_id: UUID) -> list[Pie
 def add_update(
     db: AppSession, ctx: TenantContext, piece_id: UUID, body: PieceUpdateIn
 ) -> PieceUpdateOut:
-    piece = _visible_piece(db, ctx, piece_id)
+    piece = visible_piece(db, ctx, piece_id)
     if not _can_post(ctx, piece):
         # Ve el evento pero no es de producción ni tiene la pieza: no sube avances.
         raise AppError(403, "not_assigned", "Solo producción o quien tiene la pieza suben avances")
@@ -111,7 +111,7 @@ def update_photo(db: AppSession, ctx: TenantContext, update_id: UUID) -> Respons
     ).scalar_one_or_none()
     if update is None or update.photo_document_id is None:
         raise not_found()
-    _visible_piece(db, ctx, update.piece_id)
+    visible_piece(db, ctx, update.piece_id)
     document = get_document(
         db, ctx.organization_id, update.photo_document_id, DocumentKind.PROGRESS_PHOTO
     )

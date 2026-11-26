@@ -140,6 +140,13 @@ def upload(
     return document_out(document)
 
 
+def upload_file(
+    db: AppSession, ctx: TenantContext, kind: DocumentKind, body: DocumentUploadIn
+) -> DocumentOut:
+    """Foto o PDF (para quien lo usa desde otro módulo)."""
+    return upload(db, ctx, kind, body)
+
+
 def upload_image(
     db: AppSession, ctx: TenantContext, kind: DocumentKind, body: DocumentUploadIn
 ) -> DocumentOut:

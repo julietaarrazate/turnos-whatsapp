@@ -1342,6 +1342,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/piece-plans/{plan_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Piece Plan File
+         * @description El archivo del plano. Lo ve quien ve el evento o tiene la pieza asignada.
+         */
+        get: operations["get_piece_plan_file_api_v1_piece_plans__plan_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/piece-updates/{update_id}/photo": {
         parameters: {
             query?: never;
@@ -1402,6 +1422,30 @@ export interface paths {
          * @description Cambiar la fase (diseño → a comprar → taller → listo → montado, o volver), el responsable…
          */
         patch: operations["update_piece_api_v1_pieces__piece_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/pieces/{piece_id}/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Piece Plans
+         * @description Los planos de la pieza: por título, la versión vigente primero.
+         */
+        get: operations["list_piece_plans_api_v1_pieces__piece_id__plans_get"];
+        put?: never;
+        /**
+         * Add Piece Plan
+         * @description Subir un plano (PDF o imagen). Con un título que ya existe es la versión siguiente.
+         */
+        post: operations["add_piece_plan_api_v1_pieces__piece_id__plans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/pieces/{piece_id}/updates": {
@@ -2638,7 +2682,7 @@ export interface components {
          * DocumentKind
          * @enum {string}
          */
-        DocumentKind: "RECEIPT" | "PURCHASE_ORDER" | "PROGRESS_PHOTO";
+        DocumentKind: "RECEIPT" | "PURCHASE_ORDER" | "PROGRESS_PHOTO" | "PIECE_PLAN";
         /** DocumentOut */
         DocumentOut: {
             /**
@@ -3717,6 +3761,8 @@ export interface components {
             name: string;
             /** Notes */
             notes: string | null;
+            /** Plans */
+            plans: components["schemas"]["PlanRef"][];
             status: components["schemas"]["PieceStatus"];
         };
         /** MyPieceUpdate */
@@ -3833,6 +3879,8 @@ export interface components {
             name: string;
             /** Notes */
             notes: string | null;
+            /** Plans */
+            plans: components["schemas"]["PlanRef"][];
             status: components["schemas"]["PieceStatus"];
         };
         /** OrganizationFiscalUpdate */
@@ -4205,6 +4253,63 @@ export interface components {
          * @enum {string}
          */
         PipelineStatus: "DRAFT" | "SENT" | "VIEWED" | "NEGOTIATION" | "ACCEPTED" | "LOST";
+        /**
+         * PlanIn
+         * @description Un plano: PDF o imagen (JPG, PNG, WEBP, HEIC), ≤ 10 MB. Mismo título = versión nueva.
+         */
+        PlanIn: {
+            /** File Base64 */
+            file_base64: string;
+            /** Filename */
+            filename: string;
+            /** Title */
+            title: string;
+        };
+        /** PlanOut */
+        PlanOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Current */
+            current: boolean;
+            /** Filename */
+            filename: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mime */
+            mime: string;
+            /**
+             * Piece Id
+             * Format: uuid
+             */
+            piece_id: string;
+            /** Title */
+            title: string;
+            /** Uploaded By Name */
+            uploaded_by_name: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * PlanRef
+         * @description Un plano vigente de la pieza (para "Ver plano").
+         */
+        PlanRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** PreferredOffer */
         PreferredOffer: {
             current_cost: components["schemas"]["CostOut"] | null;
@@ -8361,6 +8466,37 @@ export interface operations {
             };
         };
     };
+    get_piece_plan_file_api_v1_piece_plans__plan_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_piece_update_photo_api_v1_piece_updates__update_id__photo_get: {
         parameters: {
             query?: never;
@@ -8463,6 +8599,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PieceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_piece_plans_api_v1_pieces__piece_id__plans_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                piece_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_piece_plan_api_v1_pieces__piece_id__plans_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                piece_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
                 };
             };
             /** @description Validation Error */

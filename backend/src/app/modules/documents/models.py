@@ -13,6 +13,7 @@ class DocumentKind(StrEnum):
     RECEIPT = "RECEIPT"  # comprobante de un gasto (O-04)
     PURCHASE_ORDER = "PURCHASE_ORDER"  # OC de una aprobación manual (P-06)
     PROGRESS_PHOTO = "PROGRESS_PHOTO"  # foto de avance de una pieza (taller, montaje)
+    PIECE_PLAN = "PIECE_PLAN"  # plano o diseño de una pieza (PDF o imagen), con versiones
 
 
 class Document(IdMixin, Base):
