@@ -8,6 +8,7 @@ import { Notice } from "@/components/ui/notice";
 import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import { ME_QUERY_KEY, useSession } from "@/features/auth/session";
+import { StorageMeter } from "@/features/settings/storage-meter";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Organization } from "@/lib/api/types";
 
@@ -62,6 +63,7 @@ export function OrganizationSettings() {
     <>
       <PageHeader title="Organización" description="Datos de tu productora." />
       <div className="flex flex-col gap-4">
+        <StorageMeter />
         <Section title="General">
           <form
             className="flex flex-col gap-4 sm:flex-row sm:items-end"

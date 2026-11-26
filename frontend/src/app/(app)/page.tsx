@@ -7,6 +7,7 @@ import { useSession } from "@/features/auth/session";
 import { FollowUpCard } from "@/features/budgets/follow-up-card";
 import { DashboardView } from "@/features/dashboard/dashboard";
 import { MyWork } from "@/features/my-work/my-work";
+import { StorageWarning } from "@/features/settings/storage-meter";
 
 function greeting(): string {
   const hour = Number(
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   if (can("dashboard.view")) {
     return (
       <div className="flex flex-col gap-5">
+        {can("event.close") ? <StorageWarning /> : null}
         <DashboardView greeting={title} />
         <FollowUpCard />
       </div>

@@ -52,6 +52,7 @@ from app.modules.production.models import (
     EventFile,
     EventPiece,
     EventSupplier,
+    ExpectedFile,
     PieceProgress,
     ProductionTask,
 )
@@ -212,6 +213,13 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         created_by=owner.user_id,
     )
     s.add(link)
+    expected = ExpectedFile(
+        organization_id=owner.organization_id,
+        event_id=budget.event.id,
+        title="Planimetría del predio",
+        category="CLIENT",
+    )
+    s.add(expected)
     s.flush()
     s.add(
         PackageItem(
@@ -230,6 +238,7 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         "piece_id": piece.id,
         "update_id": progress.id,
         "file_id": link.id,
+        "expected_id": expected.id,
         # Sin plano real (necesitaría el archivo en el storage): un ID que no existe da 404.
         "plan_id": uuid7(),
         "proposal_id": created.proposal.id,
@@ -273,6 +282,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "piece_id": lambda w: w.ids["piece_id"],
     "update_id": lambda w: w.ids["update_id"],
     "file_id": lambda w: w.ids["file_id"],
+    "expected_id": lambda w: w.ids["expected_id"],
     "plan_id": lambda w: w.ids["plan_id"],
     "expense_id": lambda w: w.ids["expense_id"],
     "package_id": lambda w: w.ids["package_id"],
@@ -374,6 +384,8 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/my-work/tasks/{task_id}"): {"status": "DONE"},
     ("POST", "/api/v1/pieces/{piece_id}/updates"): {"note": "Letras cortadas"},
     ("POST", "/api/v1/activity/seen"): {},
+    ("POST", "/api/v1/events/{event_id}/expected-files"): {"title": "Seguro", "category": "ADMIN"},
+    ("POST", "/api/v1/events/{event_id}/expected-files/template"): {"template": "STAND"},
     ("POST", "/api/v1/events/{event_id}/files"): {
         "category": "CLIENT",
         "title": "Brief",

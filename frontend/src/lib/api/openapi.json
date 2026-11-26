@@ -2628,6 +2628,13 @@
             "title": "Can Edit",
             "type": "boolean"
           },
+          "expected": {
+            "items": {
+              "$ref": "#/components/schemas/ExpectedFileOut"
+            },
+            "title": "Expected",
+            "type": "array"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/FileItem"
@@ -2638,6 +2645,7 @@
         },
         "required": [
           "items",
+          "expected",
           "can_edit"
         ],
         "title": "EventFilesOut",
@@ -3443,6 +3451,73 @@
           }
         },
         "title": "EventUpdate",
+        "type": "object"
+      },
+      "ExpectedFileIn": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/FileCategory",
+            "default": "OTHER"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ExpectedFileIn",
+        "type": "object"
+      },
+      "ExpectedFileOut": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/FileCategory"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "present": {
+            "title": "Present",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "category",
+          "present"
+        ],
+        "title": "ExpectedFileOut",
+        "type": "object"
+      },
+      "ExpectedTemplateIn": {
+        "description": "Lista base según el tipo de evento: STAND, BTL (activación), EVENT o VISUAL.",
+        "properties": {
+          "template": {
+            "enum": [
+              "STAND",
+              "BTL",
+              "EVENT",
+              "VISUAL"
+            ],
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template"
+        ],
+        "title": "ExpectedTemplateIn",
         "type": "object"
       },
       "ExpenseCurrency": {
@@ -10385,15 +10460,30 @@
             "title": "Limit",
             "type": "integer"
           },
+          "today_limit": {
+            "title": "Today Limit",
+            "type": "integer"
+          },
+          "today_used": {
+            "title": "Today Used",
+            "type": "integer"
+          },
           "used": {
             "title": "Used",
             "type": "integer"
+          },
+          "warn": {
+            "title": "Warn",
+            "type": "boolean"
           }
         },
         "required": [
           "used",
           "limit",
-          "enabled"
+          "enabled",
+          "today_used",
+          "today_limit",
+          "warn"
         ],
         "title": "StorageOut",
         "type": "object"
@@ -15243,6 +15333,114 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/expected-files": {
+      "post": {
+        "description": "Agregar a la lista de archivos que el evento tiene que tener (devuelve la pestaña).",
+        "operationId": "add_expected_file_api_v1_events__event_id__expected_files_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectedFileIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFilesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Expected File",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/expected-files/template": {
+      "post": {
+        "description": "Sumar la lista base según el tipo de evento (Stand, Activación BTL, Evento, Visual).",
+        "operationId": "apply_expected_template_api_v1_events__event_id__expected_files_template_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectedTemplateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFilesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Expected Template",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/events/{event_id}/expenses": {
       "get": {
         "description": "Gastos reales del evento y presupuestado vs real (por línea y no presupuestado).",
@@ -15834,6 +16032,42 @@
           }
         },
         "summary": "Add Task",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/expected-files/{expected_id}": {
+      "delete": {
+        "operationId": "delete_expected_file_api_v1_expected_files__expected_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expected_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Expected Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Expected File",
         "tags": [
           "production"
         ]

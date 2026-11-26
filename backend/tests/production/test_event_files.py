@@ -178,3 +178,58 @@ def test_search_across_events_and_closed_events_are_read_only() -> None:
     locked = _add(owner, world, category="OTHER", title="Tarde", url="https://a.com")
     assert (locked.status_code, locked.json()["code"]) == (409, "event_locked")
     assert _files(owner, world)["items"]  # se sigue viendo
+
+
+def _expected(client: TestClient, world: OrgWorld, **body: Any) -> Any:
+    return client.post(f"/api/v1/events/{world.ids['event_id']}/expected-files", json=body)
+
+
+def test_expected_files_from_a_template_and_what_is_missing() -> None:
+    world = build_org("a")
+    owner = logged_in(world.members[Role.OWNER])
+    base = f"/api/v1/events/{world.ids['event_id']}"
+
+    stand = _ok(owner.post(f"{base}/expected-files/template", json={"template": "STAND"}))
+    titles = [e["title"] for e in stand["expected"]]
+    # El harness ya traía "Planimetría del predio": no se repite.
+    assert titles.count("Planimetría del predio") == 1
+    assert "Plano de corte" in titles
+    assert "ART del personal" in titles
+    # Solo está lo que ya tiene archivo o link: el harness trae el link "Manual de marca".
+    assert [e["title"] for e in stand["expected"] if e["present"]] == ["Manual de marca"]
+
+    # Aplicar de nuevo, u otra lista, no duplica lo que ya está.
+    again = _ok(owner.post(f"{base}/expected-files/template", json={"template": "BTL"}))
+    assert len(again["expected"]) == len(stand["expected"]) + 2  # guion y permiso del lugar
+    assert len([e for e in again["expected"] if e["title"] == "Brief"]) == 1
+
+    # Está si hay un archivo, link o plano con ese nombre (sin acentos ni mayúsculas).
+    _ok(
+        _add(
+            owner,
+            world,
+            category="CLIENT",
+            title="PLANIMETRIA DEL PREDIO Costa Salguero",
+            url="https://a.com/p",
+        ),
+        201,
+    )
+    plan = {"title": "Plano de corte", "filename": "p.pdf", "file_base64": b64encode(PDF).decode()}
+    _ok(owner.post(f"/api/v1/pieces/{world.ids['piece_id']}/plans", json=plan), 201)
+    present = {e["title"]: e["present"] for e in _files(owner, world)["expected"]}
+    assert present["Planimetría del predio"] is True
+    assert present["Plano de corte"] is True
+    assert present["Render aprobado"] is False
+
+    # Ítems propios y sacar lo que no corresponde.
+    custom = _ok(_expected(owner, world, title="  Habilitación de bomberos ", category="ADMIN"))
+    item = next(e for e in custom["expected"] if e["title"] == "Habilitación de bomberos")
+    assert item["category"] == "ADMIN"
+    assert owner.delete(f"/api/v1/expected-files/{item['id']}").status_code == 204
+    assert all(e["id"] != item["id"] for e in _files(owner, world)["expected"])
+
+    viewer = logged_in(world.members[Role.VIEWER])
+    denied = viewer.post(f"{base}/expected-files/template", json={"template": "STAND"})
+    assert (denied.status_code, denied.json()["code"]) == (403, "cannot_edit_files")
+    bad = owner.post(f"{base}/expected-files/template", json={"template": "BODA"})
+    assert bad.status_code == 422

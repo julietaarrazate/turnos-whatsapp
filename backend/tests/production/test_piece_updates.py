@@ -175,3 +175,27 @@ def test_voice_note_must_be_audio_and_short() -> None:
     assert (fake.status_code, fake.json()["code"]) == (415, "upload_unsupported")
     long = _post(production, piece_id, audio=_audio(WEBM + b"\x00" * (2 * 1024 * 1024), "x.webm"))
     assert long.status_code in {413, 422}  # pasa el tope del JSON (422) o el del audio (413)
+
+
+def test_heavy_plans_go_to_drive_and_the_daily_brake(monkeypatch: pytest.MonkeyPatch) -> None:
+    world = build_org("a")
+    production = logged_in(world.members[Role.PRODUCTION])
+    piece_id = world.ids["piece_id"]
+    heavy = b"%PDF-1.4 " + b"0" * (5 * 1024 * 1024 + 10)
+    plan = {"title": "Plano", "filename": "p.pdf", "file_base64": b64encode(heavy).decode()}
+    too_big = production.post(f"/api/v1/pieces/{piece_id}/plans", json=plan)
+    assert (too_big.status_code, too_big.json()["code"]) == (413, "upload_too_large")
+    assert "Drive" in too_big.json()["detail"]
+
+    # Freno diario: con el tope casi lleno, la próxima foto no entra; una nota sí.
+    _ok(_post(production, piece_id, photo=_photo()), 201)
+    usage = _ok(production.get("/api/v1/documents/storage"))
+    assert usage["today_used"] >= len(JPEG)
+    assert usage["warn"] is False
+    monkeypatch.setattr(get_settings(), "storage_daily_bytes", usage["today_used"] + 10)
+    braked = _post(production, piece_id, photo=_photo())
+    assert (braked.status_code, braked.json()["code"]) == (409, "daily_upload_limit")
+    assert _post(production, piece_id, note="Sigo mañana").status_code == 201
+
+    monkeypatch.setattr(get_settings(), "storage_quota_bytes", usage["used"])
+    assert _ok(production.get("/api/v1/documents/storage"))["warn"] is True

@@ -236,3 +236,22 @@ class EventFile(IdMixin, Base):
     url: Mapped[str | None] = mapped_column(String(1000))
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ExpectedFile(IdMixin, Base):
+    """Un archivo que el evento tiene que tener ("Planimetría del predio"). Está si hay un archivo,
+    link o plano del evento con ese nombre; si no, la pestaña Archivos avisa "Falta"."""
+
+    __tablename__ = "event_expected_files"
+    __table_args__ = (
+        tenant_unique(),
+        tenant_fk("event_id", "events", ondelete="CASCADE"),
+        CheckConstraint(check_in("category", FileCategory), name="category"),
+        UniqueConstraint("event_id", "title"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    event_id: Mapped[UUID] = mapped_column(index=True)
+    title: Mapped[str] = mapped_column(String(120))
+    category: Mapped[str] = mapped_column(String(10))
+    sort: Mapped[int] = mapped_column(default=0)

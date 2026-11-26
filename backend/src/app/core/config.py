@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     # Tope de archivos por organización: por debajo del plan gratis del proveedor (10 GB), así
     # nunca se paga. Al llegar, la app no deja subir más y avisa (aviso previo al 80 %).
     storage_quota_bytes: int = 8 * 1024**3
+    # Freno diario: un error (cientos de fotos, un archivo raro) no se come el espacio de meses.
+    # Un día muy cargado de uso normal son ~100 fotos achicadas (~25 MB).
+    storage_daily_bytes: int = 300 * 1024**2
 
     # Observabilidad
     sentry_dsn: str | None = None
