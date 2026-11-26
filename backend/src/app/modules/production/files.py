@@ -5,6 +5,7 @@ lo que ya vive en las piezas: los planos con su versión y las fotos de avance. 
 carpetas ni busca en Drive "Final2": cada cosa está pegada al evento y, si corresponde, a la pieza.
 """
 
+import unicodedata
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -28,11 +29,20 @@ from app.modules.identity import User
 from app.modules.production.models import (
     EventFile,
     EventPiece,
+    ExpectedFile,
     FileCategory,
     PiecePlan,
     PieceProgress,
 )
-from app.modules.production.schemas import EventFileIn, EventFilesOut, FileEvent, FileItem
+from app.modules.production.schemas import (
+    EventFileIn,
+    EventFilesOut,
+    ExpectedFileIn,
+    ExpectedFileOut,
+    ExpectedTemplateIn,
+    FileEvent,
+    FileItem,
+)
 from app.modules.production.service import _audit, _editable_event
 
 _EXPIRING_HOSTS = ("wetransfer.com", "we.tl")
@@ -166,6 +176,83 @@ def _photos(db: AppSession, ctx: TenantContext, event_id: UUID) -> list[FileItem
     ]
 
 
+# Lo que suele pedir cada tipo de trabajo (las listas base; cada evento la ajusta).
+_C, _D, _A = FileCategory.CLIENT, FileCategory.DESIGN, FileCategory.ADMIN
+TEMPLATES: dict[str, list[tuple[str, FileCategory]]] = {
+    "STAND": [
+        ("Brief", _C),
+        ("Manual de marca", _C),
+        ("Logos en vector", _C),
+        ("Planimetría del predio", _C),
+        ("Reglamento del predio", _A),
+        ("Render aprobado", _D),
+        ("Plano de corte", _D),
+        ("Seguro de responsabilidad civil", _A),
+        ("ART del personal", _A),
+    ],
+    "BTL": [
+        ("Brief", _C),
+        ("Manual de marca", _C),
+        ("Logos en vector", _C),
+        ("Guion de la activación", _C),
+        ("Render aprobado", _D),
+        ("Permiso del lugar", _A),
+        ("Seguro de responsabilidad civil", _A),
+        ("ART del personal", _A),
+    ],
+    "EVENT": [
+        ("Brief", _C),
+        ("Planimetría del lugar", _C),
+        ("Cronograma de armado", _C),
+        ("Render aprobado", _D),
+        ("Permiso del lugar", _A),
+        ("Seguro de responsabilidad civil", _A),
+        ("ART del personal", _A),
+    ],
+    "VISUAL": [
+        ("Brief", _C),
+        ("Manual de marca", _C),
+        ("Logos en vector", _C),
+        ("Medidas del lugar", _C),
+        ("Render aprobado", _D),
+        ("Archivo de impresión aprobado", _D),
+    ],
+}
+
+
+def normalize(text: str) -> str:
+    """Sin acentos, mayúsculas ni espacios de más: "Planimetría  del predio" = "planimetria del
+    predio"."""
+    plain = unicodedata.normalize("NFKD", text)
+    plain = "".join(ch for ch in plain if not unicodedata.combining(ch))
+    return " ".join(plain.lower().split())
+
+
+def _expected(
+    db: AppSession, ctx: TenantContext, event_id: UUID, items: list[FileItem]
+) -> list[ExpectedFileOut]:
+    titles = [normalize(i.title) for i in items if i.source in {"FILE", "LINK", "PLAN"}]
+    rows = db.execute(
+        select(ExpectedFile)
+        .where(
+            ExpectedFile.event_id == event_id, ExpectedFile.organization_id == ctx.organization_id
+        )
+        .order_by(ExpectedFile.sort, ExpectedFile.title)
+    ).scalars()
+    out = []
+    for row in rows:
+        wanted = normalize(row.title)
+        out.append(
+            ExpectedFileOut(
+                id=row.id,
+                title=row.title,
+                category=FileCategory(row.category),
+                present=any(wanted in title for title in titles),
+            )
+        )
+    return out
+
+
 def list_files(db: AppSession, ctx: TenantContext, event_id: UUID) -> EventFilesOut:
     event = get_event(db, ctx, event_id)
     items = (
@@ -173,7 +260,89 @@ def list_files(db: AppSession, ctx: TenantContext, event_id: UUID) -> EventFiles
         + _plans(db, ctx, [PiecePlan.event_id == event.id])
         + _photos(db, ctx, event.id)
     )
-    return EventFilesOut(items=items, can_edit=_can_edit(ctx))
+    return EventFilesOut(
+        items=items, expected=_expected(db, ctx, event.id, items), can_edit=_can_edit(ctx)
+    )
+
+
+def _editable_for_files(db: AppSession, ctx: TenantContext, event_id: UUID) -> None:
+    if not _can_edit(ctx):
+        raise AppError(403, "cannot_edit_files", "Solo producción o comercial editan los archivos")
+    event = get_event(db, ctx, event_id)
+    _editable_event(db, ctx, event.id)
+
+
+def _add_expected(
+    db: AppSession, ctx: TenantContext, event_id: UUID, title: str, category: FileCategory
+) -> bool:
+    """Agrega el ítem si no hay uno igual (sin acentos ni mayúsculas). Devuelve si lo agregó."""
+    clean = " ".join(title.split())
+    existing = db.execute(
+        select(ExpectedFile.title).where(
+            ExpectedFile.event_id == event_id, ExpectedFile.organization_id == ctx.organization_id
+        )
+    ).scalars()
+    if normalize(clean) in {normalize(t) for t in existing}:
+        return False
+    last = db.execute(
+        select(ExpectedFile.sort)
+        .where(
+            ExpectedFile.event_id == event_id, ExpectedFile.organization_id == ctx.organization_id
+        )
+        .order_by(ExpectedFile.sort.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    db.add(
+        ExpectedFile(
+            organization_id=ctx.organization_id,
+            event_id=event_id,
+            title=clean,
+            category=category.value,
+            sort=(last or 0) + 1,
+        )
+    )
+    db.flush()
+    return True
+
+
+def add_expected(
+    db: AppSession, ctx: TenantContext, event_id: UUID, body: ExpectedFileIn
+) -> EventFilesOut:
+    _editable_for_files(db, ctx, event_id)
+    _add_expected(db, ctx, event_id, body.title, body.category)
+    return list_files(db, ctx, event_id)
+
+
+def apply_template(
+    db: AppSession, ctx: TenantContext, event_id: UUID, body: ExpectedTemplateIn
+) -> EventFilesOut:
+    """Suma la lista base del tipo de evento (lo que ya estaba no se repite)."""
+    _editable_for_files(db, ctx, event_id)
+    added = sum(
+        _add_expected(db, ctx, event_id, title, category)
+        for title, category in TEMPLATES[body.template]
+    )
+    _audit(
+        db,
+        ctx,
+        "event.expected_files_set",
+        event_id,
+        after={"template": body.template, "added": added},
+    )
+    return list_files(db, ctx, event_id)
+
+
+def delete_expected(db: AppSession, ctx: TenantContext, expected_id: UUID) -> None:
+    row = db.execute(
+        select(ExpectedFile).where(
+            ExpectedFile.id == expected_id, ExpectedFile.organization_id == ctx.organization_id
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise not_found()
+    _editable_for_files(db, ctx, row.event_id)
+    db.delete(row)
+    db.flush()
 
 
 def _check_url(url: str) -> str:

@@ -1,7 +1,19 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Camera, ExternalLink, FileText, Image as ImageIcon, Link2, Plus, Trash2, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  Camera,
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Image as ImageIcon,
+  Link2,
+  Plus,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -100,12 +112,20 @@ function FileRow({ item, eventId }: { item: Item; eventId: string }) {
   );
 }
 
-function AddFile({ eventId, pieces }: { eventId: string; pieces: { id: string; name: string }[] }) {
+function AddFile({
+  eventId,
+  pieces,
+  initial,
+}: {
+  eventId: string;
+  pieces: { id: string; name: string }[];
+  initial?: { title: string; category: Category };
+}) {
   const queryClient = useQueryClient();
   const { me } = useSession();
   const [mode, setMode] = useState<"file" | "link">(me.uploads_enabled ? "file" : "link");
-  const [category, setCategory] = useState<Category>("CLIENT");
-  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<Category>(initial?.category ?? "CLIENT");
+  const [title, setTitle] = useState(initial?.title ?? "");
   const [pieceId, setPieceId] = useState("");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -265,6 +285,135 @@ function AddFile({ eventId, pieces }: { eventId: string; pieces: { id: string; n
   );
 }
 
+const TEMPLATES: { value: Schemas["ExpectedTemplateIn"]["template"]; label: string }[] = [
+  { value: "STAND", label: "Stand" },
+  { value: "BTL", label: "Activación BTL" },
+  { value: "EVENT", label: "Evento" },
+  { value: "VISUAL", label: "Producción visual" },
+];
+
+/** "Lo que tiene que estar": la lista de archivos esperados, con lo que falta bien a la vista. */
+function ExpectedFiles({
+  eventId,
+  expected,
+  canEdit,
+  onUpload,
+}: {
+  eventId: string;
+  expected: Schemas["ExpectedFileOut"][];
+  canEdit: boolean;
+  onUpload: (item: Schemas["ExpectedFileOut"]) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [custom, setCustom] = useState("");
+  const set = (data: Schemas["EventFilesOut"]) => queryClient.setQueryData(filesKey(eventId), data);
+  const template = useMutation({
+    mutationFn: async (value: Schemas["ExpectedTemplateIn"]["template"]) =>
+      unwrap(
+        await api.POST("/api/v1/events/{event_id}/expected-files/template", {
+          params: { path: { event_id: eventId } },
+          body: { template: value },
+        }),
+      ),
+    onSuccess: set,
+  });
+  const add = useMutation({
+    mutationFn: async (title: string) =>
+      unwrap(
+        await api.POST("/api/v1/events/{event_id}/expected-files", {
+          params: { path: { event_id: eventId } },
+          body: { title, category: "OTHER" },
+        }),
+      ),
+    onSuccess: (data) => {
+      setCustom("");
+      set(data);
+    },
+  });
+  const remove = useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(await api.DELETE("/api/v1/expected-files/{expected_id}", { params: { path: { expected_id: id } } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: filesKey(eventId) }),
+  });
+  const missing = expected.filter((item) => !item.present);
+  if (!expected.length && !canEdit) return null;
+  return (
+    <section aria-label="Lo que tiene que estar" className="rounded-xl border border-line bg-surface p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="font-bold">Lo que tiene que estar</h2>
+        {expected.length ? (
+          <span className={cn("text-sm font-semibold", missing.length ? "text-warning" : "text-success")}>
+            {expected.length - missing.length} de {expected.length}
+          </span>
+        ) : null}
+      </div>
+      {!expected.length ? (
+        <div className="mt-2 flex flex-col gap-2">
+          <p className="text-sm text-ink-muted">Elegí el tipo de trabajo y armamos la lista de lo que no puede faltar. Después la ajustás.</p>
+          <div className="flex flex-wrap gap-2">
+            {TEMPLATES.map((t) => (
+              <Button key={t.value} variant="secondary" size="sm" loading={template.isPending && template.variables === t.value} onClick={() => template.mutate(t.value)}>
+                {t.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <ul className="mt-2 flex flex-col">
+          {expected.map((item) => (
+            <li key={item.id} className="flex min-h-11 items-center gap-2 border-b border-line last:border-0">
+              {item.present ? (
+                <CheckCircle2 className="size-5 shrink-0 text-success" aria-label="Está" />
+              ) : (
+                <span className="shrink-0 rounded bg-warning/15 px-1.5 py-0.5 text-[11px] font-bold text-warning uppercase">Falta</span>
+              )}
+              <span className={cn("min-w-0 flex-1 truncate text-sm", item.present ? "text-ink-muted" : "font-semibold text-ink")}>{item.title}</span>
+              {canEdit && !item.present ? (
+                <Button size="sm" variant="ghost" onClick={() => onUpload(item)} aria-label={`Subir ${item.title}`}>
+                  <Upload className="size-4" aria-hidden /> Subir
+                </Button>
+              ) : null}
+              {canEdit ? (
+                <button
+                  type="button"
+                  aria-label={`Sacar ${item.title} de la lista`}
+                  onClick={() => remove.mutate(item.id)}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-subtle"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      {canEdit && expected.length ? (
+        <form
+          aria-label="Agregar a la lista"
+          className="mt-2 flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (custom.trim()) add.mutate(custom.trim());
+          }}
+        >
+          <input
+            value={custom}
+            onChange={(e) => setCustom(e.currentTarget.value)}
+            maxLength={120}
+            aria-label="Otro archivo que tiene que estar"
+            placeholder="Otro: ej. Habilitación de bomberos"
+            className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 text-base sm:text-sm"
+          />
+          <Button type="submit" size="sm" variant="secondary" disabled={!custom.trim()} loading={add.isPending}>
+            Agregar
+          </Button>
+        </form>
+      ) : null}
+      {template.isError || add.isError ? <Notice tone="error">{errorMessage(template.error ?? add.error)}</Notice> : null}
+    </section>
+  );
+}
+
 /** Pestaña "Archivos" del evento: todo ordenado por tipo, pegado a la pieza cuando corresponde. */
 export function EventFiles({ eventId }: { eventId: string }) {
   const files = useQuery({
@@ -277,17 +426,31 @@ export function EventFiles({ eventId }: { eventId: string }) {
     queryFn: async () =>
       unwrap(await api.GET("/api/v1/events/{event_id}/pieces", { params: { path: { event_id: eventId } } })),
   });
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<false | { title: string; category: Category }>(false);
   if (files.isPending) return <p className="text-sm text-ink-muted">Cargando…</p>;
   if (files.isError) return <Notice tone="error">{errorMessage(files.error)}</Notice>;
   const groups = groupFiles(files.data.items);
   return (
     <div className="flex flex-col gap-5">
+      <ExpectedFiles
+        eventId={eventId}
+        expected={files.data.expected}
+        canEdit={files.data.can_edit}
+        onUpload={(item) => {
+          setAdding({ title: item.title, category: item.category });
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
       {files.data.can_edit ? (
         adding ? (
-          <AddFile eventId={eventId} pieces={(pieces.data?.pieces ?? []).map((p) => ({ id: p.id, name: p.name }))} />
+          <AddFile
+            key={adding.title}
+            eventId={eventId}
+            initial={adding}
+            pieces={(pieces.data?.pieces ?? []).map((p) => ({ id: p.id, name: p.name }))}
+          />
         ) : (
-          <Button variant="secondary" onClick={() => setAdding(true)} className="self-start">
+          <Button variant="secondary" onClick={() => setAdding({ title: "", category: "CLIENT" })} className="self-start">
             <Plus className="size-4" aria-hidden /> Agregar archivo o link
           </Button>
         )

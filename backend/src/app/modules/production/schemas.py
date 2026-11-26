@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -311,6 +312,25 @@ class FileItem(BaseModel):
     can_delete: bool
 
 
+class ExpectedFileOut(BaseModel):
+    id: UUID
+    title: str
+    category: FileCategory
+    present: bool  # hay un archivo, link o plano del evento con ese nombre
+
+
 class EventFilesOut(BaseModel):
     items: list[FileItem]
+    expected: list[ExpectedFileOut]
     can_edit: bool
+
+
+class ExpectedFileIn(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    category: FileCategory = FileCategory.OTHER
+
+
+class ExpectedTemplateIn(BaseModel):
+    """Lista base según el tipo de evento: STAND, BTL (activación), EVENT o VISUAL."""
+
+    template: Literal["STAND", "BTL", "EVENT", "VISUAL"]

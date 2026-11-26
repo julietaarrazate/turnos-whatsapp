@@ -997,6 +997,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/expected-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Expected File
+         * @description Agregar a la lista de archivos que el evento tiene que tener (devuelve la pestaña).
+         */
+        post: operations["add_expected_file_api_v1_events__event_id__expected_files_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/expected-files/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Expected Template
+         * @description Sumar la lista base según el tipo de evento (Stand, Activación BTL, Evento, Visual).
+         */
+        post: operations["apply_expected_template_api_v1_events__event_id__expected_files_template_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/expenses": {
         parameters: {
             query?: never;
@@ -1177,6 +1217,23 @@ export interface paths {
         /** Add Task */
         post: operations["add_task_api_v1_events__event_id__tasks_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/expected-files/{expected_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Expected File */
+        delete: operations["delete_expected_file_api_v1_expected_files__expected_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2983,6 +3040,8 @@ export interface components {
         EventFilesOut: {
             /** Can Edit */
             can_edit: boolean;
+            /** Expected */
+            expected: components["schemas"]["ExpectedFileOut"][];
             /** Items */
             items: components["schemas"]["FileItem"][];
         };
@@ -3181,6 +3240,37 @@ export interface components {
             teardown_days?: number | null;
             /** Venue */
             venue?: string | null;
+        };
+        /** ExpectedFileIn */
+        ExpectedFileIn: {
+            /** @default OTHER */
+            category?: components["schemas"]["FileCategory"];
+            /** Title */
+            title: string;
+        };
+        /** ExpectedFileOut */
+        ExpectedFileOut: {
+            category: components["schemas"]["FileCategory"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Present */
+            present: boolean;
+            /** Title */
+            title: string;
+        };
+        /**
+         * ExpectedTemplateIn
+         * @description Lista base según el tipo de evento: STAND, BTL (activación), EVENT o VISUAL.
+         */
+        ExpectedTemplateIn: {
+            /**
+             * Template
+             * @enum {string}
+             */
+            template: "STAND" | "BTL" | "EVENT" | "VISUAL";
         };
         /**
          * ExpenseCurrency
@@ -7940,6 +8030,76 @@ export interface operations {
             };
         };
     };
+    add_expected_file_api_v1_events__event_id__expected_files_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpectedFileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFilesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_expected_template_api_v1_events__event_id__expected_files_template_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpectedTemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFilesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_expenses_api_v1_events__event_id__expenses_get: {
         parameters: {
             query?: never;
@@ -8326,6 +8486,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaskOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_expected_file_api_v1_expected_files__expected_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expected_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -15,6 +15,8 @@ from app.modules.production.schemas import (
     EventFilesOut,
     EventSupplierOut,
     EventSupplierUpdate,
+    ExpectedFileIn,
+    ExpectedTemplateIn,
     FileItem,
     MyPieceUpdate,
     MyTaskUpdate,
@@ -216,3 +218,24 @@ def open_event_file(file_id: UUID, ctx: View, db: DbSession) -> Response:
 def search_files(q: str, ctx: View, db: DbSession) -> list[FileItem]:
     """Buscar archivos por título, pieza o evento, en todos los eventos (los 30 más nuevos)."""
     return files.search(db, ctx, q)
+
+
+@router.post("/events/{event_id}/expected-files")
+def add_expected_file(
+    event_id: UUID, body: ExpectedFileIn, ctx: View, db: DbSession
+) -> EventFilesOut:
+    """Agregar a la lista de archivos que el evento tiene que tener (devuelve la pestaña)."""
+    return files.add_expected(db, ctx, event_id, body)
+
+
+@router.post("/events/{event_id}/expected-files/template")
+def apply_expected_template(
+    event_id: UUID, body: ExpectedTemplateIn, ctx: View, db: DbSession
+) -> EventFilesOut:
+    """Sumar la lista base según el tipo de evento (Stand, Activación BTL, Evento, Visual)."""
+    return files.apply_template(db, ctx, event_id, body)
+
+
+@router.delete("/expected-files/{expected_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_expected_file(expected_id: UUID, ctx: View, db: DbSession) -> None:
+    files.delete_expected(db, ctx, expected_id)
