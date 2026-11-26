@@ -5,6 +5,13 @@ import { contentSecurityPolicy } from "@/lib/csp";
 /** Páginas que se ven sin sesión: auth, la offline de la PWA y la propuesta pública. */
 const PUBLIC = /^\/(login|invite|reset-password|offline|p)(\/|$)/;
 
+/** Lectores de vistas previas (WhatsApp, Facebook, Telegram...): arman la miniatura del link. */
+const PREVIEW_BOTS = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|Applebot|Googlebot|bingbot/i;
+
+export function isPreviewBot(userAgent: string | null): boolean {
+  return !!userAgent && PREVIEW_BOTS.test(userAgent);
+}
+
 /**
  * 1. CSP estricta con nonce por request (ARCHITECTURE §8.3): Next lo toma del header del request
  *    y se lo pone a sus scripts. Por eso todas las páginas se renderizan por request (layout raíz).
@@ -13,7 +20,11 @@ const PUBLIC = /^\/(login|invite|reset-password|offline|p)(\/|$)/;
  */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  if (!PUBLIC.test(pathname) && !request.cookies.has("has_session")) {
+  const needsLogin = !PUBLIC.test(pathname) && !request.cookies.has("has_session");
+  // WhatsApp no siempre sigue la redirección al armar la miniatura: al lector de vistas previas
+  // se le sirve la página de ingreso en la misma dirección (trae el título y la imagen de Handie).
+  const preview = needsLogin && isPreviewBot(request.headers.get("user-agent"));
+  if (needsLogin && !preview) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = `?next=${encodeURIComponent(pathname + search)}`;
@@ -25,7 +36,9 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = preview
+    ? NextResponse.rewrite(new URL("/login", request.url), { request: { headers: requestHeaders } })
+    : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
   return response;
 }
