@@ -18,6 +18,8 @@ import { formatDate, formatDateTime, todayInArgentina } from "@/lib/format/date"
 import { formatMoney } from "@/lib/format/number";
 import { textValue } from "@/lib/form";
 
+import { VenueSheet } from "@/features/venues/venue-sheet";
+
 import { EVENT_STATUS_LABELS, EventStatusBadge } from "./status";
 
 export const eventKey = (id: string) => [...EVENTS_KEY, "detail", id] as const;
@@ -293,6 +295,8 @@ export function EventSummary({ id }: { id: string }) {
           {can("proposal.decide") ? <CommercialActions event={data} /> : null}
         </div>
       </section>
+
+      <VenueSheet eventId={id} />
 
       <section className="rounded-xl border border-line bg-surface p-5">
         <h2 className="mb-3 font-semibold">Historial</h2>

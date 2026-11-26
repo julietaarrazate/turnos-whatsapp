@@ -375,6 +375,7 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("POST", "/api/v1/budgets/{budget_id}/proposals"): {},
     ("POST", "/api/v1/proposals/{proposal_id}/revoke"): {},
     ("POST", "/api/v1/events/{event_id}/start-production"): {},
+    ("PUT", "/api/v1/events/{event_id}/venue-sheet"): {"load_in": "Carga por calle Sarmiento"},
     ("POST", "/api/v1/event-files/{file_id}/approval"): {},
     ("PATCH", "/api/v1/event-suppliers/{event_supplier_id}"): {"notes": "Llamar el lunes"},
     ("POST", "/api/v1/events/{event_id}/tasks"): {"title": "Pedir planos"},

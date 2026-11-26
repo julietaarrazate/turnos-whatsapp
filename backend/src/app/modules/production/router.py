@@ -18,6 +18,7 @@ from app.modules.production import (
     plans,
     service,
     updates,
+    venues,
 )
 from app.modules.production.schemas import (
     ActivityPage,
@@ -28,6 +29,7 @@ from app.modules.production.schemas import (
     EventFilesOut,
     EventSupplierOut,
     EventSupplierUpdate,
+    EventVenueOut,
     ExpectedFileIn,
     ExpectedTemplateIn,
     FileItem,
@@ -49,6 +51,7 @@ from app.modules.production.schemas import (
     TaskOut,
     TaskUpdate,
     UnreadOut,
+    VenueSheetIn,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["production"])
@@ -296,3 +299,18 @@ def public_approval_decision(
 def download_event(event_id: UUID, ctx: View, db: DbSession) -> Response:
     """Todo el evento en un .zip ordenado en carpetas (los comprobantes, solo si ve costos)."""
     return bundle.download(db, ctx, event_id)
+
+
+# --- Ficha del lugar ---------------------------------------------------------------------
+
+
+@router.get("/events/{event_id}/venue-sheet")
+def get_venue_sheet(event_id: UUID, ctx: View, db: DbSession) -> EventVenueOut:
+    """La ficha del lugar del evento: accesos, horario de carga, medidas, reglas y contactos."""
+    return venues.for_event(db, ctx, event_id)
+
+
+@router.put("/events/{event_id}/venue-sheet")
+def save_venue_sheet(event_id: UUID, body: VenueSheetIn, ctx: View, db: DbSession) -> EventVenueOut:
+    """Guarda la ficha del lugar: queda para todos los eventos en ese mismo lugar."""
+    return venues.save(db, ctx, event_id, body)
