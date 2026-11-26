@@ -19,20 +19,44 @@ const CSRF_HEADERS = { "X-Requested-With": "fetch" };
 // Endpoints donde un 401 es una respuesta legítima, no una sesión vencida.
 const NO_REFRESH = ["/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout"];
 
-let refreshing: Promise<boolean> | null = null;
+export type RefreshResult = "ok" | "expired" | "unavailable";
+
+/** Esperas entre reintentos mientras el servidor gratuito se despierta (~1 minuto en total). */
+export const WAKE_DELAYS_MS = [2_000, 4_000, 8_000, 15_000, 30_000];
+
+/**
+ * Renovar la sesión. Solo un 401/403 significa "vencida, volver a ingresar". Un 5xx o un corte
+ * de red es el servidor que todavía no despertó (Render gratis duerme): se reintenta un rato en
+ * vez de mandar a la pantalla de ingreso por nada.
+ */
+export async function renewSession(
+  doFetch: () => Promise<Response>,
+  delays: readonly number[] = WAKE_DELAYS_MS,
+  wait: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<RefreshResult> {
+  for (let attempt = 0; ; attempt++) {
+    let status: number | null = null;
+    try {
+      status = (await doFetch()).status;
+    } catch {
+      status = null; // sin red o el servidor no contestó
+    }
+    if (status !== null && status >= 200 && status < 300) return "ok";
+    if (status === 401 || status === 403) return "expired";
+    if (attempt >= delays.length) return "unavailable";
+    await wait(delays[attempt]);
+  }
+}
+
+let refreshing: Promise<RefreshResult> | null = null;
 
 /** Un solo refresh a la vez aunque varias requests reciban 401 juntas (evita el reuso). */
-function refreshSession(): Promise<boolean> {
-  refreshing ??= fetch("/api/v1/auth/refresh", {
-    method: "POST",
-    headers: CSRF_HEADERS,
-    credentials: "same-origin",
-  })
-    .then((response) => response.ok)
-    .catch(() => false)
-    .finally(() => {
-      refreshing = null;
-    });
+function refreshSession(): Promise<RefreshResult> {
+  refreshing ??= renewSession(() =>
+    fetch("/api/v1/auth/refresh", { method: "POST", headers: CSRF_HEADERS, credentials: "same-origin" }),
+  ).finally(() => {
+    refreshing = null;
+  });
   return refreshing;
 }
 
@@ -49,8 +73,11 @@ async function fetchWithRefresh(request: Request): Promise<Response> {
   const response = await fetch(request);
   const path = new URL(request.url).pathname;
   if (response.status !== 401 || NO_REFRESH.some((p) => path.startsWith(p))) return response;
-  if (await refreshSession()) return fetch(retry);
-  redirectToLogin();
+  const renewed = await refreshSession();
+  if (renewed === "ok") return fetch(retry);
+  // Solo una sesión realmente vencida lleva al ingreso; si el servidor no despertó, la pantalla
+  // muestra el error con "Reintentar" y la sesión sigue.
+  if (renewed === "expired") redirectToLogin();
   return response;
 }
 

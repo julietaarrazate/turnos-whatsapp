@@ -55,6 +55,11 @@ function OrganizationSwitcher() {
   );
 }
 
+/** El botón de salir queda al lado de la campana: sin preguntar, un toque de más cerraba la sesión. */
+export function confirmLogout(logout: () => Promise<void>, ask: (message: string) => boolean = (m) => window.confirm(m)) {
+  if (ask("¿Cerrar sesión? Vas a tener que volver a ingresar con tu mail y contraseña.")) void logout();
+}
+
 function openPalette() {
   window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
 }
@@ -69,7 +74,7 @@ function CrewShell({ children }: { children: React.ReactNode }) {
         <span className="truncate text-sm text-white/80">· {me.user.name}</span>
         <button
           type="button"
-          onClick={logout}
+          onClick={() => confirmLogout(logout)}
           aria-label="Cerrar sesión"
           className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white"
         >
@@ -166,7 +171,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
           </div>
           <button
             type="button"
-            onClick={logout}
+            onClick={() => confirmLogout(logout)}
             aria-label="Cerrar sesión"
             className="rounded-md p-2 text-ink-muted hover:bg-subtle hover:text-ink"
           >
@@ -182,7 +187,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
         <ActivityBell />
         <button
           type="button"
-          onClick={logout}
+          onClick={() => confirmLogout(logout)}
           aria-label="Cerrar sesión"
           className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white"
         >
