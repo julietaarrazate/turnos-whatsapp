@@ -40,4 +40,9 @@ test("el cliente aprueba un diseño desde el link, sin cuenta, y la productora l
 
   await page.reload();
   await expect(page.getByText(/✓ Aprobado por Laura de Natura/)).toBeVisible();
+
+  // Al cerrar: todo el evento en un .zip.
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Descargar todo" }).click();
+  expect((await download).suggestedFilename()).toMatch(/^Evento \d+ - Stand .+\.zip$/);
 });

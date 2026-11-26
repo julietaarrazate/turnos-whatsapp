@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Camera,
   CheckCircle2,
+  Download,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -17,7 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { ShareLink } from "@/components/ui/share-link";
 import { useSession } from "@/features/auth/session";
@@ -525,6 +526,23 @@ export function EventFiles({ eventId }: { eventId: string }) {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
       />
+      <div className="flex flex-wrap gap-2">
+        {files.data.can_edit && !adding ? (
+          <Button variant="secondary" onClick={() => setAdding({ title: "", category: "CLIENT" })}>
+            <Plus className="size-4" aria-hidden /> Agregar archivo o link
+          </Button>
+        ) : null}
+        {files.data.items.length > 0 ? (
+          <a
+            href={`/api/v1/events/${eventId}/download`}
+            download
+            className={buttonClasses("ghost", "md")}
+            title="Todo el evento en un solo archivo, ordenado en carpetas: para guardarlo al cerrar"
+          >
+            <Download className="size-4" aria-hidden /> Descargar todo
+          </a>
+        ) : null}
+      </div>
       {files.data.can_edit ? (
         adding ? (
           <AddFile
@@ -533,11 +551,7 @@ export function EventFiles({ eventId }: { eventId: string }) {
             initial={adding}
             pieces={(pieces.data?.pieces ?? []).map((p) => ({ id: p.id, name: p.name }))}
           />
-        ) : (
-          <Button variant="secondary" onClick={() => setAdding({ title: "", category: "CLIENT" })} className="self-start">
-            <Plus className="size-4" aria-hidden /> Agregar archivo o link
-          </Button>
-        )
+        ) : null
       ) : null}
       {groups.length === 0 ? (
         <p className="rounded-xl border border-line bg-surface p-6 text-sm text-ink-muted">
