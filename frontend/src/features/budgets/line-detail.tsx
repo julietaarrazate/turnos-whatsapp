@@ -74,7 +74,7 @@ export function LineDetail({
       aria-label={`Detalle de ${line.name_internal}`}
       onClose={onClose}
       onClick={(e) => e.target === dialog.current && dialog.current?.close()}
-      className="m-0 mt-auto max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-ink/30 lg:mt-0 lg:ml-auto lg:h-dvh lg:max-h-none lg:w-[28rem] lg:rounded-none lg:border-l lg:border-line"
+      className="m-0 mt-auto max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-black/40 lg:mt-0 lg:ml-auto lg:h-dvh lg:max-h-none lg:w-[28rem] lg:rounded-none lg:border-l lg:border-line"
     >
       <div className="sticky top-0 flex items-start gap-3 border-b border-line bg-surface px-5 py-4">
         <div className="min-w-0 flex-1">

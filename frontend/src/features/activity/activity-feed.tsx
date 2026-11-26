@@ -90,7 +90,7 @@ function ActivityItem({ item, isNew }: { item: Item; isNew: boolean }) {
       <span
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-full",
-          item.kind === "piece.update_posted" ? "bg-magenta/10 text-magenta" : mounted ? "bg-brand text-white" : "bg-brand/10 text-brand",
+          item.kind === "piece.update_posted" ? "bg-magenta/10 text-magenta" : mounted ? "bg-fill text-white" : "bg-brand/10 text-brand",
         )}
       >
         <Icon className="size-5" aria-hidden />

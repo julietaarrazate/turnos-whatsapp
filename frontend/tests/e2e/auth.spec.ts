@@ -35,6 +35,11 @@ test("se puede ver la contraseña mientras se escribe", async ({ page }) => {
 test("cerrar sesión", async ({ page }) => {
   await login(page);
   await expect(page.getByRole("heading", { name: /Buen[oa]s/ })).toBeVisible();
+  // Primero pregunta: si la persona dice que no, sigue adentro.
+  page.once("dialog", (dialog) => void dialog.dismiss());
+  await page.getByRole("button", { name: "Cerrar sesión" }).first().click();
+  await expect(page.getByRole("heading", { name: /Buen[oa]s/ })).toBeVisible();
+  page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Cerrar sesión" }).first().click();
   await expect(page).toHaveURL(/\/login/);
   await page.goto("/");

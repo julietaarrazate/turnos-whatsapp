@@ -31,7 +31,7 @@ export function QuickPhotoDialog({ open, onClose, onSent }: { open: boolean; onC
       aria-label="Foto de avance"
       onClose={onClose}
       onClick={(e) => e.target === dialog.current && onClose()}
-      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-ink/30 sm:m-auto sm:max-w-md sm:rounded-2xl"
+      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-black/40 sm:m-auto sm:max-w-md sm:rounded-2xl"
     >
       {open ? (
         <QuickPhoto

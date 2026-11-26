@@ -37,7 +37,7 @@ export function StorageMeter() {
         Usaste <strong>{formatSize(used)}</strong> de {formatSize(limit)} ({percent} %).
       </p>
       <div className="h-2.5 overflow-hidden rounded-full bg-subtle" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Espacio usado">
-        <div className={cn("h-full rounded-full", warn ? "bg-warning" : "bg-brand")} style={{ width: `${percent}%` }} />
+        <div className={cn("h-full rounded-full", warn ? "bg-warning" : "bg-fill")} style={{ width: `${percent}%` }} />
       </div>
       <p className="text-xs text-ink-muted">
         Hoy se subieron {formatSize(today_used)} (freno diario: {formatSize(today_limit)}). Fotos y voz se achican solas; planos y archivos, hasta 5 MB cada uno.
