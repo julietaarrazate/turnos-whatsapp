@@ -10,7 +10,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    # Qué tocó el cambio: si solo es pantalla, no se prueba el servidor (y al revés). En main y a
+    # mano corre todo. Este archivo cuenta para los dos lados; el contrato y la seguridad, siempre.
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.diff.outputs.backend }}
+      frontend: ${{ steps.diff.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"; echo "frontend=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          files=$(git diff --name-only "$BASE" HEAD)
+          echo "$files"
+          match() { echo "$files" | grep -qE "$1" && echo true || echo false; }
+          echo "backend=$(match '^(backend/|infra/|\.github/workflows/ci\.yml$)')" >> "$GITHUB_OUTPUT"
+          echo "frontend=$(match '^(frontend/|\.github/workflows/ci\.yml$)')" >> "$GITHUB_OUTPUT"
+
   backend:
+    # Lint, tipos, límites, migraciones y pricing. Los tests van en backend-tests, repartidos.
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     # Fijo como en backup.yml: ubuntu-latest pasó a 26.04, que ya no trae postgresql-client-16.
     runs-on: ubuntu-24.04
     defaults:
@@ -52,9 +79,48 @@ jobs:
           uv run alembic upgrade head
       - name: Motor de pricing (100 % de ramas)
         run: uv run pytest tests/pricing -p no:cacheprovider --cov=app.domain.pricing --cov-branch --cov-fail-under=100
+
+  backend-tests:
+    # Los ~1.200 tests repartidos en 4 máquinas, cada una con su Postgres (los tests vacían la
+    # base entre uno y otro, así que no pueden compartirla). Un test va a una sola máquina.
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    name: backend-tests (${{ matrix.shard }}/4)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Roles y bases de datos
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f ../infra/postgres/init.sql
+      - name: Librerías de WeasyPrint (PDF) y cliente de Postgres 16 (backup)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core postgresql-client-16
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
       - name: Tests
         env:
           PG_BINDIR: /usr/lib/postgresql/16/bin  # la versión del servidor (scripts/backup.py)
+          TEST_SHARDS: "4"
+          TEST_SHARD: ${{ matrix.shard }}
         run: uv run pytest --cov --cov-report=term-missing:skip-covered
 
   contract:
@@ -81,6 +147,8 @@ jobs:
         run: git diff --exit-code -- frontend/src/lib/api
 
   frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -103,6 +171,8 @@ jobs:
 
   docker:
     # Construye la imagen de producción de la API y verifica que arranca.
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
