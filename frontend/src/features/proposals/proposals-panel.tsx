@@ -71,7 +71,7 @@ function SendDialog({ budget, editor, onSent }: { budget: Budget; editor: Budget
       ref={dialog}
       aria-label="Generar propuesta"
       onClose={() => onSent(null)}
-      className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-ink/30"
+      className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-black/40"
     >
       <form
         className="flex flex-col gap-4 p-5"
@@ -188,7 +188,7 @@ function ApproveDialog({ proposal, onDone }: { proposal: Proposal; onDone: (appr
       ref={dialog}
       aria-label="Aprobar propuesta"
       onClose={() => onDone(false)}
-      className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-ink/30"
+      className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-black/40"
     >
       <form
         className="flex flex-col gap-4 p-5"

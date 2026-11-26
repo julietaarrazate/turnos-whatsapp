@@ -94,7 +94,7 @@ function UploadPlan({ pieceId, titles }: { pieceId: string; titles: string[] }) 
       <p className="text-xs text-ink-muted">Con un título que ya existe se sube como versión nueva y pasa a ser la vigente.</p>
       <label
         className={cn(
-          "flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand text-sm font-semibold text-white focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink",
+          "flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-fill text-sm font-semibold text-white focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink",
           (!title.trim() || add.isPending) && "pointer-events-none opacity-50",
         )}
       >

@@ -50,7 +50,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       ref={ref}
       aria-label={title}
       onClose={onClose}
-      className="m-auto w-[min(36rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-ink/30"
+      className="m-auto w-[min(36rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-black/40"
     >
       <div className="flex flex-col gap-4 p-5">
         <h2 className="text-lg font-semibold">{title}</h2>

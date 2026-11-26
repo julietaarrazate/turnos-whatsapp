@@ -53,7 +53,7 @@ export function CommandPalette() {
     <dialog
       ref={dialog}
       aria-label="Buscar"
-      className="m-auto mt-[15vh] w-[min(36rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-ink/30"
+      className="m-auto mt-[15vh] w-[min(36rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 shadow-2xl backdrop:bg-black/40"
     >
       <input
         autoFocus

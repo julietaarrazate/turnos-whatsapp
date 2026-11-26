@@ -115,7 +115,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
               type="button"
               aria-label="Quitar la foto"
               onClick={() => setFile(null)}
-              className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-full bg-ink/70 text-white"
+              className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-full bg-black/60 text-white"
             >
               <X className="size-5" aria-hidden />
             </button>
@@ -228,7 +228,7 @@ export function PieceProgress({ pieceId, pieceName, canPost }: { pieceId: string
           aria-label={`Subir avance de ${pieceName}`}
           onClose={() => setOpen(false)}
           onClick={(e) => e.target === dialog.current && setOpen(false)}
-          className="m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-ink/30 sm:m-auto sm:max-w-md sm:rounded-2xl"
+          className="m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-black/40 sm:m-auto sm:max-w-md sm:rounded-2xl"
         >
           <div className="flex flex-col gap-3 px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between">

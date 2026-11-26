@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn";
 import { CommandPalette } from "./command-palette";
 import { ActivityBell } from "@/features/activity/bell";
 import { QuickPhotoDialog } from "@/features/pieces/quick-photo";
+import { ThemePicker } from "@/features/theme/theme";
 
 import { NAV_ITEMS, isActive, mobileBar, moreItems } from "./nav";
 
@@ -63,7 +64,7 @@ function CrewShell({ children }: { children: React.ReactNode }) {
   const { me, logout } = useSession();
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-brand px-4 text-white">
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-bar px-4 text-white">
         <OrganizationSwitcher />
         <span className="truncate text-sm text-white/80">· {me.user.name}</span>
         <button
@@ -108,7 +109,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-dvh lg:pl-60">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-line bg-surface lg:flex">
-        <div className="flex h-14 items-center gap-2 bg-brand px-4 text-white">
+        <div className="flex h-14 items-center gap-2 bg-bar px-4 text-white">
           <span className="min-w-0 flex-1">
             <OrganizationSwitcher />
           </span>
@@ -157,6 +158,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
             ))}
           </ul>
         </nav>
+        <ThemePicker className="mx-3 mb-2" />
         <div className="flex items-center gap-2 border-t border-line p-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{me.user.name}</p>
@@ -174,7 +176,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Header (mobile) */}
-      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-brand px-4 text-white lg:hidden">
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-bar px-4 text-white lg:hidden">
         <OrganizationSwitcher />
         <span className="ml-auto" />
         <ActivityBell />
@@ -268,7 +270,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
         ref={more}
         aria-label="Más secciones"
         onClick={(event) => event.target === more.current && more.current?.close()}
-        className="m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-ink/30"
+        className="m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-black/40"
       >
         <div className="mx-auto my-3 h-1 w-10 rounded-full bg-line" aria-hidden />
         <nav aria-label="Más secciones" className="px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
@@ -290,6 +292,8 @@ function FullShell({ children }: { children: React.ReactNode }) {
               </li>
             ))}
           </ul>
+          <p className="mt-4 mb-1.5 text-xs font-semibold text-ink-muted">Apariencia</p>
+          <ThemePicker />
         </nav>
       </dialog>
 
@@ -298,7 +302,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
         ref={quickActions}
         aria-label="Crear"
         onClick={(event) => event.target === quickActions.current && quickActions.current?.close()}
-        className="m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-ink/30"
+        className="m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-black/40"
       >
         <div className="mx-auto my-3 h-1 w-10 rounded-full bg-line" aria-hidden />
         <ul className="px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
@@ -345,7 +349,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
       {sent ? (
         <p
           role="status"
-          className="fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 rounded-xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white shadow-lg lg:inset-x-auto lg:right-6 lg:bottom-6"
+          className="fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 rounded-xl bg-ink px-4 py-3 text-center text-sm font-semibold text-surface shadow-lg lg:inset-x-auto lg:right-6 lg:bottom-6"
         >
           Avance enviado
         </p>

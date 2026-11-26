@@ -16,9 +16,59 @@
   --color-danger: #b3122b;
   --color-success: #1e6b3a;
   --color-warning: #8a5a00;
+  /* Rellenos con texto blanco (botones, barras). En claro coinciden con accent/brand/danger;
+     en oscuro se separan: un azul que se lee como texto no aguanta letras blancas encima. */
+  --color-fill: #2b2fa8;
+  --color-fill-strong: #1c1f7a;
+  --color-bar: #2b2fa8;
+  --color-danger-fill: #b3122b;
 
   --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Modo oscuro: sigue al teléfono, salvo que la persona elija Claro u Oscuro (data-theme en <html>).
+   Contraste AA verificado: texto ≥ 4,5:1 sobre surface y blanco ≥ 4,5:1 sobre los rellenos. */
+:root[data-theme="dark"] {
+  --color-canvas: #101223;
+  --color-surface: #181b30;
+  --color-subtle: #22263f;
+  --color-line: #2f3352;
+  --color-ink: #e8e9f5;
+  --color-ink-muted: #a7aac8;
+  --color-accent: #8a8fff;
+  --color-accent-strong: #a5a9ff;
+  --color-brand: #8a8fff;
+  --color-danger: #ff6b7f;
+  --color-success: #4cc27a;
+  --color-warning: #f0b44c;
+  --color-fill: #4f55e6;
+  --color-fill-strong: #3d42c9;
+  --color-bar: #1f2250;
+  --color-danger-fill: #c8243c;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-canvas: #101223;
+    --color-surface: #181b30;
+    --color-subtle: #22263f;
+    --color-line: #2f3352;
+    --color-ink: #e8e9f5;
+    --color-ink-muted: #a7aac8;
+    --color-accent: #8a8fff;
+    --color-accent-strong: #a5a9ff;
+    --color-brand: #8a8fff;
+    --color-danger: #ff6b7f;
+    --color-success: #4cc27a;
+    --color-warning: #f0b44c;
+    --color-fill: #4f55e6;
+    --color-fill-strong: #3d42c9;
+    --color-bar: #1f2250;
+    --color-danger-fill: #c8243c;
+    color-scheme: dark;
+  }
 }
 
 html {

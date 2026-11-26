@@ -108,7 +108,7 @@ export function VoiceRecorder({ value, onChange }: { value: Blob | null; onChang
         aria-pressed={recording}
         className={cn(
           "flex h-12 items-center justify-center gap-2 rounded-xl border text-base font-semibold",
-          recording ? "border-danger bg-danger text-white" : "border-line bg-surface text-ink hover:bg-subtle",
+          recording ? "border-danger bg-danger-fill text-white" : "border-line bg-surface text-ink hover:bg-subtle",
         )}
       >
         {recording ? <Square className="size-5" aria-hidden /> : <Mic className="size-5 text-magenta" aria-hidden />}

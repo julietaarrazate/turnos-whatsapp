@@ -74,7 +74,7 @@ function Todo({ data }: { data: Dashboard["todo"] }) {
           {items.map((item) => (
             <li key={item.text}>
               <Link href={item.href} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-subtle">
-                <span className={`size-2 shrink-0 rounded-full ${"urgent" in item && item.urgent ? "bg-danger" : "bg-warning"}`} aria-hidden />
+                <span className={`size-2 shrink-0 rounded-full ${"urgent" in item && item.urgent ? "bg-danger-fill" : "bg-warning"}`} aria-hidden />
                 <span className="min-w-0 flex-1">{item.text}</span>
                 <ChevronRight className="size-4 text-ink-muted" aria-hidden />
               </Link>
@@ -137,7 +137,7 @@ function Pulse({ greeting, active }: { greeting: string; active: Active[] | unde
   const ready = active?.reduce((sum, e) => sum + e.pieces_ready, 0);
   const total = active?.reduce((sum, e) => sum + e.pieces_total, 0);
   return (
-    <section aria-label="Pulso" className="flex flex-col gap-4 rounded-2xl bg-brand p-5 text-white">
+    <section aria-label="Pulso" className="flex flex-col gap-4 rounded-2xl bg-bar p-5 text-white">
       <div>
         <p className="text-sm text-white/85">{todayLabel()}</p>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{greeting}</h1>
@@ -147,7 +147,7 @@ function Pulse({ greeting, active }: { greeting: string; active: Active[] | unde
           <p className="text-2xl font-extrabold tabular-nums">{active ? active.length : "—"}</p>
           <p className="text-xs text-white/90">eventos activos</p>
         </div>
-        <div className={cn("rounded-xl px-3 py-2.5", late ? "bg-white text-danger" : "bg-white/12")}>
+        <div className={cn("rounded-xl px-3 py-2.5", late ? "bg-surface text-danger" : "bg-white/12")}>
           <p className="text-2xl font-extrabold tabular-nums">{late ?? "—"}</p>
           <p className={cn("text-xs", late ? "font-semibold" : "text-white/90")}>{late === 1 ? "atraso" : "atrasos"}</p>
         </div>
@@ -198,7 +198,7 @@ function ActiveEvents({ events }: { events: Active[] }) {
                   ) : null}
                 </div>
                 <div className="h-2 overflow-hidden rounded bg-subtle">
-                  <div className="h-2 rounded bg-brand" style={{ width: `${event.progress}%` }} />
+                  <div className="h-2 rounded bg-fill" style={{ width: `${event.progress}%` }} />
                 </div>
                 <div className="flex justify-between gap-2 text-sm text-ink-muted">
                   <span>

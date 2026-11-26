@@ -149,7 +149,7 @@ export function EventPieces({ id }: { id: string }) {
         </div>
         <div className="flex items-center gap-3">
           <div className="h-2 flex-1 overflow-hidden rounded bg-subtle">
-            <div className="h-2 rounded bg-accent" style={{ width: `${data.progress}%` }} />
+            <div className="h-2 rounded bg-fill" style={{ width: `${data.progress}%` }} />
           </div>
           <span className="text-sm font-bold tabular-nums">{data.progress}%</span>
         </div>

@@ -23,7 +23,11 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#2b2fa8",
+  // La barra del teléfono acompaña al modo claro u oscuro.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#2b2fa8" },
+    { media: "(prefers-color-scheme: dark)", color: "#1f2250" },
+  ],
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
