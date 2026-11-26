@@ -13,6 +13,7 @@ import { cn } from "@/lib/cn";
 import { CommandPalette } from "./command-palette";
 import { ActivityBell } from "@/features/activity/bell";
 import { QuickPhotoDialog } from "@/features/pieces/quick-photo";
+import { ShareApp } from "@/features/share/share-app";
 import { ThemePicker } from "@/features/theme/theme";
 
 import { NAV_ITEMS, isActive, mobileBar, moreItems } from "./nav";
@@ -167,6 +168,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
             ))}
           </ul>
         </nav>
+        <ShareApp className="mx-3 mb-2 w-auto" />
         <ThemePicker className="mx-3 mb-2" />
         <div className="flex items-center gap-2 border-t border-line p-3">
           <div className="min-w-0 flex-1">
@@ -306,6 +308,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
           </ul>
           <p className="mt-4 mb-1.5 text-xs font-semibold text-ink-muted">Apariencia</p>
           <ThemePicker />
+          <ShareApp className="mt-4" />
         </nav>
       </dialog>
 

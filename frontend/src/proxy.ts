@@ -32,5 +32,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Todo menos el API (lo atiende el backend) y los archivos estáticos.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icons|sw.js|manifest.webmanifest|apple-icon.png).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icons|sw.js|manifest.webmanifest|apple-icon.png|icon.svg|opengraph-image|twitter-image).*)"],
 };
