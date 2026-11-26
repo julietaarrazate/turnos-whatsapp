@@ -124,3 +124,33 @@ test("una nota de voz se escucha en la ficha de la pieza y en Actividad", async 
   await page.goto("/activity");
   await expect(page.getByRole("region", { name: "Movimientos" }).getByText(`dejó una nota de voz en Barra ${suffix}`)).toBeVisible();
 });
+
+test("la campanita avisa lo que hicieron otros y se apaga al abrir Actividad", async ({ page, browser, baseURL }, testInfo) => {
+  const suffix = `${testInfo.project.name}-campana-${Date.now()}`;
+  await login(page);
+  const eventId = await eventInProduction(page.request, suffix);
+  const piece = await json<{ id: string }>(
+    await page.request.post(`/api/v1/events/${eventId}/pieces`, { headers: H, data: { name: `Atril ${suffix}`, area: "CARPENTRY" } }),
+  );
+  // Al abrir Actividad queda todo visto.
+  await page.goto("/activity");
+  const bell = page.getByRole("link", { name: /^Novedades:/ }).first();
+  await expect(bell).toHaveAccessibleName("Novedades: ninguna nueva");
+
+  // Producción mueve la pieza desde su teléfono.
+  const { viewport, userAgent, isMobile, hasTouch } = testInfo.project.use;
+  const context = await browser.newContext({ baseURL, viewport, userAgent, isMobile, hasTouch });
+  const production = await context.newPage();
+  await login(production, "/", PRODUCTION);
+  await json(await production.request.patch(`/api/v1/pieces/${piece.id}`, { headers: H, data: { status: "IN_WORKSHOP" } }));
+  await context.close();
+
+  // En cualquier pantalla la campanita trae lo nuevo (y se refresca sola cada 15 s).
+  await page.goto("/");
+  await expect(bell).toHaveAccessibleName(/Novedades: \d+ nuevas?$/, { timeout: 20_000 });
+  await bell.click();
+  await expect(page).toHaveURL(/\/activity$/);
+  const item = page.getByRole("listitem").filter({ hasText: `pasó Atril ${suffix} a En taller` });
+  await expect(item).toContainText("Nuevo");
+  await expect(bell).toHaveAccessibleName("Novedades: ninguna nueva");
+});

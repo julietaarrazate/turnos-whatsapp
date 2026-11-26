@@ -15,6 +15,7 @@ import { PieceProgress } from "@/features/pieces/piece-progress";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
+import { LIVE } from "@/lib/live";
 import { formatDay } from "@/lib/format/date";
 
 type Piece = Schemas["PieceOut"];
@@ -43,6 +44,7 @@ const AREAS = Object.keys(PIECE_AREA) as PieceArea[];
 
 function usePieces(eventId: string) {
   return useQuery({
+    ...LIVE,
     queryKey: piecesKey(eventId),
     queryFn: async () => unwrap(await api.GET("/api/v1/events/{event_id}/pieces", { params: { path: { event_id: eventId } } })),
   });

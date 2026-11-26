@@ -1,8 +1,9 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, CheckCircle2, FileText, Hammer, PlusCircle, Truck } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
@@ -11,6 +12,9 @@ import { audioUrl, photoUrl } from "@/features/pieces/piece-progress";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
+import { LIVE } from "@/lib/live";
+
+import { UNREAD_KEY, useUnread } from "./bell";
 
 type Item = Schemas["ActivityOut"];
 type PieceStatus = Schemas["PieceStatus"];
@@ -38,6 +42,11 @@ export function timeAgo(iso: string, now: Date = new Date()): string {
     month: "2-digit",
     timeZone: "America/Argentina/Buenos_Aires",
   }).format(then);
+}
+
+/** Llegó después de la última vez que se miró (si nunca se miró, nada se marca como nuevo). */
+export function isNewSince(createdAt: string, since: string | null | undefined): boolean {
+  return Boolean(since) && Date.parse(createdAt) > Date.parse(since!);
 }
 
 /** La frase de cada movimiento, en castellano y sin códigos. */
@@ -73,7 +82,7 @@ const ICONS: Record<string, typeof Camera> = {
   "production.supplier_status": Truck,
 };
 
-function ActivityItem({ item }: { item: Item }) {
+function ActivityItem({ item, isNew }: { item: Item; isNew: boolean }) {
   const Icon = ICONS[item.kind] ?? Hammer;
   const mounted = item.kind === "piece.status_changed" && item.status === "MOUNTED";
   return (
@@ -88,6 +97,7 @@ function ActivityItem({ item }: { item: Item }) {
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm">
+          {isNew ? <span className="mr-1.5 rounded bg-magenta px-1.5 py-0.5 text-[10px] font-bold text-white uppercase">Nuevo</span> : null}
           <strong>{item.actor_name ?? "Alguien"}</strong> {describe(item)}
         </p>
         <p className="text-xs text-ink-muted">
@@ -125,9 +135,30 @@ export function ActivityFeed() {
     queryFn: async ({ pageParam }) =>
       unwrap(await api.GET("/api/v1/activity", { params: { query: { before: pageParam ?? undefined } } })),
     getNextPageParam: (page) => page.next_before ?? null,
-    refetchInterval: 60_000, // hasta que llegue el tiempo real: cada minuto
+    ...LIVE,
   });
   const items = feed.data?.pages.flatMap((page) => page.items) ?? [];
+  // Lo nuevo se marca contra lo que se había visto al entrar; después se apaga la campanita.
+  const queryClient = useQueryClient();
+  const unread = useUnread();
+  const [since, setSince] = useState<string | null | undefined>(undefined);
+  const seen = useMutation({
+    mutationFn: async () => unwrap(await api.POST("/api/v1/activity/seen", { body: {} })),
+    onSuccess: (data) => queryClient.setQueryData(UNREAD_KEY, data),
+  });
+  const { mutate: markSeen } = seen;
+  const ready = unread.isSuccess && since === undefined;
+  const previous = unread.data?.seen_at ?? null;
+  useEffect(() => {
+    if (!ready) return;
+    setSince(previous); // eslint-disable-line react-hooks/set-state-in-effect -- se fija una sola vez, al entrar
+    markSeen();
+  }, [ready, previous, markSeen]);
+  // Mientras se está mirando, lo que llega también queda visto.
+  const newest = items[0]?.id;
+  useEffect(() => {
+    if (since !== undefined && newest) markSeen();
+  }, [since, newest, markSeen]);
   return (
     <div className="flex flex-col gap-4">
       <header>
@@ -145,7 +176,7 @@ export function ActivityFeed() {
         <section aria-label="Movimientos" className="rounded-xl border border-line bg-surface px-4">
           <ul className="divide-y divide-line">
             {items.map((item) => (
-              <ActivityItem key={item.id} item={item} />
+              <ActivityItem key={item.id} item={item} isNew={isNewSince(item.created_at, since)} />
             ))}
           </ul>
         </section>

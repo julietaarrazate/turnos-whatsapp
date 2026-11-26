@@ -10,6 +10,7 @@ import { useSession } from "@/features/auth/session";
 import { ApiError, api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
+import { LIVE } from "@/lib/live";
 import { formatDateTime } from "@/lib/format/date";
 import { MAX_UPLOAD_BYTES, shrinkImage, toBase64, uploadName } from "@/lib/files";
 
@@ -32,6 +33,7 @@ export function audioUrl(updateId: string): string {
 
 export function usePieceProgress(pieceId: string) {
   return useQuery({
+    ...LIVE,
     queryKey: progressKey(pieceId),
     queryFn: async () =>
       unwrap(await api.GET("/api/v1/pieces/{piece_id}/updates", { params: { path: { piece_id: pieceId } } })),

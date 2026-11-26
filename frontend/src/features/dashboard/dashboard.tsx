@@ -225,6 +225,9 @@ function ActiveEvents({ events }: { events: Active[] }) {
 export function DashboardView({ greeting }: { greeting: string }) {
   const [month, setMonth] = useState(thisMonth);
   const query = useQuery({
+    // El pulso se mueve con el taller: cada minuto mientras está a la vista, y al volver a la app.
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryKey: ["dashboard", month],
     queryFn: async () => unwrap(await api.GET("/api/v1/dashboard", { params: { query: { month } } })),
   });

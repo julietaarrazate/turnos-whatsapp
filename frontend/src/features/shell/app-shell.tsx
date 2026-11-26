@@ -10,6 +10,7 @@ import { useSession } from "@/features/auth/session";
 import { cn } from "@/lib/cn";
 
 import { CommandPalette } from "./command-palette";
+import { ActivityBell } from "@/features/activity/bell";
 import { QuickPhotoDialog } from "@/features/pieces/quick-photo";
 
 import { NAV_ITEMS, isActive, mobileBar } from "./nav";
@@ -104,8 +105,11 @@ function FullShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-dvh lg:pl-60">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-line bg-surface lg:flex">
-        <div className="flex h-14 items-center bg-brand px-4 text-white">
-          <OrganizationSwitcher />
+        <div className="flex h-14 items-center gap-2 bg-brand px-4 text-white">
+          <span className="min-w-0 flex-1">
+            <OrganizationSwitcher />
+          </span>
+          <ActivityBell />
         </div>
         <button
           type="button"
@@ -169,11 +173,13 @@ function FullShell({ children }: { children: React.ReactNode }) {
       {/* Header (mobile) */}
       <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-brand px-4 text-white lg:hidden">
         <OrganizationSwitcher />
+        <span className="ml-auto" />
+        <ActivityBell />
         <button
           type="button"
           onClick={logout}
           aria-label="Cerrar sesión"
-          className="ml-auto flex size-11 items-center justify-center rounded-full bg-white/15 text-white"
+          className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white"
         >
           <LogOut className="size-5" aria-hidden />
         </button>

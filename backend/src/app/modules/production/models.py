@@ -184,3 +184,17 @@ class PiecePlan(IdMixin, Base):
     document_id: Mapped[UUID]
     uploaded_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ActivityRead(IdMixin, Base):
+    """Hasta cuándo vio cada persona la Actividad: lo posterior (de otros) es la campanita."""
+
+    __tablename__ = "activity_reads"
+    __table_args__ = (
+        tenant_unique(),
+        UniqueConstraint("organization_id", "user_id"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    seen_at: Mapped[datetime]

@@ -12,6 +12,7 @@ import { ProgressForm } from "@/features/pieces/piece-progress";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
+import { LIVE } from "@/lib/live";
 import { formatDay } from "@/lib/format/date";
 
 type MyPiece = Schemas["MyPiece"];
@@ -164,6 +165,7 @@ function TaskCard({ task }: { task: MyTask }) {
 
 export function MyWork() {
   const query = useQuery({
+    ...LIVE,
     queryKey: MY_WORK_KEY,
     queryFn: async () => unwrap(await api.GET("/api/v1/my-work")),
   });
