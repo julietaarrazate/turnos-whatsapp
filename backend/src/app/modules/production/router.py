@@ -7,12 +7,15 @@ from fastapi import APIRouter, Depends, Response, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.production import activity, my_work, pieces, plans, service, updates
+from app.modules.production import activity, files, my_work, pieces, plans, service, updates
 from app.modules.production.schemas import (
     ActivityPage,
     ActivitySeenIn,
+    EventFileIn,
+    EventFilesOut,
     EventSupplierOut,
     EventSupplierUpdate,
+    FileItem,
     MyPieceUpdate,
     MyTaskUpdate,
     MyWorkOut,
@@ -184,3 +187,32 @@ def get_activity_unread(ctx: View, db: DbSession) -> UnreadOut:
 def mark_activity_seen(body: ActivitySeenIn, ctx: View, db: DbSession) -> UnreadOut:
     """Abrir Actividad apaga la campanita (para quien la abre, no para los demás)."""
     return activity.mark_seen(db, ctx)
+
+
+@router.get("/events/{event_id}/files")
+def list_event_files(event_id: UUID, ctx: View, db: DbSession) -> EventFilesOut:
+    """Archivos del evento: los subidos y los links, más los planos y las fotos de avance."""
+    return files.list_files(db, ctx, event_id)
+
+
+@router.post("/events/{event_id}/files", status_code=status.HTTP_201_CREATED)
+def add_event_file(event_id: UUID, body: EventFileIn, ctx: View, db: DbSession) -> FileItem:
+    """Subir un archivo (PDF o imagen) o pegar un link, con categoría y pieza opcional.
+    Producción o comercial; el resto ve pero no sube."""
+    return files.add_file(db, ctx, event_id, body)
+
+
+@router.delete("/event-files/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_event_file(file_id: UUID, ctx: View, db: DbSession) -> None:
+    files.delete_file(db, ctx, file_id)
+
+
+@router.get("/event-files/{file_id}/file")
+def open_event_file(file_id: UUID, ctx: View, db: DbSession) -> Response:
+    return files.open_file(db, ctx, file_id)
+
+
+@router.get("/files/search")
+def search_files(q: str, ctx: View, db: DbSession) -> list[FileItem]:
+    """Buscar archivos por título, pieza o evento, en todos los eventos (los 30 más nuevos)."""
+    return files.search(db, ctx, q)

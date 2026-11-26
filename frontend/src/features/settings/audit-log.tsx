@@ -52,6 +52,8 @@ const ACTION_LABELS: Record<string, string> = {
   "piece.deleted": "Borró una pieza",
   "piece.update_posted": "Subió un avance de una pieza",
   "piece.plan_uploaded": "Subió un plano de una pieza",
+  "event.file_added": "Agregó un archivo al evento",
+  "event.file_removed": "Sacó un archivo del evento",
   "expense.created": "Cargó un gasto",
   "expense.updated": "Cambió un gasto",
   "expense.deleted": "Borró un gasto",

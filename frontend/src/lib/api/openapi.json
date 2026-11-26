@@ -2436,7 +2436,8 @@
           "PURCHASE_ORDER",
           "PROGRESS_PHOTO",
           "PIECE_PLAN",
-          "VOICE_NOTE"
+          "VOICE_NOTE",
+          "EVENT_FILE"
         ],
         "title": "DocumentKind",
         "type": "string"
@@ -2565,6 +2566,81 @@
           "rules_changed"
         ],
         "title": "DuplicateOut",
+        "type": "object"
+      },
+      "EventFileIn": {
+        "description": "Un archivo (PDF o imagen, ≤ 10 MB) o un link https (Drive, Dropbox…), no los dos.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/FileCategory"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PhotoIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "piece_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Piece Id"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "category",
+          "title"
+        ],
+        "title": "EventFileIn",
+        "type": "object"
+      },
+      "EventFilesOut": {
+        "properties": {
+          "can_edit": {
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "can_edit"
+        ],
+        "title": "EventFilesOut",
         "type": "object"
       },
       "EventIn": {
@@ -3940,6 +4016,162 @@
           "after"
         ],
         "title": "FieldChange",
+        "type": "object"
+      },
+      "FileCategory": {
+        "description": "Cómo se ordenan los archivos del evento (la pestaña Archivos).",
+        "enum": [
+          "CLIENT",
+          "DESIGN",
+          "ADMIN",
+          "OTHER"
+        ],
+        "title": "FileCategory",
+        "type": "string"
+      },
+      "FileEvent": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "name"
+        ],
+        "title": "FileEvent",
+        "type": "object"
+      },
+      "FileItem": {
+        "description": "Un archivo en la pestaña Archivos o en el buscador, venga de donde venga.",
+        "properties": {
+          "author_name": {
+            "title": "Author Name",
+            "type": "string"
+          },
+          "can_delete": {
+            "title": "Can Delete",
+            "type": "boolean"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "event": {
+            "$ref": "#/components/schemas/FileEvent"
+          },
+          "expires_soon": {
+            "title": "Expires Soon",
+            "type": "boolean"
+          },
+          "href": {
+            "title": "Href",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime"
+          },
+          "piece_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Piece Id"
+          },
+          "piece_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Piece Name"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "category",
+          "title",
+          "piece_id",
+          "piece_name",
+          "href",
+          "mime",
+          "version",
+          "current",
+          "expires_soon",
+          "author_name",
+          "created_at",
+          "event",
+          "can_delete"
+        ],
+        "title": "FileItem",
         "type": "object"
       },
       "FollowUp": {
@@ -14544,6 +14776,83 @@
         ]
       }
     },
+    "/api/v1/event-files/{file_id}": {
+      "delete": {
+        "operationId": "delete_event_file_api_v1_event_files__file_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Event File",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/event-files/{file_id}/file": {
+      "get": {
+        "operationId": "open_event_file_api_v1_event_files__file_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Open Event File",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/event-suppliers/{event_supplier_id}": {
       "patch": {
         "description": "Marcar un proveedor como confirmado o cancelado, o anotar algo.",
@@ -15044,6 +15353,102 @@
         "summary": "Create Expense",
         "tags": [
           "finance"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/files": {
+      "get": {
+        "description": "Archivos del evento: los subidos y los links, más los planos y las fotos de avance.",
+        "operationId": "list_event_files_api_v1_events__event_id__files_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFilesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Event Files",
+        "tags": [
+          "production"
+        ]
+      },
+      "post": {
+        "description": "Subir un archivo (PDF o imagen) o pegar un link, con categoría y pieza opcional.\nProducción o comercial; el resto ve pero no sube.",
+        "operationId": "add_event_file_api_v1_events__event_id__files_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventFileIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Event File",
+        "tags": [
+          "production"
         ]
       }
     },
@@ -15566,6 +15971,53 @@
         "summary": "Get Receipt",
         "tags": [
           "finance"
+        ]
+      }
+    },
+    "/api/v1/files/search": {
+      "get": {
+        "description": "Buscar archivos por título, pieza o evento, en todos los eventos (los 30 más nuevos).",
+        "operationId": "search_files_api_v1_files_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FileItem"
+                  },
+                  "title": "Response Search Files Api V1 Files Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Files",
+        "tags": [
+          "production"
         ]
       }
     },

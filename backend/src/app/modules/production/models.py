@@ -99,6 +99,15 @@ class PieceArea(StrEnum):
     OTHER = "OTHER"
 
 
+class FileCategory(StrEnum):
+    """Cómo se ordenan los archivos del evento (la pestaña Archivos)."""
+
+    CLIENT = "CLIENT"  # del cliente: brief, manual de marca, logos, referencias
+    DESIGN = "DESIGN"  # renders, diseños (los planos con versión van en piece_plans)
+    ADMIN = "ADMIN"  # OC, permisos del predio, seguros, ART
+    OTHER = "OTHER"
+
+
 class PieceStatus(StrEnum):
     """Fases de una pieza a medida. Se puede ir y volver (un plano rechazado vuelve a diseño)."""
 
@@ -198,3 +207,32 @@ class ActivityRead(IdMixin, Base):
     organization_id: Mapped[UUID] = _org_fk()
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     seen_at: Mapped[datetime]
+
+
+class EventFile(IdMixin, Base):
+    """Un archivo del evento (subido) o un link (Drive, Dropbox…), ordenado por categoría y,
+    si corresponde, atado a una pieza. Exactamente uno de los dos: archivo o link."""
+
+    __tablename__ = "event_files"
+    __table_args__ = (
+        tenant_unique(),
+        tenant_fk("event_id", "events", ondelete="CASCADE"),
+        # Al borrar una pieza, sus archivos pasan al evento (pieces.delete_piece los suelta):
+        # SET NULL de una FK compuesta también vaciaría organization_id.
+        tenant_fk("piece_id", "event_pieces"),
+        tenant_fk("document_id", "documents"),
+        CheckConstraint(check_in("category", FileCategory), name="category"),
+        CheckConstraint("(document_id IS NULL) <> (url IS NULL)", name="file_or_link"),
+        CheckConstraint("url IS NULL OR url LIKE 'https://%'", name="https_only"),
+        Index("ix_event_files_event_created", "event_id", "created_at"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    event_id: Mapped[UUID]
+    piece_id: Mapped[UUID | None]
+    category: Mapped[str] = mapped_column(String(10))
+    title: Mapped[str] = mapped_column(String(200))
+    document_id: Mapped[UUID | None]
+    url: Mapped[str | None] = mapped_column(String(1000))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())

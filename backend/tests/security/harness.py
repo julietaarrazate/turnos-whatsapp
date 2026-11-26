@@ -49,6 +49,7 @@ from app.modules.events import EventIn
 from app.modules.finance.models import Expense
 from app.modules.pricing.models import MarkupRuleRow, SaleChargeRow
 from app.modules.production.models import (
+    EventFile,
     EventPiece,
     EventSupplier,
     PieceProgress,
@@ -201,6 +202,16 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         note="Avance ejemplo",
     )
     s.add(progress)
+    # Un link del evento (sin archivo en el storage).
+    link = EventFile(
+        organization_id=owner.organization_id,
+        event_id=budget.event.id,
+        category="CLIENT",
+        title="Manual de marca",
+        url="https://drive.google.com/file/d/ejemplo",
+        created_by=owner.user_id,
+    )
+    s.add(link)
     s.flush()
     s.add(
         PackageItem(
@@ -218,6 +229,7 @@ def _budget_entities(s: Any, owner: Member, ids: dict[str, UUID]) -> dict[str, U
         "task_id": task.id,
         "piece_id": piece.id,
         "update_id": progress.id,
+        "file_id": link.id,
         # Sin plano real (necesitaría el archivo en el storage): un ID que no existe da 404.
         "plan_id": uuid7(),
         "proposal_id": created.proposal.id,
@@ -260,6 +272,7 @@ PARAM_FACTORIES: dict[str, Callable[[OrgWorld], UUID | int]] = {
     "task_id": lambda w: w.ids["task_id"],
     "piece_id": lambda w: w.ids["piece_id"],
     "update_id": lambda w: w.ids["update_id"],
+    "file_id": lambda w: w.ids["file_id"],
     "plan_id": lambda w: w.ids["plan_id"],
     "expense_id": lambda w: w.ids["expense_id"],
     "package_id": lambda w: w.ids["package_id"],
@@ -361,6 +374,11 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/my-work/tasks/{task_id}"): {"status": "DONE"},
     ("POST", "/api/v1/pieces/{piece_id}/updates"): {"note": "Letras cortadas"},
     ("POST", "/api/v1/activity/seen"): {},
+    ("POST", "/api/v1/events/{event_id}/files"): {
+        "category": "CLIENT",
+        "title": "Brief",
+        "url": "https://drive.google.com/file/d/brief",
+    },
     ("POST", "/api/v1/pieces/{piece_id}/plans"): {
         "title": "Plano de corte",
         "filename": "plano.pdf",
@@ -395,6 +413,7 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
 # Query params obligatorios (con IDs del mundo que se usa).
 SAMPLE_QUERIES: dict[tuple[str, str], Callable[[OrgWorld], dict[str, str]]] = {
     ("GET", "/api/v1/budgets/{budget_id}/compare"): lambda _: {"from": "1", "to": "1"},
+    ("GET", "/api/v1/files/search"): lambda _: {"q": "manual"},
     ("GET", "/api/v1/pricing/resolve"): lambda w: {
         "product_id": str(w.ids["product_id"]),
         "client_id": str(w.ids["client_id"]),
