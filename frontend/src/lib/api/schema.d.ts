@@ -1383,6 +1383,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/piece-updates/{update_id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Piece Update Audio
+         * @description La nota de voz de un avance (para escucharla en la ficha o en Actividad).
+         */
+        get: operations["get_piece_update_audio_api_v1_piece_updates__update_id__audio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/piece-updates/{update_id}/photo": {
         parameters: {
             query?: never;
@@ -2083,6 +2103,8 @@ export interface components {
              */
             created_at: string;
             event: components["schemas"]["ActivityEvent"];
+            /** Has Audio */
+            has_audio: boolean;
             /** Has Photo */
             has_photo: boolean;
             /**
@@ -2137,6 +2159,16 @@ export interface components {
             po_document_id?: string | null;
             /** Po Number */
             po_number?: string | null;
+        };
+        /**
+         * AudioIn
+         * @description Una nota de voz grabada en el teléfono (WebM, Ogg o MP4), ≤ 1 minuto (2 MB).
+         */
+        AudioIn: {
+            /** File Base64 */
+            file_base64: string;
+            /** Filename */
+            filename: string;
         };
         /** AuditLogOut */
         AuditLogOut: {
@@ -2759,7 +2791,7 @@ export interface components {
          * DocumentKind
          * @enum {string}
          */
-        DocumentKind: "RECEIPT" | "PURCHASE_ORDER" | "PROGRESS_PHOTO" | "PIECE_PLAN";
+        DocumentKind: "RECEIPT" | "PURCHASE_ORDER" | "PROGRESS_PHOTO" | "PIECE_PLAN" | "VOICE_NOTE";
         /** DocumentOut */
         DocumentOut: {
             /**
@@ -4231,6 +4263,7 @@ export interface components {
         };
         /** PieceUpdateIn */
         PieceUpdateIn: {
+            audio?: components["schemas"]["AudioIn"] | null;
             /** Note */
             note?: string | null;
             photo?: components["schemas"]["PhotoIn"] | null;
@@ -4244,6 +4277,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Has Audio */
+            has_audio: boolean;
             /** Has Photo */
             has_photo: boolean;
             /**
@@ -8581,6 +8616,37 @@ export interface operations {
             header?: never;
             path: {
                 plan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_piece_update_audio_api_v1_piece_updates__update_id__audio_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                update_id: string;
             };
             cookie?: never;
         };

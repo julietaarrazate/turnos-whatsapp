@@ -26,7 +26,21 @@ from app.modules.documents.models import Document, DocumentKind
 from app.modules.documents.schemas import DocumentOut, DocumentUploadIn
 
 MAX_BYTES = 10 * 1024 * 1024
+MAX_AUDIO_BYTES = 2 * 1024 * 1024  # 1 minuto de voz comprimida pesa ~0,5 MB: sobra margen
 _HEIF_BRANDS = {b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"mif1", b"msf1"}
+# Lo que graban los navegadores: Chrome/Android WebM (Opus), Firefox Ogg, Safari/iPhone MP4 (AAC).
+_MP4_AUDIO_BRANDS = {b"M4A ", b"mp42", b"isom", b"iso5", b"iso6", b"mp41", b"dash"}
+
+
+def sniff_audio(data: bytes) -> str | None:
+    """El tipo real de una grabación por su firma, o None si no es audio grabado."""
+    if data.startswith(b"\x1a\x45\xdf\xa3"):
+        return "audio/webm"
+    if data.startswith(b"OggS"):
+        return "audio/ogg"
+    if data[4:8] == b"ftyp" and data[8:12] in _MP4_AUDIO_BRANDS:
+        return "audio/mp4"
+    return None
 
 
 def sniff(data: bytes) -> str | None:
@@ -93,7 +107,7 @@ def _check_quota(db: AppSession, organization_id: UUID, size: int) -> None:
 def upload(
     db: AppSession, ctx: TenantContext, kind: DocumentKind, body: DocumentUploadIn
 ) -> DocumentOut:
-    storage = require_storage()
+    require_storage()  # sin almacenamiento configurado, 503 antes de leer nada
     enforce(f"upload:user:{ctx.user_id}", limit=60, window_seconds=600)
     try:
         data = b64decode(body.file_base64, validate=True)
@@ -107,6 +121,13 @@ def upload(
         raise AppError(
             415, "upload_unsupported", "Solo se aceptan fotos (JPG, PNG, WEBP o HEIC) o PDF"
         )
+    return _store(db, ctx, kind, body.filename, data, mime)
+
+
+def _store(  # noqa: PLR0917 — interno: lo llaman upload y upload_audio ya validado
+    db: AppSession, ctx: TenantContext, kind: DocumentKind, filename: str, data: bytes, mime: str
+) -> DocumentOut:
+    storage = require_storage()
     document_id = uuid7()
     key = f"{ctx.organization_id}/{kind.value.lower()}/{document_id}"
     # Primero el archivo: si la transacción falla después, queda un objeto huérfano (inocuo);
@@ -117,7 +138,7 @@ def upload(
         organization_id=ctx.organization_id,
         kind=kind.value,
         storage_key=key,
-        filename=clean_filename(body.filename),
+        filename=clean_filename(filename),
         mime=mime,
         size=len(data),
         sha256=hashlib.sha256(data).hexdigest(),
@@ -138,6 +159,26 @@ def upload(
         after={"kind": kind.value, "filename": document.filename, "size": document.size},
     )
     return document_out(document)
+
+
+def upload_audio(
+    db: AppSession, ctx: TenantContext, kind: DocumentKind, body: DocumentUploadIn
+) -> DocumentOut:
+    """Una grabación de voz (WebM, Ogg o MP4), ≤ 2 MB. Mismo control que las fotos: el tipo se
+    mira en el contenido, el tope de espacio vale igual y se descarga con nosniff."""
+    require_storage()  # sin almacenamiento configurado, 503 antes de leer nada
+    enforce(f"upload:user:{ctx.user_id}", limit=60, window_seconds=600)
+    try:
+        data = b64decode(body.file_base64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise AppError(422, "upload_invalid", "El audio llegó dañado. Probá de nuevo.") from exc
+    if len(data) > MAX_AUDIO_BYTES:
+        raise AppError(413, "upload_too_large", "La nota de voz es muy larga (máximo 1 minuto)")
+    _check_quota(db, ctx.organization_id, len(data))
+    mime = sniff_audio(data)
+    if mime is None:
+        raise AppError(415, "upload_unsupported", "No es una grabación de voz")
+    return _store(db, ctx, kind, body.filename, data, mime)
 
 
 def upload_file(

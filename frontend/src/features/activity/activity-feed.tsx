@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { PIECE_STATUS } from "@/features/events/event-pieces";
-import { photoUrl } from "@/features/pieces/piece-progress";
+import { audioUrl, photoUrl } from "@/features/pieces/piece-progress";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
@@ -49,7 +49,8 @@ export function describe(item: Item): string {
       return `pasó ${piece} a ${status ?? "otra fase"}`;
     }
     case "piece.update_posted":
-      return item.has_photo ? `subió una foto de avance de ${piece}` : `dejó una nota en ${piece}`;
+      if (item.has_photo) return `subió una foto de avance de ${piece}`;
+      return item.has_audio ? `dejó una nota de voz en ${piece}` : `dejó una nota en ${piece}`;
     case "piece.plan_uploaded":
       return `subió ${item.title ?? "un plano"}${item.version ? ` v${item.version}` : ""} de ${piece}`;
     case "piece.created":
@@ -96,6 +97,15 @@ function ActivityItem({ item }: { item: Item }) {
           · {timeAgo(item.created_at)}
         </p>
         {item.note ? <p className="mt-1 text-sm text-ink">“{item.note}”</p> : null}
+        {item.has_audio && item.update_id ? (
+          <audio
+            src={audioUrl(item.update_id)}
+            controls
+            preload="none"
+            className="mt-2 h-10 w-full max-w-xs"
+            aria-label={`Nota de voz de ${item.actor_name ?? "alguien"}`}
+          />
+        ) : null}
         {item.has_photo && item.update_id ? (
           <a href={photoUrl(item.update_id)} target="_blank" rel="noopener" className="mt-2 block w-40 overflow-hidden rounded-xl bg-subtle">
             {/* eslint-disable-next-line @next/next/no-img-element -- la API sirve la foto con permiso de sesión */}

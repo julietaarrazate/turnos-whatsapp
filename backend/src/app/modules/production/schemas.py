@@ -176,9 +176,17 @@ class PhotoIn(BaseModel):
     file_base64: str = Field(min_length=4, max_length=14_000_000)
 
 
+class AudioIn(BaseModel):
+    """Una nota de voz grabada en el teléfono (WebM, Ogg o MP4), ≤ 1 minuto (2 MB)."""
+
+    filename: str = Field(min_length=1, max_length=255)
+    file_base64: str = Field(min_length=4, max_length=2_800_000)
+
+
 class PieceUpdateIn(BaseModel):
     note: str | None = Field(default=None, max_length=1000)
     photo: PhotoIn | None = None
+    audio: AudioIn | None = None
 
 
 class PieceUpdateOut(BaseModel):
@@ -187,6 +195,7 @@ class PieceUpdateOut(BaseModel):
     author_name: str
     note: str | None
     has_photo: bool
+    has_audio: bool
     created_at: datetime
 
 
@@ -235,8 +244,9 @@ class ActivityOut(BaseModel):
     title: str | None  # título del plano
     version: int | None
     note: str | None
-    update_id: UUID | None  # para mostrar la foto del avance
+    update_id: UUID | None  # para mostrar la foto o escuchar la nota de voz del avance
     has_photo: bool
+    has_audio: bool
     created_at: datetime
 
 

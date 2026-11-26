@@ -164,3 +164,9 @@ def get_activity(
     """Lo que pasa en producción, lo más nuevo primero (de a 30; ``before`` trae los anteriores).
     Con ``event_id``, solo ese evento."""
     return activity.feed(db, ctx, before, event_id)
+
+
+@router.get("/piece-updates/{update_id}/audio")
+def get_piece_update_audio(update_id: UUID, ctx: OwnWork, db: DbSession) -> Response:
+    """La nota de voz de un avance (para escucharla en la ficha o en Actividad)."""
+    return updates.update_audio(db, ctx, update_id)

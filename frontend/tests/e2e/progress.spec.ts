@@ -97,3 +97,30 @@ test("producción: la cámara está a un toque (en el celular, el botón del med
   );
   expect(updates[0]).toMatchObject({ note: `Impreso, falta laminar ${suffix}`, has_photo: true });
 });
+
+test("una nota de voz se escucha en la ficha de la pieza y en Actividad", async ({ page }, testInfo) => {
+  const suffix = `${testInfo.project.name}-voz-${Date.now()}`;
+  await login(page);
+  const eventId = await eventInProduction(page.request, suffix);
+  const piece = await json<{ id: string }>(
+    await page.request.post(`/api/v1/events/${eventId}/pieces`, { headers: H, data: { name: `Barra ${suffix}`, area: "METAL" } }),
+  );
+  // La grabación la hace el navegador con el micrófono; acá se manda una ya grabada (firma WebM).
+  const webm = Buffer.concat([Buffer.from([0x1a, 0x45, 0xdf, 0xa3]), Buffer.alloc(200)]);
+  const update = await json<{ id: string; has_audio: boolean }>(
+    await page.request.post(`/api/v1/pieces/${piece.id}/updates`, {
+      headers: H,
+      data: { audio: { filename: "nota.webm", file_base64: webm.toString("base64") } },
+    }),
+  );
+  expect(update.has_audio).toBe(true);
+
+  await page.goto(`/events/${eventId}/pieces/${piece.id}`);
+  const voice = page.getByRole("region", { name: "Avances" }).getByLabel(/Nota de voz de/);
+  await expect(voice).toBeVisible();
+  const served = await page.request.get((await voice.getAttribute("src")) ?? "");
+  expect(served.headers()["content-type"]).toBe("audio/webm");
+
+  await page.goto("/activity");
+  await expect(page.getByRole("region", { name: "Movimientos" }).getByText(`dejó una nota de voz en Barra ${suffix}`)).toBeVisible();
+});

@@ -14,6 +14,7 @@ class DocumentKind(StrEnum):
     PURCHASE_ORDER = "PURCHASE_ORDER"  # OC de una aprobación manual (P-06)
     PROGRESS_PHOTO = "PROGRESS_PHOTO"  # foto de avance de una pieza (taller, montaje)
     PIECE_PLAN = "PIECE_PLAN"  # plano o diseño de una pieza (PDF o imagen), con versiones
+    VOICE_NOTE = "VOICE_NOTE"  # nota de voz de un avance (≤ 1 minuto)
 
 
 class Document(IdMixin, Base):

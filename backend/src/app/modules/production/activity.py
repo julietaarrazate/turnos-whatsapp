@@ -80,6 +80,7 @@ def feed(
                 note=_text(after, "note"),
                 update_id=_uuid(after, "update_id"),
                 has_photo=bool((after or {}).get("photo")),
+                has_audio=bool((after or {}).get("audio")),
                 created_at=log.created_at,
             )
         )
