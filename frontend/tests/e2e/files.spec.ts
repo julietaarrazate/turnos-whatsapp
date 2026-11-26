@@ -37,9 +37,9 @@ test("archivos del evento: link de Drive, PDF del cliente, planos solos y el bus
   // "Subir" abre el formulario con el nombre y el tipo puestos.
   await planimetry.getByRole("button", { name: "Subir Planimetría del predio" }).click();
   const form = page.getByRole("form", { name: "Agregar archivo" });
-  await expect(form.getByLabel("Nombre", { exact: true })).toHaveValue("Planimetría del predio");
+  await expect(form.getByRole("textbox", { name: "Nombre", exact: true })).toHaveValue("Planimetría del predio");
   await form.getByRole("button", { name: "Pegar link (Drive…)" }).click();
-  await form.getByLabel("Link", { exact: true }).fill("https://drive.google.com/file/d/planimetria");
+  await form.getByRole("textbox", { name: "Link", exact: true }).fill("https://drive.google.com/file/d/planimetria");
   await form.getByRole("button", { name: "Agregar" }).click();
   await expect(planimetry.getByLabel("Está")).toBeVisible();
 
@@ -68,12 +68,12 @@ test("archivos del evento: link de Drive, PDF del cliente, planos solos y el bus
 
   // Un PDF de más de 5 MB no se sube: pasa a "pegar link" con el nombre puesto, sin gastar datos.
   await form.getByRole("button", { name: "Subir archivo" }).click();
-  await form.getByLabel("Nombre").fill("");
+  await form.getByRole("textbox", { name: "Nombre", exact: true }).fill("");
   const heavy = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(5 * 1024 * 1024 + 100)]);
-  await form.getByLabel("Archivo").setInputFiles({ name: "planimetria-predio.pdf", mimeType: "application/pdf", buffer: heavy });
+  await form.getByLabel("Archivo", { exact: true }).setInputFiles({ name: "planimetria-predio.pdf", mimeType: "application/pdf", buffer: heavy });
   await expect(form.getByText("“planimetria-predio.pdf” pesa más de 5 MB")).toBeVisible();
   await expect(form.getByRole("button", { name: "Pegar link (Drive…)" })).toHaveAttribute("aria-pressed", "true");
-  await expect(form.getByLabel("Nombre")).toHaveValue("planimetria-predio");
+  await expect(form.getByRole("textbox", { name: "Nombre", exact: true })).toHaveValue("planimetria-predio");
 
   // Buscador: en todos los eventos.
   await page.goto("/files");
