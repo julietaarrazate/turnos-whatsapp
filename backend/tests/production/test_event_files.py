@@ -195,7 +195,8 @@ def test_expected_files_from_a_template_and_what_is_missing() -> None:
     assert titles.count("Planimetría del predio") == 1
     assert "Plano de corte" in titles
     assert "ART del personal" in titles
-    assert not any(e["present"] for e in stand["expected"])
+    # Solo está lo que ya tiene archivo o link: el harness trae el link "Manual de marca".
+    assert [e["title"] for e in stand["expected"] if e["present"]] == ["Manual de marca"]
 
     # Aplicar de nuevo, u otra lista, no duplica lo que ya está.
     again = _ok(owner.post(f"{base}/expected-files/template", json={"template": "BTL"}))
