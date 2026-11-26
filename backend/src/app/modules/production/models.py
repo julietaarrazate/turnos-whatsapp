@@ -291,3 +291,29 @@ class FileApproval(IdMixin, Base):
     comment: Mapped[str | None] = mapped_column(String(1000))
     decision_ip: Mapped[str | None] = mapped_column(String(64))
     decision_user_agent: Mapped[str | None] = mapped_column(String(400))
+
+
+class VenueSheet(IdMixin, Base):
+    """Ficha de un lugar (predio, salón, hotel): accesos, horario de carga, medidas, reglas y
+    contactos. Va atada al nombre del lugar del evento, así el próximo evento en el mismo predio
+    ya la tiene completa y nadie vuelve a pedir todo por WhatsApp."""
+
+    __tablename__ = "venue_sheets"
+    __table_args__ = (
+        tenant_unique(),
+        UniqueConstraint("organization_id", "name_key"),
+        CheckConstraint("maps_url IS NULL OR maps_url LIKE 'https://%'", name="https_only"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    name: Mapped[str] = mapped_column(String(200))
+    name_key: Mapped[str] = mapped_column(String(200))  # sin acentos ni mayúsculas
+    address: Mapped[str | None] = mapped_column(String(300))
+    maps_url: Mapped[str | None] = mapped_column(String(1000))
+    load_in: Mapped[str | None] = mapped_column(Text)  # horario de carga, accesos, estacionamiento
+    measures: Mapped[str | None] = mapped_column(Text)  # puertas, montacargas, altura, superficie
+    rules: Mapped[str | None] = mapped_column(Text)  # reglamento: seguros, ART, horarios, prohibido
+    contacts: Mapped[str | None] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
+    updated_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())

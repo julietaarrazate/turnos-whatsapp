@@ -1348,6 +1348,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/venue-sheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Venue Sheet
+         * @description La ficha del lugar del evento: accesos, horario de carga, medidas, reglas y contactos.
+         */
+        get: operations["get_venue_sheet_api_v1_events__event_id__venue_sheet_get"];
+        /**
+         * Save Venue Sheet
+         * @description Guarda la ficha del lugar: queda para todos los eventos en ese mismo lugar.
+         */
+        put: operations["save_venue_sheet_api_v1_events__event_id__venue_sheet_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/expected-files/{expected_id}": {
         parameters: {
             query?: never;
@@ -3470,6 +3494,19 @@ export interface components {
             teardown_days?: number | null;
             /** Venue */
             venue?: string | null;
+        };
+        /**
+         * EventVenueOut
+         * @description La ficha del lugar del evento (si el evento tiene lugar y ya hay ficha).
+         */
+        EventVenueOut: {
+            /** Can Edit */
+            can_edit: boolean;
+            /** Other Events */
+            other_events: number;
+            sheet: components["schemas"]["VenueSheetOut"] | null;
+            /** Venue */
+            venue: string | null;
         };
         /** ExpectedFileIn */
         ExpectedFileIn: {
@@ -6035,6 +6072,54 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VenueSheetIn */
+        VenueSheetIn: {
+            /** Address */
+            address?: string | null;
+            /** Contacts */
+            contacts?: string | null;
+            /** Load In */
+            load_in?: string | null;
+            /** Maps Url */
+            maps_url?: string | null;
+            /** Measures */
+            measures?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Rules */
+            rules?: string | null;
+        };
+        /** VenueSheetOut */
+        VenueSheetOut: {
+            /** Address */
+            address?: string | null;
+            /** Contacts */
+            contacts?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Load In */
+            load_in?: string | null;
+            /** Maps Url */
+            maps_url?: string | null;
+            /** Measures */
+            measures?: string | null;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+            /** Rules */
+            rules?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Updated By Name */
+            updated_by_name: string;
         };
         /** VersionCosts */
         VersionCosts: {
@@ -8988,6 +9073,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_venue_sheet_api_v1_events__event_id__venue_sheet_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventVenueOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_venue_sheet_api_v1_events__event_id__venue_sheet_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VenueSheetIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventVenueOut"];
                 };
             };
             /** @description Validation Error */

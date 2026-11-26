@@ -374,3 +374,32 @@ class ApprovalDecisionIn(BaseModel):
     decision: Literal["APPROVED", "CHANGES"]
     name: str = Field(min_length=2, max_length=120)
     comment: str | None = Field(default=None, max_length=1000)
+
+
+_LONG = Field(default=None, max_length=2000)
+
+
+class VenueSheetIn(BaseModel):
+    address: str | None = Field(default=None, max_length=300)
+    maps_url: str | None = Field(default=None, max_length=1000)
+    load_in: str | None = _LONG
+    measures: str | None = _LONG
+    rules: str | None = _LONG
+    contacts: str | None = _LONG
+    notes: str | None = _LONG
+
+
+class VenueSheetOut(VenueSheetIn):
+    id: UUID
+    name: str
+    updated_by_name: str
+    updated_at: datetime
+
+
+class EventVenueOut(BaseModel):
+    """La ficha del lugar del evento (si el evento tiene lugar y ya hay ficha)."""
+
+    venue: str | None
+    sheet: VenueSheetOut | None
+    other_events: int  # cuántos otros eventos se hicieron en el mismo lugar
+    can_edit: bool
