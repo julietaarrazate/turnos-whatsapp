@@ -107,3 +107,75 @@ body {
     -webkit-touch-callout: default;
   }
 }
+
+/* Isotipo animado de Handie (pantalla de ingreso): entran los dos handies, suben las antenas,
+   se prenden las pantallas y los tres puntos viajan de uno al otro. */
+@media (prefers-reduced-motion: no-preference) {
+  .handie-animated :is(.handie-l, .handie-r, .handie-ant, .handie-dot) {
+    transform-box: fill-box;
+  }
+  .handie-animated .handie-l,
+  .handie-animated .handie-r {
+    transform-origin: 50% 100%;
+    animation: handie-rise 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+  .handie-animated .handie-r {
+    animation-delay: 0.12s;
+  }
+  .handie-animated .handie-ant {
+    transform-origin: 50% 100%;
+    animation: handie-ant 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) 0.55s both;
+  }
+  .handie-animated .handie-r .handie-ant {
+    animation-delay: 0.65s;
+  }
+  .handie-animated .handie-screen {
+    animation: handie-screen 1.1s ease-out 0.8s both;
+  }
+  .handie-animated .handie-dot {
+    transform-origin: 50% 50%;
+    animation:
+      handie-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both,
+      handie-wave 1.4s ease-in-out 3;
+  }
+  .handie-animated .handie-d0 {
+    animation-delay: 1.05s, 2.2s;
+  }
+  .handie-animated .handie-d1 {
+    animation-delay: 1.2s, 2.35s;
+  }
+  .handie-animated .handie-d2 {
+    animation-delay: 1.35s, 2.5s;
+  }
+}
+@keyframes handie-rise {
+  from {
+    transform: translateY(140px) scaleY(0.6);
+    opacity: 0;
+  }
+}
+@keyframes handie-ant {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes handie-screen {
+  35% {
+    fill: #8fe3ff;
+  }
+}
+@keyframes handie-pop {
+  from {
+    transform: scale(0);
+  }
+}
+@keyframes handie-wave {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-34px);
+  }
+}
