@@ -36,5 +36,5 @@ test("la auditoría registra los cambios", async ({ page }) => {
   await page.getByLabel("Nombre").fill(name);
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await page.goto("/settings/audit");
-  await expect(page.getByText(`name: ${name}`)).toBeVisible();
+  await expect(page.getByText(`Nombre: ${name}`)).toBeVisible();
 });

@@ -13,7 +13,7 @@ test("configurar markups, cargos y tipo de cambio, y ver el markup en el product
   });
   expect(created.status()).toBe(201);
   await page.goto("/settings/pricing");
-  await expect(page.getByRole("heading", { name: "Pricing", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Precios", exact: true })).toBeVisible();
 
   // Markup del rubro: 40 %.
   const row = page.getByRole("listitem").filter({ has: page.getByLabel(`Markup de ${category}`) });

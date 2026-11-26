@@ -549,7 +549,7 @@ export function PricingSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Pricing"
+        title="Precios"
         description="Cómo se calcula el precio de venta. Los cambios valen para presupuestos nuevos: los ya hechos no se tocan."
       />
       {!editable ? (

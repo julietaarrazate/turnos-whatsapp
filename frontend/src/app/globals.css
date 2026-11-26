@@ -23,10 +23,37 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  /* Nada puede ensanchar la pantalla y hacer que el teléfono la achique. */
+  overflow-x: clip; /* clip y no hidden: hidden rompe los encabezados y pies fijos (sticky) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: clip;
+  overflow-wrap: break-word; /* una palabra o código larguísimo corta línea en vez de salirse */
 }
 
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-feature-settings: "tnum" 1; /* números tabulares: los importes se alinean */
+}
+
+/* En pantallas táctiles la app se usa como app, no como página: mantener el dedo sobre un
+   texto no lo marca ni abre "Copiar / Seleccionar todo". Donde se escribe, sí. */
+@media (pointer: coarse) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
 }
