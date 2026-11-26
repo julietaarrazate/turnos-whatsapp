@@ -867,6 +867,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/event-files/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Event File */
+        delete: operations["delete_event_file_api_v1_event_files__file_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/event-files/{file_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open Event File */
+        get: operations["open_event_file_api_v1_event_files__file_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-suppliers/{event_supplier_id}": {
         parameters: {
             query?: never;
@@ -981,6 +1015,31 @@ export interface paths {
          * @description Cargar un gasto (en campo la señal es mala: con Idempotency-Key no se duplica).
          */
         post: operations["create_expense_api_v1_events__event_id__expenses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Event Files
+         * @description Archivos del evento: los subidos y los links, más los planos y las fotos de avance.
+         */
+        get: operations["list_event_files_api_v1_events__event_id__files_get"];
+        put?: never;
+        /**
+         * Add Event File
+         * @description Subir un archivo (PDF o imagen) o pegar un link, con categoría y pieza opcional.
+         *     Producción o comercial; el resto ve pero no sube.
+         */
+        post: operations["add_event_file_api_v1_events__event_id__files_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1153,6 +1212,26 @@ export interface paths {
          * @description La foto o el PDF del comprobante (para verlo en el navegador).
          */
         get: operations["get_receipt_api_v1_expenses__expense_id__receipt_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Files
+         * @description Buscar archivos por título, pieza o evento, en todos los eventos (los 30 más nuevos).
+         */
+        get: operations["search_files_api_v1_files_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2836,7 +2915,7 @@ export interface components {
          * DocumentKind
          * @enum {string}
          */
-        DocumentKind: "RECEIPT" | "PURCHASE_ORDER" | "PROGRESS_PHOTO" | "PIECE_PLAN" | "VOICE_NOTE";
+        DocumentKind: "RECEIPT" | "PURCHASE_ORDER" | "PROGRESS_PHOTO" | "PIECE_PLAN" | "VOICE_NOTE" | "EVENT_FILE";
         /** DocumentOut */
         DocumentOut: {
             /**
@@ -2885,6 +2964,27 @@ export interface components {
             costs_changed: number;
             /** Rules Changed */
             rules_changed: number;
+        };
+        /**
+         * EventFileIn
+         * @description Un archivo (PDF o imagen, ≤ 10 MB) o un link https (Drive, Dropbox…), no los dos.
+         */
+        EventFileIn: {
+            category: components["schemas"]["FileCategory"];
+            file?: components["schemas"]["PhotoIn"] | null;
+            /** Piece Id */
+            piece_id?: string | null;
+            /** Title */
+            title: string;
+            /** Url */
+            url?: string | null;
+        };
+        /** EventFilesOut */
+        EventFilesOut: {
+            /** Can Edit */
+            can_edit: boolean;
+            /** Items */
+            items: components["schemas"]["FileItem"][];
         };
         /**
          * EventIn
@@ -3235,6 +3335,65 @@ export interface components {
             before: string | null;
             /** Field */
             field: string;
+        };
+        /**
+         * FileCategory
+         * @description Cómo se ordenan los archivos del evento (la pestaña Archivos).
+         * @enum {string}
+         */
+        FileCategory: "CLIENT" | "DESIGN" | "ADMIN" | "OTHER";
+        /** FileEvent */
+        FileEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+        };
+        /**
+         * FileItem
+         * @description Un archivo en la pestaña Archivos o en el buscador, venga de donde venga.
+         */
+        FileItem: {
+            /** Author Name */
+            author_name: string;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Category */
+            category: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Current */
+            current: boolean | null;
+            event: components["schemas"]["FileEvent"];
+            /** Expires Soon */
+            expires_soon: boolean;
+            /** Href */
+            href: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mime */
+            mime: string | null;
+            /** Piece Id */
+            piece_id: string | null;
+            /** Piece Name */
+            piece_name: string | null;
+            /** Source */
+            source: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number | null;
         };
         /**
          * FollowUp
@@ -7484,6 +7643,66 @@ export interface operations {
             };
         };
     };
+    delete_event_file_api_v1_event_files__file_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_event_file_api_v1_event_files__file_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_supplier_api_v1_event_suppliers__event_supplier_id__patch: {
         parameters: {
             query?: never;
@@ -7770,6 +7989,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExpensesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_event_files_api_v1_events__event_id__files_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFilesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_event_file_api_v1_events__event_id__files_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventFileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileItem"];
                 };
             };
             /** @description Validation Error */
@@ -8132,6 +8417,37 @@ export interface operations {
                 content: {
                     "application/pdf": unknown;
                     "image/jpeg": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_files_api_v1_files_search_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileItem"][];
                 };
             };
             /** @description Validation Error */

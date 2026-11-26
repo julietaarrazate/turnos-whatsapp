@@ -4,7 +4,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.modules.production.models import HireStatus, PieceArea, PieceStatus, TaskStatus
+from app.modules.production.models import (
+    FileCategory,
+    HireStatus,
+    PieceArea,
+    PieceStatus,
+    TaskStatus,
+)
 
 
 class HireItem(BaseModel):
@@ -264,3 +270,47 @@ class UnreadOut(BaseModel):
 
 class ActivitySeenIn(BaseModel):
     """Sin datos: marca "visto hasta ahora"."""
+
+
+# --- Archivos del evento -------------------------------------------------------------------
+
+
+class EventFileIn(BaseModel):
+    """Un archivo (PDF o imagen, ≤ 10 MB) o un link https (Drive, Dropbox…), no los dos."""
+
+    category: FileCategory
+    title: str = Field(min_length=1, max_length=200)
+    piece_id: UUID | None = None
+    url: str | None = Field(default=None, max_length=1000)
+    file: PhotoIn | None = None
+
+
+class FileEvent(BaseModel):
+    id: UUID
+    number: int
+    name: str
+
+
+class FileItem(BaseModel):
+    """Un archivo en la pestaña Archivos o en el buscador, venga de donde venga."""
+
+    id: UUID
+    source: str  # FILE (subido) | LINK | PLAN (plano con versión) | PHOTO (foto de avance)
+    category: str  # CLIENT | DESIGN | ADMIN | OTHER | PROGRESS
+    title: str
+    piece_id: UUID | None
+    piece_name: str | None
+    href: str  # para abrirlo: la ruta de la API o el link externo
+    mime: str | None
+    version: int | None
+    current: bool | None  # planos: la versión vigente
+    expires_soon: bool  # links de WeTransfer: se vencen en días
+    author_name: str
+    created_at: datetime
+    event: FileEvent
+    can_delete: bool
+
+
+class EventFilesOut(BaseModel):
+    items: list[FileItem]
+    can_edit: bool

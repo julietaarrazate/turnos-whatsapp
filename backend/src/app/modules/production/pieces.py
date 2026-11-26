@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.core.db import AppSession
 from app.core.errors import not_found
@@ -14,6 +14,7 @@ from app.modules.catalog import today_ar
 from app.modules.events import get_event
 from app.modules.identity import User
 from app.modules.production.models import (
+    EventFile,
     EventPiece,
     PieceArea,
     PieceStatus,
@@ -155,6 +156,12 @@ def delete_piece(db: AppSession, ctx: TenantContext, piece_id: UUID) -> None:
     piece = _piece(db, ctx, piece_id)
     _editable_event(db, ctx, piece.event_id)
     _audit(db, ctx, "piece.deleted", piece.event_id, before={"piece": piece.name})
+    # Los archivos atados a la pieza no se pierden: quedan en el evento.
+    db.execute(
+        update(EventFile)
+        .where(EventFile.piece_id == piece.id, EventFile.organization_id == ctx.organization_id)
+        .values(piece_id=None)
+    )
     db.delete(piece)
     db.flush()
 

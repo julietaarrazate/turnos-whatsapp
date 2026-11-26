@@ -15,6 +15,7 @@ class DocumentKind(StrEnum):
     PROGRESS_PHOTO = "PROGRESS_PHOTO"  # foto de avance de una pieza (taller, montaje)
     PIECE_PLAN = "PIECE_PLAN"  # plano o diseño de una pieza (PDF o imagen), con versiones
     VOICE_NOTE = "VOICE_NOTE"  # nota de voz de un avance (≤ 1 minuto)
+    EVENT_FILE = "EVENT_FILE"  # archivo del evento: brief, manual de marca, render, permiso…
 
 
 class Document(IdMixin, Base):

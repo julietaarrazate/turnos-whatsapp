@@ -213,6 +213,7 @@ function ProductionActions({ event }: { event: EventDetail }) {
 const TABS: { segment: string; label: string; permission?: Permission }[] = [
   { segment: "", label: "Resumen" },
   { segment: "/pieces", label: "Piezas" },
+  { segment: "/files", label: "Archivos" },
   { segment: "/budgets", label: "Presupuestos" },
   { segment: "/production", label: "Producción" },
   { segment: "/expenses", label: "Gastos", permission: "cost.view" }, // los gastos son costos
