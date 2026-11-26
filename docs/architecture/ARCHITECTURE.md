@@ -452,18 +452,20 @@ modules/ai/
 
 ```
 ci.yml (cada PR y push a main)
-├── backend
+├── changes: en un PR, qué lado tocó (backend/, infra/ → servidor; frontend/ → pantalla;
+│     ci.yml → los dos). Solo corre lo que corresponde; en main corre todo.
+├── backend (si cambió el servidor)
 │   ├── uv sync --frozen
 │   ├── ruff check · ruff format --check
 │   ├── mypy --strict
 │   ├── import-linter (reglas de dependencia entre módulos)
-│   ├── pytest (con service container Postgres 16, RLS real)
-│   │     └── cobertura: domain/pricing 100% de branches; global ≥ 85%
-│   ├── alembic upgrade head · alembic check · downgrade -1 · upgrade head
-│   └── exportar openapi.json
+│   ├── alembic upgrade head · alembic check · downgrade base · upgrade head
+│   └── pytest tests/pricing: domain/pricing 100% de branches
+├── backend-tests (si cambió el servidor): pytest repartido en 4 máquinas, cada una con su
+│     Postgres 16 (RLS real). TEST_SHARDS/TEST_SHARD en conftest.py: uno y uno, parejo.
 ├── contract
 │   └── regenerar cliente TS desde openapi.json → git diff --exit-code
-├── frontend
+├── frontend (si cambió la pantalla)
 │   ├── pnpm install --frozen-lockfile
 │   ├── eslint · tsc --noEmit
 │   ├── vitest

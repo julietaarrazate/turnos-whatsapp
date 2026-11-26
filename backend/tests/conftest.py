@@ -32,6 +32,20 @@ from app.modules.notifications import console_backend
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """En CI los tests se reparten en varias máquinas (cada una con su Postgres):
+    ``TEST_SHARDS=4 TEST_SHARD=0..3``. Se reparten uno y uno (no por archivo), así la matriz de
+    permisos, que es lo más largo, queda pareja entre todas."""
+    shards = int(os.environ.get("TEST_SHARDS", "1"))
+    shard = int(os.environ.get("TEST_SHARD", "0"))
+    if shards <= 1:
+        return
+    keep = [item for i, item in enumerate(items) if i % shards == shard]
+    drop = [item for i, item in enumerate(items) if i % shards != shard]
+    config.hook.pytest_deselected(items=drop)
+    items[:] = keep
+
+
 @pytest.fixture(scope="session")
 def migrator_engine() -> Iterator[Engine]:
     engine = create_engine(get_settings().migrator_database_url)
