@@ -24,6 +24,7 @@ dependencies = [
     "defusedxml>=0.7",
     "boto3>=1.44.9",
     "webauthn>=2.5",
+    "pywebpush>=2.0",
 ]
 
 [dependency-groups]
@@ -72,7 +73,7 @@ packages = ["app"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["argon2.*", "weasyprint.*", "openpyxl.*", "boto3.*", "botocore.*"]
+module = ["argon2.*", "weasyprint.*", "openpyxl.*", "boto3.*", "botocore.*", "py_vapid.*", "pywebpush.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

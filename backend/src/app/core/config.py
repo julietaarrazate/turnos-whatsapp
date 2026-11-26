@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     # Llaves de acceso (huella/cara): el dominio del frontend. Vacío = el de app_base_url.
     webauthn_rp_id: str | None = None
+    # Avisos al teléfono (Web Push). En pruebas se apaga: no hay a quién mandar.
+    push_enabled: bool = True
 
     # Email
     email_backend: Literal["console", "resend"] = "console"

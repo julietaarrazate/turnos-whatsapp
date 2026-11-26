@@ -17,5 +17,6 @@ from app.modules.notifications import models as _notifications  # noqa: F401
 from app.modules.pricing import models as _pricing  # noqa: F401
 from app.modules.production import models as _production  # noqa: F401
 from app.modules.proposals import models as _proposals  # noqa: F401
+from app.modules.push import models as _push  # noqa: F401
 
 metadata = Base.metadata
