@@ -68,6 +68,10 @@ export function describe(item: Item): string {
       return "inició la producción";
     case "production.supplier_status":
       return `marcó ${item.supplier ?? "un proveedor"} como ${SUPPLIER_STATUS[item.status ?? ""] ?? "otro estado"}`;
+    case "file.approval_decided":
+      return item.status === "APPROVED"
+        ? `aprobó ${item.title ?? "un diseño"}`
+        : `pidió cambios en ${item.title ?? "un diseño"}${item.note ? `: “${item.note}”` : ""}`;
     default:
       return "hizo un cambio";
   }
@@ -80,6 +84,7 @@ const ICONS: Record<string, typeof Camera> = {
   "piece.created": PlusCircle,
   "production.started": CheckCircle2,
   "production.supplier_status": Truck,
+  "file.approval_decided": CheckCircle2,
 };
 
 function ActivityItem({ item, isNew }: { item: Item; isNew: boolean }) {

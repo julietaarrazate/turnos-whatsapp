@@ -2,15 +2,27 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Path, Response, status
 
 from app.core.db import DbSession
 from app.core.permissions import Permission
-from app.modules.auth import TenantContext, require
-from app.modules.production import activity, files, my_work, pieces, plans, service, updates
+from app.core.rate_limit import enforce
+from app.modules.auth import Client, Public, TenantContext, require
+from app.modules.production import (
+    activity,
+    approvals,
+    files,
+    my_work,
+    pieces,
+    plans,
+    service,
+    updates,
+)
 from app.modules.production.schemas import (
     ActivityPage,
     ActivitySeenIn,
+    ApprovalDecisionIn,
+    ApprovalLinkOut,
     EventFileIn,
     EventFilesOut,
     EventSupplierOut,
@@ -31,6 +43,7 @@ from app.modules.production.schemas import (
     PlanIn,
     PlanOut,
     ProductionOut,
+    PublicApproval,
     TaskIn,
     TaskOut,
     TaskUpdate,
@@ -38,6 +51,8 @@ from app.modules.production.schemas import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["production"])
+public_router = APIRouter(prefix="/api/v1/public", tags=["public"])
+Token = Annotated[str, Path(min_length=20, max_length=100)]
 
 View = Annotated[TenantContext, Depends(require(Permission.ORG_VIEW))]
 Manage = Annotated[TenantContext, Depends(require(Permission.PRODUCTION_MANAGE))]
@@ -239,3 +254,34 @@ def apply_expected_template(
 @router.delete("/expected-files/{expected_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expected_file(expected_id: UUID, ctx: View, db: DbSession) -> None:
     files.delete_expected(db, ctx, expected_id)
+
+
+# --- Aprobación de diseños por link ------------------------------------------------------
+
+
+@router.post("/event-files/{file_id}/approval", status_code=status.HTTP_201_CREATED)
+def request_approval(file_id: UUID, ctx: View, db: DbSession) -> ApprovalLinkOut:
+    """Arma el link para que el cliente apruebe el diseño (el anterior sin responder se anula)."""
+    return approvals.request(db, ctx, file_id)
+
+
+@public_router.get("/approvals/{token}", dependencies=[Public])
+def public_approval(token: Token, db: DbSession, client: Client) -> PublicApproval:
+    """Lo que ve el cliente: el título y el diseño, nada más del evento."""
+    enforce(f"approval:ip:{client.ip}", limit=120, window_seconds=600)
+    return approvals.public_view(db, token)
+
+
+@public_router.get("/approvals/{token}/file", dependencies=[Public], response_class=Response)
+def public_approval_file(token: Token, db: DbSession, client: Client) -> Response:
+    enforce(f"approval:ip:{client.ip}", limit=120, window_seconds=600)
+    return approvals.public_file(db, token)
+
+
+@public_router.post("/approvals/{token}/decision", dependencies=[Public])
+def public_approval_decision(
+    token: Token, body: ApprovalDecisionIn, db: DbSession, client: Client
+) -> PublicApproval:
+    """ "Aprobado" o "Pido cambios" (con comentario). Queda quién, cuándo y desde dónde."""
+    enforce(f"approval-decision:ip:{client.ip}", limit=20, window_seconds=600)
+    return approvals.decide(db, token, body, client)

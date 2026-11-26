@@ -22,6 +22,10 @@ PUBLIC_ROUTES = {
     "POST /api/v1/public/proposals/{token}/reject",
     # PDF del mismo snapshot público (P-03).
     "GET /api/v1/public/proposals/{token}/pdf",
+    # Aprobación de diseños por link: solo con el token, lista blanca y rate limit por IP.
+    "GET /api/v1/public/approvals/{token}",
+    "GET /api/v1/public/approvals/{token}/file",
+    "POST /api/v1/public/approvals/{token}/decision",
 }
 
 

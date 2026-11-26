@@ -970,6 +970,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/event-files/{file_id}/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Approval
+         * @description Arma el link para que el cliente apruebe el diseño (el anterior sin responder se anula).
+         */
+        post: operations["request_approval_api_v1_event_files__file_id__approval_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-files/{file_id}/file": {
         parameters: {
             query?: never;
@@ -2059,6 +2079,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/approvals/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public Approval
+         * @description Lo que ve el cliente: el título y el diseño, nada más del evento.
+         */
+        get: operations["public_approval_api_v1_public_approvals__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/approvals/{token}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Public Approval Decision
+         * @description "Aprobado" o "Pido cambios" (con comentario). Queda quién, cuándo y desde dónde.
+         */
+        post: operations["public_approval_decision_api_v1_public_approvals__token__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/approvals/{token}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public Approval File */
+        get: operations["public_approval_file_api_v1_public_approvals__token__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/proposals/{token}": {
         parameters: {
             query?: never;
@@ -2410,11 +2487,58 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** ApprovalDecisionIn */
+        ApprovalDecisionIn: {
+            /** Comment */
+            comment?: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "APPROVED" | "CHANGES";
+            /** Name */
+            name: string;
+        };
+        /**
+         * ApprovalLinkOut
+         * @description El link para mandarle al cliente. El token existe en claro solo en esta respuesta.
+         */
+        ApprovalLinkOut: {
+            approval: components["schemas"]["ApprovalOut"];
+            /** Path */
+            path: string;
+        };
         /**
          * ApprovalMethod
          * @enum {string}
          */
         ApprovalMethod: "ONLINE" | "MANUAL";
+        /**
+         * ApprovalOut
+         * @description El último pedido de aprobación de un archivo (lo que muestra la pestaña Archivos).
+         */
+        ApprovalOut: {
+            /** Comment */
+            comment: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Rounds */
+            rounds: number;
+            /** Status */
+            status: string;
+        };
         /**
          * ApproveIn
          * @description Aprobación manual (P-06): el cliente confirmó por otro canal, típicamente con una OC.
@@ -3535,6 +3659,7 @@ export interface components {
          * @description Un archivo en la pestaña Archivos o en el buscador, venga de donde venga.
          */
         FileItem: {
+            approval?: components["schemas"]["ApprovalOut"] | null;
             /** Author Name */
             author_name: string;
             /** Can Delete */
@@ -5177,6 +5302,30 @@ export interface components {
          * @enum {string}
          */
         ProposalStatus: "SENT" | "VIEWED" | "ACCEPTED" | "REJECTED" | "EXPIRED" | "SUPERSEDED" | "REVOKED";
+        /**
+         * PublicApproval
+         * @description Lo que ve el cliente en el link: el diseño y su respuesta, nada de plata ni del resto.
+         */
+        PublicApproval: {
+            /** Comment */
+            comment: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Name */
+            decided_by_name: string | null;
+            /** Event Name */
+            event_name: string;
+            /** Kind */
+            kind: string;
+            /** Organization Name */
+            organization_name: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string | null;
+        };
         /** PublicDecision */
         PublicDecision: {
             /**
@@ -8040,6 +8189,37 @@ export interface operations {
             };
         };
     };
+    request_approval_api_v1_event_files__file_id__approval_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     open_event_file_api_v1_event_files__file_id__file_get: {
         parameters: {
             query?: never;
@@ -10506,6 +10686,101 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProposalOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_approval_api_v1_public_approvals__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicApproval"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_approval_decision_api_v1_public_approvals__token__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalDecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicApproval"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_approval_file_api_v1_public_approvals__token__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

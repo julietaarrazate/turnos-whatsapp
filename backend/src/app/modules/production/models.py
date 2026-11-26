@@ -255,3 +255,39 @@ class ExpectedFile(IdMixin, Base):
     title: Mapped[str] = mapped_column(String(120))
     category: Mapped[str] = mapped_column(String(10))
     sort: Mapped[int] = mapped_column(default=0)
+
+
+class ApprovalStatus(StrEnum):
+    PENDING = "PENDING"  # el link está mandado, el cliente todavía no respondió
+    APPROVED = "APPROVED"
+    CHANGES = "CHANGES"  # pidió cambios (con comentario)
+    REPLACED = "REPLACED"  # se pidió de nuevo: este link ya no sirve
+
+
+class FileApproval(IdMixin, Base):
+    """Pedido de aprobación de un diseño al cliente por link (sin cuenta). Queda quién respondió,
+    cuándo, desde dónde y qué dijo: el "¿cuál era el aprobado?" se contesta mirando acá.
+    La decisión no se edita: para otra vuelta se pide de nuevo (otro link)."""
+
+    __tablename__ = "file_approvals"
+    __table_args__ = (
+        tenant_unique(),
+        tenant_fk("event_id", "events", ondelete="CASCADE"),
+        tenant_fk("file_id", "event_files", ondelete="CASCADE"),
+        CheckConstraint(check_in("status", ApprovalStatus), name="status"),
+        Index("ix_file_approvals_file_created", "file_id", "created_at"),
+    )
+
+    organization_id: Mapped[UUID] = _org_fk()
+    event_id: Mapped[UUID]
+    file_id: Mapped[UUID]
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    status: Mapped[str] = mapped_column(String(10), default=ApprovalStatus.PENDING.value)
+    requested_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime]
+    decided_at: Mapped[datetime | None]
+    decided_by_name: Mapped[str | None] = mapped_column(String(120))
+    comment: Mapped[str | None] = mapped_column(String(1000))
+    decision_ip: Mapped[str | None] = mapped_column(String(64))
+    decision_user_agent: Mapped[str | None] = mapped_column(String(400))

@@ -46,4 +46,12 @@ group("actividad", () => {
     expect(isNewSince("2026-11-26T11:59:59Z", "2026-11-26T09:00:00-03:00")).toBe(false);
     expect(isNewSince("2026-11-26T12:00:00Z", null)).toBe(false);
   });
+  it("cuenta lo que respondió el cliente en el link de aprobación", () => {
+    expect(describe({ ...base, kind: "file.approval_decided", title: "Render stand", status: "APPROVED" })).toBe(
+      "aprobó Render stand",
+    );
+    expect(
+      describe({ ...base, kind: "file.approval_decided", title: "Render stand", status: "CHANGES", note: "Logo más grande" }),
+    ).toBe("pidió cambios en Render stand: “Logo más grande”");
+  });
 });

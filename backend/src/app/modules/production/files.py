@@ -78,6 +78,11 @@ def _uploaded(
     if limit:
         query = query.limit(limit)
     editable = _can_edit(ctx)
+    rows = db.execute(query).all()
+    # Import diferido: approvals importa este módulo (para _can_edit).
+    from app.modules.production.approvals import latest_by_file  # noqa: PLC0415
+
+    approvals = latest_by_file(db, ctx.organization_id, [row.id for row, *_ in rows])
     return [
         FileItem(
             id=row.id,
@@ -95,8 +100,9 @@ def _uploaded(
             created_at=row.created_at,
             event=_file_event(event),
             can_delete=editable,
+            approval=approvals.get(row.id),
         )
-        for row, event, author, piece, mime in db.execute(query).all()
+        for row, event, author, piece, mime in rows
     ]
 
 

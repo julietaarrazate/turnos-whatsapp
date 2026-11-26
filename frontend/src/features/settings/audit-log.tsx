@@ -55,6 +55,8 @@ const ACTION_LABELS: Record<string, string> = {
   "event.file_added": "Agregó un archivo al evento",
   "event.file_removed": "Sacó un archivo del evento",
   "event.expected_files_set": "Armó la lista de archivos del evento",
+  "file.approval_requested": "Pidió aprobación de un diseño al cliente",
+  "file.approval_decided": "El cliente respondió la aprobación de un diseño",
   "expense.created": "Cargó un gasto",
   "expense.updated": "Cambió un gasto",
   "expense.deleted": "Borró un gasto",

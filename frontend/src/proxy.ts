@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy } from "@/lib/csp";
 
 /** Páginas que se ven sin sesión: auth, la offline de la PWA y la propuesta pública. */
-const PUBLIC = /^\/(login|invite|reset-password|offline|p)(\/|$)/;
+const PUBLIC = /^\/(login|invite|reset-password|offline|p|a)(\/|$)/;
 
 /** Lectores de vistas previas (WhatsApp, Facebook, Telegram...): arman la miniatura del link. */
 const PREVIEW_BOTS = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|Applebot|Googlebot|bingbot/i;
