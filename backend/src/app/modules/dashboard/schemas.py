@@ -52,6 +52,22 @@ class UpcomingEvent(BaseModel):
     margin: Decimal | None  # de la versión aceptada; None sin permiso o sin versión
 
 
+class ActiveEvent(BaseModel):
+    """Un evento aprobado o en producción, con el avance de sus piezas (el "pulso")."""
+
+    id: UUID
+    number: int
+    name: str
+    client_name: str
+    status: EventStatus
+    start_date: date | None
+    mount_date: date | None  # inicio menos los días de armado
+    pieces_total: int
+    pieces_ready: int
+    progress: int  # 0 a 100
+    late: int  # piezas y tareas vencidas sin terminar
+
+
 class DashboardOut(BaseModel):
     month: str  # YYYY-MM
     own_only: bool  # QUOTER: solo sus presupuestos
@@ -62,6 +78,7 @@ class DashboardOut(BaseModel):
     conversion: ConversionOut
     todo: TodoOut
     upcoming: list[UpcomingEvent]
+    active: list[ActiveEvent]
 
 
 class ReportRow(BaseModel):

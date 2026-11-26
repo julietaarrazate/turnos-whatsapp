@@ -43,6 +43,86 @@
         "title": "AcceptIn",
         "type": "object"
       },
+      "ActiveEvent": {
+        "description": "Un evento aprobado o en producción, con el avance de sus piezas (el \"pulso\").",
+        "properties": {
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "late": {
+            "title": "Late",
+            "type": "integer"
+          },
+          "mount_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mount Date"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "pieces_ready": {
+            "title": "Pieces Ready",
+            "type": "integer"
+          },
+          "pieces_total": {
+            "title": "Pieces Total",
+            "type": "integer"
+          },
+          "progress": {
+            "title": "Progress",
+            "type": "integer"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "name",
+          "client_name",
+          "status",
+          "start_date",
+          "mount_date",
+          "pieces_total",
+          "pieces_ready",
+          "progress",
+          "late"
+        ],
+        "title": "ActiveEvent",
+        "type": "object"
+      },
       "AmountOut": {
         "properties": {
           "amount": {
@@ -2052,6 +2132,13 @@
           "accepted": {
             "$ref": "#/components/schemas/AmountOut"
           },
+          "active": {
+            "items": {
+              "$ref": "#/components/schemas/ActiveEvent"
+            },
+            "title": "Active",
+            "type": "array"
+          },
           "avg_margin": {
             "anyOf": [
               {
@@ -2100,7 +2187,8 @@
           "avg_margin",
           "conversion",
           "todo",
-          "upcoming"
+          "upcoming",
+          "active"
         ],
         "title": "DashboardOut",
         "type": "object"

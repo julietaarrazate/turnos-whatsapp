@@ -1818,6 +1818,36 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * ActiveEvent
+         * @description Un evento aprobado o en producción, con el avance de sus piezas (el "pulso").
+         */
+        ActiveEvent: {
+            /** Client Name */
+            client_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Late */
+            late: number;
+            /** Mount Date */
+            mount_date: string | null;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
+            /** Pieces Ready */
+            pieces_ready: number;
+            /** Pieces Total */
+            pieces_total: number;
+            /** Progress */
+            progress: number;
+            /** Start Date */
+            start_date: string | null;
+            status: components["schemas"]["EventStatus"];
+        };
         /** AmountOut */
         AmountOut: {
             /** Amount */
@@ -2434,6 +2464,8 @@ export interface components {
         /** DashboardOut */
         DashboardOut: {
             accepted: components["schemas"]["AmountOut"];
+            /** Active */
+            active: components["schemas"]["ActiveEvent"][];
             /** Avg Margin */
             avg_margin: string | null;
             conversion: components["schemas"]["ConversionOut"];

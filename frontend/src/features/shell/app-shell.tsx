@@ -24,7 +24,7 @@ function OrganizationSwitcher() {
   const active = me.memberships.find((m) => m.organization_id === me.active_organization_id);
 
   if (me.memberships.length <= 1) {
-    return <span className="truncate text-sm font-semibold text-ink">{active?.organization_name}</span>;
+    return <span className="truncate text-base font-bold tracking-tight">{active?.organization_name}</span>;
   }
   return (
     <select
@@ -39,7 +39,7 @@ function OrganizationSwitcher() {
           setPending(false);
         }
       }}
-      className="max-w-48 truncate rounded-md border border-line bg-surface px-2 py-1 text-sm font-semibold"
+      className="max-w-48 truncate rounded-md border border-line bg-surface px-2 py-1 text-sm font-semibold text-ink"
     >
       {me.memberships.map((m) => (
         <option key={m.organization_id} value={m.organization_id}>
@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-dvh lg:pl-60">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-line bg-surface lg:flex">
-        <div className="flex h-14 items-center border-b border-line px-4">
+        <div className="flex h-14 items-center bg-brand px-4 text-white">
           <OrganizationSwitcher />
         </div>
         <button
@@ -117,13 +117,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Header (mobile) */}
-      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-line bg-surface/95 px-4 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-brand px-4 text-white lg:hidden">
         <OrganizationSwitcher />
         <button
           type="button"
           onClick={logout}
           aria-label="Cerrar sesión"
-          className="ml-auto rounded-md p-2 text-ink-muted"
+          className="ml-auto flex size-11 items-center justify-center rounded-full bg-white/15 text-white"
         >
           <LogOut className="size-5" aria-hidden />
         </button>
@@ -136,18 +136,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Principal"
         className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
-        <ul className="grid h-16 grid-cols-5">
+        <ul className="grid h-[4.5rem] grid-cols-5">
           {mobileTabs.slice(0, 2).map(({ href, label, icon: Icon }) => (
             <li key={href}>
               <Link
                 href={href}
                 aria-current={isActive(pathname, href) ? "page" : undefined}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-0.5 text-[11px]",
-                  isActive(pathname, href) ? "text-accent" : "text-ink-muted",
+                  "flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold",
+                  isActive(pathname, href) ? "text-brand" : "text-ink-muted",
                 )}
               >
-                <Icon className="size-5" aria-hidden />
+                <Icon className="size-6" aria-hidden />
                 {label}
               </Link>
             </li>
@@ -157,7 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               type="button"
               aria-label="Crear"
               onClick={() => quickActions.current?.showModal()}
-              className="flex size-12 items-center justify-center rounded-full bg-accent text-white shadow-lg"
+              className="flex size-14 items-center justify-center rounded-full bg-magenta text-white shadow-lg shadow-magenta/40"
             >
               <Plus className="size-6" aria-hidden />
             </button>
@@ -169,11 +169,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href={href}
                   aria-current={isActive(pathname, href) ? "page" : undefined}
                   className={cn(
-                    "flex h-full flex-col items-center justify-center gap-0.5 text-[11px]",
-                    isActive(pathname, href) ? "text-accent" : "text-ink-muted",
+                    "flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold",
+                    isActive(pathname, href) ? "text-brand" : "text-ink-muted",
                   )}
                 >
-                  <Icon className="size-5" aria-hidden />
+                  <Icon className="size-6" aria-hidden />
                   {label}
                 </Link>
               </li>

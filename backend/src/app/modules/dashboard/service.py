@@ -7,7 +7,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.core.db import AppSession
 from app.core.enums import Role
@@ -19,6 +19,7 @@ from app.modules.budgets import stale_cost_count, version_totals
 from app.modules.catalog import today_ar
 from app.modules.clients import Client
 from app.modules.dashboard.schemas import (
+    ActiveEvent,
     AmountOut,
     ConversionOut,
     DashboardOut,
@@ -28,13 +29,16 @@ from app.modules.dashboard.schemas import (
 )
 from app.modules.events import Event, EventStatus
 from app.modules.identity import Organization
-from app.modules.production import pending_operations
+from app.modules.production import events_health, pending_operations
 from app.modules.proposals import Amount, FollowUp, commercial_metrics
 
 AR = ZoneInfo("America/Argentina/Buenos_Aires")
 RATE = Decimal("0.000001")
 CONVERSION_WINDOW = timedelta(days=90)
 UPCOMING_LIMIT = 5
+ACTIVE_LIMIT = 8
+# Un evento que pasó hace más de esto y sigue "aprobado" quedó olvidado: no ocupa el pulso.
+ACTIVE_PAST_DAYS = 14
 _UPCOMING = (EventStatus.APPROVED, EventStatus.IN_PRODUCTION)
 
 
@@ -98,6 +102,47 @@ def _upcoming(db: AppSession, ctx: TenantContext) -> list[UpcomingEvent]:
     return out
 
 
+def _active(db: AppSession, ctx: TenantContext) -> list[ActiveEvent]:
+    """Lo que se está produciendo: aprobados y en producción, el montaje más cercano primero."""
+    rows = db.execute(
+        select(Event, Client.name)
+        .join(Client, Client.id == Event.client_id)
+        .where(
+            Event.organization_id == ctx.organization_id,
+            Event.deleted_at.is_(None),
+            Event.status.in_([s.value for s in _UPCOMING]),
+            or_(
+                Event.start_date.is_(None),
+                Event.start_date >= today_ar() - timedelta(days=ACTIVE_PAST_DAYS),
+            ),
+        )
+        .order_by(Event.start_date.asc().nulls_last(), Event.number)
+        .limit(ACTIVE_LIMIT)
+    ).all()
+    health = events_health(db, ctx, [event.id for event, _ in rows], today_ar())
+    out = []
+    for event, client_name in rows:
+        h = health[event.id]
+        out.append(
+            ActiveEvent(
+                id=event.id,
+                number=event.number,
+                name=event.name,
+                client_name=client_name,
+                status=EventStatus(event.status),
+                start_date=event.start_date,
+                mount_date=event.start_date - timedelta(days=event.setup_days)
+                if event.start_date
+                else None,
+                pieces_total=h.total,
+                pieces_ready=h.ready,
+                progress=h.progress,
+                late=h.late,
+            )
+        )
+    return out
+
+
 def dashboard(db: AppSession, ctx: TenantContext, month: str | None) -> DashboardOut:
     label, start, end = _month_bounds(month)
     own_only = ctx.role is Role.QUOTER  # "propio" (PRODUCT_SPEC §9)
@@ -149,4 +194,5 @@ def dashboard(db: AppSession, ctx: TenantContext, month: str | None) -> Dashboar
             else [],
         ),
         upcoming=_upcoming(db, ctx),
+        active=_active(db, ctx),
     )
