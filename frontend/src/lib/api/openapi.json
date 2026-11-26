@@ -6247,6 +6247,73 @@
         "title": "OfferUpdate",
         "type": "object"
       },
+      "OpenPiece": {
+        "description": "Una pieza a la que se le puede subir un avance (para elegirla después de la foto).",
+        "properties": {
+          "area": {
+            "$ref": "#/components/schemas/PieceArea"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "event": {
+            "$ref": "#/components/schemas/WorkEvent"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "late": {
+            "title": "Late",
+            "type": "boolean"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PieceStatus"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "area",
+          "status",
+          "due_date",
+          "late",
+          "notes",
+          "event",
+          "mine"
+        ],
+        "title": "OpenPiece",
+        "type": "object"
+      },
       "OrganizationFiscalUpdate": {
         "properties": {
           "legal_name": {
@@ -15800,6 +15867,32 @@
           }
         },
         "summary": "Get Piece Update Photo",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/pieces/open": {
+      "get": {
+        "description": "Piezas sin montar de eventos aprobados o en producción (las propias primero): para elegir\na qué pieza va una foto de avance.",
+        "operationId": "list_open_pieces_api_v1_pieces_open_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OpenPiece"
+                  },
+                  "title": "Response List Open Pieces Api V1 Pieces Open Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Open Pieces",
         "tags": [
           "production"
         ]

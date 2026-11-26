@@ -1362,6 +1362,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pieces/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Open Pieces
+         * @description Piezas sin montar de eventos aprobados o en producción (las propias primero): para elegir
+         *     a qué pieza va una foto de avance.
+         */
+        get: operations["list_open_pieces_api_v1_pieces_open_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pieces/{piece_id}": {
         parameters: {
             query?: never;
@@ -3789,6 +3810,30 @@ export interface components {
             notes?: string | null;
             /** Supplier Sku */
             supplier_sku?: string | null;
+        };
+        /**
+         * OpenPiece
+         * @description Una pieza a la que se le puede subir un avance (para elegirla después de la foto).
+         */
+        OpenPiece: {
+            area: components["schemas"]["PieceArea"];
+            /** Due Date */
+            due_date: string | null;
+            event: components["schemas"]["WorkEvent"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Late */
+            late: boolean;
+            /** Mine */
+            mine: boolean;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes: string | null;
+            status: components["schemas"]["PieceStatus"];
         };
         /** OrganizationFiscalUpdate */
         OrganizationFiscalUpdate: {
@@ -8343,6 +8388,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_open_pieces_api_v1_pieces_open_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenPiece"][];
                 };
             };
         };

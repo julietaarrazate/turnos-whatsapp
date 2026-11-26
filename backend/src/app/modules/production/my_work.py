@@ -26,6 +26,7 @@ from app.modules.production.schemas import (
     MyPiece,
     MyTask,
     MyWorkOut,
+    OpenPiece,
     PieceOut,
     PieceUpdate,
     TaskOut,
@@ -107,6 +108,47 @@ def my_work(db: AppSession, ctx: TenantContext) -> MyWorkOut:
     my_pieces.sort(key=lambda p: _key(p.due_date, p.late, p.event))
     my_tasks.sort(key=lambda t: _key(t.due_date, t.late, t.event))
     return MyWorkOut(pieces=my_pieces, tasks=my_tasks)
+
+
+_PRODUCING = (EventStatus.APPROVED.value, EventStatus.IN_PRODUCTION.value)
+OPEN_LIMIT = 200
+
+
+def open_pieces(db: AppSession, ctx: TenantContext) -> list[OpenPiece]:
+    """Piezas sin montar de eventos aprobados o en producción: las propias primero, después por
+    montaje más cercano. Es la lista para elegir a qué pieza va una foto."""
+    today = today_ar()
+    rows = db.execute(
+        select(EventPiece, Event)
+        .join(Event, Event.id == EventPiece.event_id)
+        .where(
+            EventPiece.organization_id == ctx.organization_id,
+            EventPiece.status != _PIECE_DONE,
+            Event.organization_id == ctx.organization_id,
+            Event.deleted_at.is_(None),
+            Event.status.in_(_PRODUCING),
+        )
+        .limit(OPEN_LIMIT)
+    ).all()
+    out = []
+    for piece, event in rows:
+        status = PieceStatus(piece.status)
+        out.append(
+            OpenPiece(
+                id=piece.id,
+                name=piece.name,
+                area=PieceArea(piece.area),
+                status=status,
+                due_date=piece.due_date,
+                late=pieces.is_late(piece.due_date, status, today),
+                notes=piece.notes,
+                event=_event(event),
+                mine=piece.assignee_user_id == ctx.user_id,
+            )
+        )
+    far = date.max
+    out.sort(key=lambda p: (not p.mine, p.event.mount_date or far, p.event.number, p.name))
+    return out
 
 
 def _assigned(

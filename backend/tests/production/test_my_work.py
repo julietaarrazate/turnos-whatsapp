@@ -113,3 +113,26 @@ def test_crew_can_be_invited_and_assigned() -> None:
     )
     assert invited.status_code == 201, invited.text
     assert invited.json()["role"] == "CREW"
+
+
+def test_open_pieces_to_pick_where_a_photo_goes() -> None:
+    world = build_org("a")
+    _approved(world)  # el evento del harness pasa a aprobado
+    owner = logged_in(world.members[Role.OWNER])
+    production_member = world.members[Role.PRODUCTION]
+    production = logged_in(production_member)
+    me = str(production_member.user_id)
+    _piece(owner, world, name="Tarima", assignee_user_id=me)
+    mounted = _piece(owner, world, name="Ya montada")
+    _ok(owner.patch(f"/api/v1/pieces/{mounted['id']}", json={"status": "MOUNTED"}))
+
+    names = [p["name"] for p in _ok(production.get("/api/v1/pieces/open"))]
+    # La propia primero; la montada no aparece.
+    assert names[0] == "Tarima"
+    assert "Pieza ejemplo" in names
+    assert "Ya montada" not in names
+    assert _ok(production.get("/api/v1/pieces/open"))[0]["mine"] is True
+
+    # El taller elige entre lo suyo (Mis tareas): esta lista no es para su rol.
+    crew = logged_in(world.members[Role.CREW])
+    assert crew.get("/api/v1/pieces/open").status_code == 403

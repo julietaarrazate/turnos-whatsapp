@@ -1,16 +1,18 @@
 "use client";
 
-import { LogOut, Plus, Search } from "lucide-react";
+import { Camera, LogOut, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ROLE_LABELS } from "@/features/auth/roles";
 import { useSession } from "@/features/auth/session";
 import { cn } from "@/lib/cn";
 
 import { CommandPalette } from "./command-palette";
-import { MOBILE_TABS, NAV_ITEMS, isActive } from "./nav";
+import { QuickPhotoDialog } from "@/features/pieces/quick-photo";
+
+import { NAV_ITEMS, isActive, mobileBar } from "./nav";
 
 const QUICK_ACTIONS: { label: string; href?: string; phase?: number }[] = [
   { label: "Nuevo presupuesto", href: "/budgets/new" },
@@ -85,9 +87,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function FullShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { me, logout } = useSession();
+  const { me, logout, can } = useSession();
   const quickActions = useRef<HTMLDialogElement>(null);
-  const mobileTabs = NAV_ITEMS.filter((item) => (MOBILE_TABS as readonly string[]).includes(item.href));
+  const bar = mobileBar(can);
+  const byHref = (href: string) => NAV_ITEMS.find((item) => item.href === href)!;
+  const [photo, setPhoto] = useState(false);
+  const [sent, setSent] = useState(false);
+  const canPhoto = can("production.manage");
+  useEffect(() => {
+    if (!sent) return;
+    const timer = window.setTimeout(() => setSent(false), 3500);
+    return () => window.clearTimeout(timer);
+  }, [sent]);
 
   return (
     <div className="min-h-dvh lg:pl-60">
@@ -105,6 +116,16 @@ function FullShell({ children }: { children: React.ReactNode }) {
           Buscar
           <kbd className="ml-auto text-xs">⌘K</kbd>
         </button>
+        {canPhoto ? (
+          <button
+            type="button"
+            onClick={() => setPhoto(true)}
+            className="mx-3 mt-2 flex items-center gap-2 rounded-lg bg-magenta px-3 py-2 text-sm font-semibold text-white hover:bg-magenta/90"
+          >
+            <Camera className="size-4" aria-hidden />
+            Foto de avance
+          </button>
+        ) : null}
         <nav aria-label="Principal" className="flex-1 overflow-y-auto p-3">
           <ul className="flex flex-col gap-0.5">
             {NAV_ITEMS.map(({ href, label, icon: Icon, phase }) => (
@@ -166,7 +187,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         <ul className="grid h-[4.5rem] grid-cols-5">
-          {mobileTabs.slice(0, 2).map(({ href, label, icon: Icon }) => (
+          {bar.left.map(byHref).map(({ href, label, icon: Icon }) => (
             <li key={href}>
               <Link
                 href={href}
@@ -182,16 +203,27 @@ function FullShell({ children }: { children: React.ReactNode }) {
             </li>
           ))}
           <li className="flex items-center justify-center">
-            <button
-              type="button"
-              aria-label="Crear"
-              onClick={() => quickActions.current?.showModal()}
-              className="flex size-14 items-center justify-center rounded-full bg-magenta text-white shadow-lg shadow-magenta/40"
-            >
-              <Plus className="size-6" aria-hidden />
-            </button>
+            {bar.center === "camera" ? (
+              <button
+                type="button"
+                aria-label="Foto de avance"
+                onClick={() => setPhoto(true)}
+                className="flex size-14 items-center justify-center rounded-full bg-magenta text-white shadow-lg shadow-magenta/40"
+              >
+                <Camera className="size-6" aria-hidden />
+              </button>
+            ) : (
+              <button
+                type="button"
+                aria-label="Crear"
+                onClick={() => quickActions.current?.showModal()}
+                className="flex size-14 items-center justify-center rounded-full bg-magenta text-white shadow-lg shadow-magenta/40"
+              >
+                <Plus className="size-6" aria-hidden />
+              </button>
+            )}
           </li>
-          {[...mobileTabs.slice(2), { href: "/settings", label: "Más", icon: NAV_ITEMS.at(-1)!.icon }].map(
+          {[byHref(bar.right), { href: "/settings", label: "Más", icon: NAV_ITEMS.at(-1)!.icon }].map(
             ({ href, label, icon: Icon }) => (
               <li key={href}>
                 <Link
@@ -220,6 +252,20 @@ function FullShell({ children }: { children: React.ReactNode }) {
       >
         <div className="mx-auto my-3 h-1 w-10 rounded-full bg-line" aria-hidden />
         <ul className="px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          {canPhoto ? (
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  quickActions.current?.close();
+                  setPhoto(true);
+                }}
+                className="flex h-12 w-full items-center gap-2 border-b border-line text-left text-base font-semibold text-magenta"
+              >
+                <Camera className="size-5" aria-hidden /> Foto de avance
+              </button>
+            </li>
+          ) : null}
           {QUICK_ACTIONS.map((action) => (
             <li key={action.label}>
               {action.href ? (
@@ -244,6 +290,16 @@ function FullShell({ children }: { children: React.ReactNode }) {
           ))}
         </ul>
       </dialog>
+
+      {canPhoto ? <QuickPhotoDialog open={photo} onClose={() => setPhoto(false)} onSent={() => setSent(true)} /> : null}
+      {sent ? (
+        <p
+          role="status"
+          className="fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 rounded-xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white shadow-lg lg:inset-x-auto lg:right-6 lg:bottom-6"
+        >
+          Avance enviado
+        </p>
+      ) : null}
 
       <CommandPalette />
     </div>

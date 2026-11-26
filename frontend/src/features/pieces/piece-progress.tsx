@@ -32,10 +32,10 @@ export function usePieceProgress(pieceId: string) {
   });
 }
 
-function usePostProgress(pieceId: string, onDone: () => void) {
+export function usePostProgress(onDone: () => void) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ note, file }: { note: string; file: File | null }) => {
+    mutationFn: async ({ pieceId, note, file }: { pieceId: string; note: string; file: File | null }) => {
       let photo: Schemas["PhotoIn"] | null = null;
       if (file) {
         const blob = await shrinkImage(file, PHOTO);
@@ -49,7 +49,7 @@ function usePostProgress(pieceId: string, onDone: () => void) {
         }),
       );
     },
-    onSuccess: () => {
+    onSuccess: (_, { pieceId }) => {
       void queryClient.invalidateQueries({ queryKey: progressKey(pieceId) });
       onDone();
     },
@@ -62,7 +62,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [sent, setSent] = useState(false);
-  const post = usePostProgress(pieceId, () => {
+  const post = usePostProgress(() => {
     setNote("");
     setFile(null);
     setSent(true);
@@ -79,7 +79,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
       onSubmit={(e) => {
         e.preventDefault();
         setSent(false);
-        post.mutate({ note, file });
+        post.mutate({ pieceId, note, file });
       }}
     >
       {me.uploads_enabled ? (

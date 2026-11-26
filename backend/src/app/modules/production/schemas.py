@@ -127,6 +127,12 @@ class MyPiece(BaseModel):
     event: WorkEvent
 
 
+class OpenPiece(MyPiece):
+    """Una pieza a la que se le puede subir un avance (para elegirla después de la foto)."""
+
+    mine: bool  # asignada a quien consulta: va primero
+
+
 class MyTask(BaseModel):
     id: UUID
     title: str

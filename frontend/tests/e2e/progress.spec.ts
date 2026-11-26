@@ -1,8 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { CREW, login } from "./helpers";
+import { CREW, H, PRODUCTION, eventInProduction, json, login } from "./helpers";
 
-const H = { "X-Requested-With": "fetch" };
 // Alcanza la firma JPEG: el servidor mira el contenido. Es chica, así que no se achica.
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]);
 
@@ -54,4 +53,39 @@ test("el taller saca una foto de avance desde Mis tareas y producción la ve en 
   await dialog.getByLabel("Nota (opcional)").fill("Revisado por producción");
   await dialog.getByRole("button", { name: "Enviar avance" }).click();
   await expect(progress).toContainText("Revisado por producción");
+});
+
+test("producción: la cámara está a un toque (en el celular, el botón del medio); se saca la foto y después se elige la pieza", async ({ page, browser, baseURL }, testInfo) => {
+  const suffix = `${testInfo.project.name}-camara-${Date.now()}`;
+  await login(page);
+  const eventId = await eventInProduction(page.request, suffix);
+  const piece = await json<{ id: string }>(
+    await page.request.post(`/api/v1/events/${eventId}/pieces`, { headers: H, data: { name: `Tótem ${suffix}`, area: "GRAPHICS" } }),
+  );
+
+  const { viewport, userAgent, isMobile, hasTouch } = testInfo.project.use;
+  const context = await browser.newContext({ baseURL, viewport, userAgent, isMobile, hasTouch });
+  const production = await context.newPage();
+  await login(production, "/", PRODUCTION);
+  if (isMobile) {
+    // Barra de producción: Inicio · Eventos · [cámara] · Mis tareas · Más.
+    const bar = production.getByRole("navigation", { name: "Principal" }).last();
+    await expect(bar.getByRole("link", { name: "Mis tareas" })).toBeVisible();
+    await expect(bar.getByRole("link", { name: "Presupuestos" })).toHaveCount(0);
+  }
+  // Uno solo visible: el del medio de la barra (celular) o el del menú lateral (computadora).
+  await production.getByRole("button", { name: "Foto de avance" }).click();
+
+  const sheet = production.getByRole("dialog", { name: "Foto de avance" });
+  await sheet.getByLabel("Foto del avance").setInputFiles({ name: "totem.jpg", mimeType: "image/jpeg", buffer: JPEG });
+  await sheet.getByRole("radio", { name: new RegExp(`Tótem ${suffix}`) }).check();
+  await sheet.getByLabel("Nota (opcional)").fill("Impreso, falta laminar");
+  await sheet.getByRole("button", { name: "Enviar avance" }).click();
+  await expect(production.getByRole("status").filter({ hasText: "Avance enviado" })).toBeVisible();
+  await context.close();
+
+  const updates = await json<{ note: string; has_photo: boolean }[]>(
+    await page.request.get(`/api/v1/pieces/${piece.id}/updates`, { headers: H }),
+  );
+  expect(updates[0]).toMatchObject({ note: "Impreso, falta laminar", has_photo: true });
 });

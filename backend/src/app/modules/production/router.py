@@ -13,6 +13,7 @@ from app.modules.production.schemas import (
     MyPieceUpdate,
     MyTaskUpdate,
     MyWorkOut,
+    OpenPiece,
     PieceIn,
     PieceOut,
     PiecesOut,
@@ -125,3 +126,10 @@ def add_piece_update(
 def get_piece_update_photo(update_id: UUID, ctx: OwnWork, db: DbSession) -> Response:
     """La foto de un avance (para verla en la ficha o en Mis tareas)."""
     return updates.update_photo(db, ctx, update_id)
+
+
+@router.get("/pieces/open")
+def list_open_pieces(ctx: View, db: DbSession) -> list[OpenPiece]:
+    """Piezas sin montar de eventos aprobados o en producción (las propias primero): para elegir
+    a qué pieza va una foto de avance."""
+    return my_work.open_pieces(db, ctx)

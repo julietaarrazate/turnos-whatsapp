@@ -11,6 +11,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { Permission } from "@/features/auth/session";
+
 export interface NavItem {
   href: string;
   label: string;
@@ -31,8 +33,22 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/settings", label: "Configuración", icon: Settings },
 ];
 
-/** Barra inferior en mobile: 4 destinos + el botón central "+". */
-export const MOBILE_TABS = ["/", "/events", "/budgets"] as const;
+/**
+ * Barra inferior en mobile: 2 destinos, el botón central y 1 destino + "Más". Cambia según el rol:
+ * producción tiene la cámara al medio y "Mis tareas"; lo comercial, "+" y "Presupuestos".
+ */
+export interface MobileBar {
+  left: string[];
+  right: string;
+  center: "camera" | "create";
+}
+
+export function mobileBar(can: (permission: Permission) => boolean): MobileBar {
+  const field = can("production.manage") && !can("budget.edit");
+  return field
+    ? { left: ["/", "/events"], right: "/my-work", center: "camera" }
+    : { left: ["/", "/events"], right: "/budgets", center: "create" };
+}
 
 export function isActive(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
