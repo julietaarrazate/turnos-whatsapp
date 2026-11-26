@@ -1,4 +1,4 @@
-# Plataforma para productoras de eventos (nombre a definir)
+# Handie — plataforma para productoras de eventos
 
 Sistema operativo para productoras de eventos, agencias BTL y empresas de stands:
 **cliente → evento → presupuesto → propuesta → aprobación → producción → costo real → rentabilidad.**

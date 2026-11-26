@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Plataforma para productoras",
-    short_name: "Productoras",
-    description: "Presupuestos, propuestas, producción y rentabilidad.",
+    name: "Handie",
+    short_name: "Handie",
+    description: "Presupuestos, producción y montaje de tus eventos, en un solo lugar.",
     start_url: "/",
     display: "standalone",
     background_color: "#f6f7f9",

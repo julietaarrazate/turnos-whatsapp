@@ -11,9 +11,19 @@ import "./globals.css";
 const interTight = Inter_Tight({ subsets: ["latin"], variable: "--font-inter-tight", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Plataforma para productoras", template: "%s · Plataforma" },
-  description: "Presupuestos, propuestas, producción y rentabilidad para productoras de eventos.",
-  appleWebApp: { capable: true, title: "Productoras", statusBarStyle: "default" },
+  title: { default: "Handie", template: "%s · Handie" },
+  applicationName: "Handie",
+  description: "Presupuestos, producción y montaje de tus eventos, en un solo lugar.",
+  appleWebApp: { capable: true, title: "Handie", statusBarStyle: "default" },
+  // La miniatura al compartir por WhatsApp sale de opengraph-image.png (Next arma la URL completa
+  // con el dominio de producción de Vercel).
+  openGraph: {
+    type: "website",
+    siteName: "Handie",
+    title: "Handie",
+    description: "Presupuestos, producción y montaje de tus eventos, en un solo lugar.",
+    locale: "es_AR",
+  },
 };
 
 export const viewport: Viewport = {
