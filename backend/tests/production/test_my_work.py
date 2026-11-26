@@ -55,7 +55,7 @@ def test_crew_sees_and_moves_only_what_is_assigned_to_them() -> None:
     assert done["status"] == "DONE"
     assert [t["title"] for t in _ok(crew.get("/api/v1/my-work"))["tasks"]] == []
     audit = _ok(owner.get("/api/v1/audit-logs"))["items"]
-    assert any(e["action"] == "piece.status_changed" and e["user_id"] == me for e in audit), (
+    assert any(e["action"] == "piece.status_changed" and e["actor_user_id"] == me for e in audit), (
         "el cambio del taller tiene que quedar registrado a su nombre"
     )
 
