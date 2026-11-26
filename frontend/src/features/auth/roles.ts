@@ -7,6 +7,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   QUOTER: "Comercial",
   PRODUCTION: "Producción",
   VIEWER: "Solo lectura",
+  CREW: "Taller/Montaje",
 };
 
 export const ROLE_OPTIONS = (Object.keys(ROLE_LABELS) as Role[]).map((value) => ({

@@ -41,6 +41,11 @@ def summary(statuses: list[PieceStatus]) -> tuple[int, int, int]:
     return total, ready, round(sum(_weight(s) for s in statuses) / total)
 
 
+def is_late(due: date | None, status: PieceStatus, today: date) -> bool:
+    """Vencida y todavía no está lista para cargar."""
+    return bool(due and due < today and status not in _DONE)
+
+
 def _out(piece: EventPiece, assignee: str | None, today: date) -> PieceOut:
     status = PieceStatus(piece.status)
     return PieceOut(
@@ -52,7 +57,7 @@ def _out(piece: EventPiece, assignee: str | None, today: date) -> PieceOut:
         assignee_user_id=piece.assignee_user_id,
         assignee_name=assignee,
         due_date=piece.due_date,
-        late=bool(piece.due_date and piece.due_date < today and status not in _DONE),
+        late=is_late(piece.due_date, status, today),
         notes=piece.notes,
         status_changed_at=piece.status_changed_at,
     )

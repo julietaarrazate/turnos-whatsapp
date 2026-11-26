@@ -28,7 +28,8 @@ export type Permission =
   | "proposal.decide"
   | "production.manage"
   | "expenses.edit"
-  | "event.close";
+  | "event.close"
+  | "work.own";
 
 export const ME_QUERY_KEY = ["auth", "me"] as const;
 

@@ -1149,6 +1149,66 @@ export interface paths {
         patch: operations["update_member_api_v1_members__membership_id__patch"];
         trace?: never;
     };
+    "/api/v1/my-work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Work
+         * @description Mis tareas: piezas y tareas asignadas a quien consulta, pendientes, en eventos abiertos.
+         */
+        get: operations["get_my_work_api_v1_my_work_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/my-work/pieces/{piece_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Move My Piece
+         * @description Cambiar la fase de una pieza propia. La de otra persona responde 404.
+         */
+        patch: operations["move_my_piece_api_v1_my_work_pieces__piece_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/my-work/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Move My Task
+         * @description Marcar una tarea propia en curso o hecha. La de otra persona responde 404.
+         */
+        patch: operations["move_my_task_api_v1_my_work_tasks__task_id__patch"];
+        trace?: never;
+    };
     "/api/v1/offers/{offer_id}": {
         parameters: {
             query?: never;
@@ -3555,6 +3615,59 @@ export interface components {
          * @enum {string}
          */
         MembershipStatus: "INVITED" | "ACTIVE" | "DISABLED";
+        /** MyPiece */
+        MyPiece: {
+            area: components["schemas"]["PieceArea"];
+            /** Due Date */
+            due_date: string | null;
+            event: components["schemas"]["WorkEvent"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Late */
+            late: boolean;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes: string | null;
+            status: components["schemas"]["PieceStatus"];
+        };
+        /** MyPieceUpdate */
+        MyPieceUpdate: {
+            status: components["schemas"]["PieceStatus"];
+        };
+        /** MyTask */
+        MyTask: {
+            /** Due Date */
+            due_date: string | null;
+            event: components["schemas"]["WorkEvent"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Late */
+            late: boolean;
+            status: components["schemas"]["TaskStatus"];
+            /** Title */
+            title: string;
+        };
+        /** MyTaskUpdate */
+        MyTaskUpdate: {
+            status: components["schemas"]["TaskStatus"];
+        };
+        /**
+         * MyWorkOut
+         * @description Lo asignado a quien consulta, pendiente, en eventos abiertos: lo atrasado primero.
+         */
+        MyWorkOut: {
+            /** Pieces */
+            pieces: components["schemas"]["MyPiece"][];
+            /** Tasks */
+            tasks: components["schemas"]["MyTask"][];
+        };
         /** OfferIn */
         OfferIn: {
             cost?: components["schemas"]["PriceIn"] | null;
@@ -4511,7 +4624,7 @@ export interface components {
          * Role
          * @enum {string}
          */
-        Role: "OWNER" | "ADMIN" | "MANAGER" | "QUOTER" | "PRODUCTION" | "VIEWER";
+        Role: "OWNER" | "ADMIN" | "MANAGER" | "QUOTER" | "PRODUCTION" | "VIEWER" | "CREW";
         /**
          * RoundingIncrement
          * @description Incremento comercial al que se redondea cada línea (DOMAIN_MODEL §5.1).
@@ -5090,6 +5203,20 @@ export interface components {
             target_margin?: number | string | null;
             /** Target Price */
             target_price?: number | string | null;
+        };
+        /** WorkEvent */
+        WorkEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mount Date */
+            mount_date: string | null;
+            /** Name */
+            name: string;
+            /** Number */
+            number: number;
         };
     };
     responses: never;
@@ -7604,6 +7731,96 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_work_api_v1_my_work_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyWorkOut"];
+                };
+            };
+        };
+    };
+    move_my_piece_api_v1_my_work_pieces__piece_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                piece_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyPieceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PieceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_my_task_api_v1_my_work_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyTaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
                 };
             };
             /** @description Validation Error */

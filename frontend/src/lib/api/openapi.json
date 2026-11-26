@@ -5888,6 +5888,161 @@
         "title": "MembershipStatus",
         "type": "string"
       },
+      "MyPiece": {
+        "properties": {
+          "area": {
+            "$ref": "#/components/schemas/PieceArea"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "event": {
+            "$ref": "#/components/schemas/WorkEvent"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "late": {
+            "title": "Late",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PieceStatus"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "area",
+          "status",
+          "due_date",
+          "late",
+          "notes",
+          "event"
+        ],
+        "title": "MyPiece",
+        "type": "object"
+      },
+      "MyPieceUpdate": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/PieceStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "MyPieceUpdate",
+        "type": "object"
+      },
+      "MyTask": {
+        "properties": {
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "event": {
+            "$ref": "#/components/schemas/WorkEvent"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "late": {
+            "title": "Late",
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "due_date",
+          "late",
+          "event"
+        ],
+        "title": "MyTask",
+        "type": "object"
+      },
+      "MyTaskUpdate": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "MyTaskUpdate",
+        "type": "object"
+      },
+      "MyWorkOut": {
+        "description": "Lo asignado a quien consulta, pendiente, en eventos abiertos: lo atrasado primero.",
+        "properties": {
+          "pieces": {
+            "items": {
+              "$ref": "#/components/schemas/MyPiece"
+            },
+            "title": "Pieces",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/MyTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pieces",
+          "tasks"
+        ],
+        "title": "MyWorkOut",
+        "type": "object"
+      },
       "OfferIn": {
         "properties": {
           "cost": {
@@ -9003,7 +9158,8 @@
           "MANAGER",
           "QUOTER",
           "PRODUCTION",
-          "VIEWER"
+          "VIEWER",
+          "CREW"
         ],
         "title": "Role",
         "type": "string"
@@ -10952,6 +11108,43 @@
           }
         },
         "title": "VersionUpdate",
+        "type": "object"
+      },
+      "WorkEvent": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mount_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mount Date"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "name",
+          "mount_date"
+        ],
+        "title": "WorkEvent",
         "type": "object"
       }
     }
@@ -14816,6 +15009,136 @@
         "summary": "Update Member",
         "tags": [
           "organization"
+        ]
+      }
+    },
+    "/api/v1/my-work": {
+      "get": {
+        "description": "Mis tareas: piezas y tareas asignadas a quien consulta, pendientes, en eventos abiertos.",
+        "operationId": "get_my_work_api_v1_my_work_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWorkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get My Work",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/my-work/pieces/{piece_id}": {
+      "patch": {
+        "description": "Cambiar la fase de una pieza propia. La de otra persona responde 404.",
+        "operationId": "move_my_piece_api_v1_my_work_pieces__piece_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "piece_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Piece Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyPieceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PieceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Move My Piece",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/my-work/tasks/{task_id}": {
+      "patch": {
+        "description": "Marcar una tarea propia en curso o hecha. La de otra persona responde 404.",
+        "operationId": "move_my_task_api_v1_my_work_tasks__task_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyTaskUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Move My Task",
+        "tags": [
+          "production"
         ]
       }
     },
