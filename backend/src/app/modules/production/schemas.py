@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.modules.production.models import HireStatus, TaskStatus
+from app.modules.production.models import HireStatus, PieceArea, PieceStatus, TaskStatus
 
 
 class HireItem(BaseModel):
@@ -66,3 +66,41 @@ class ProductionOut(BaseModel):
     suppliers: list[EventSupplierOut]
     tasks: list[TaskOut]
     budgeted_cost: Decimal | None  # total, solo con cost.view
+
+
+class PieceOut(BaseModel):
+    id: UUID
+    event_id: UUID
+    name: str
+    area: PieceArea
+    status: PieceStatus
+    assignee_user_id: UUID | None
+    assignee_name: str | None
+    due_date: date | None
+    late: bool  # vencida y todavía no está lista para cargar
+    notes: str | None
+    status_changed_at: datetime | None
+
+
+class PiecesOut(BaseModel):
+    pieces: list[PieceOut]
+    total: int
+    ready: int  # listas para carga o montadas
+    progress: int  # 0 a 100: promedio de la fase de cada pieza
+
+
+class PieceIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    area: PieceArea = PieceArea.OTHER
+    assignee_user_id: UUID | None = None
+    due_date: date | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class PieceUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    area: PieceArea | None = None
+    status: PieceStatus | None = None
+    assignee_user_id: UUID | None = None
+    due_date: date | None = None
+    notes: str | None = Field(default=None, max_length=2000)

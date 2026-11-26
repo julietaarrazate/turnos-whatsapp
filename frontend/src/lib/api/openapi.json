@@ -6549,6 +6549,291 @@
         "title": "PendingOut",
         "type": "object"
       },
+      "PieceArea": {
+        "description": "Área de fabricación de una pieza (filtro del tablero).",
+        "enum": [
+          "CARPENTRY",
+          "METAL",
+          "GRAPHICS",
+          "OTHER"
+        ],
+        "title": "PieceArea",
+        "type": "string"
+      },
+      "PieceIn": {
+        "properties": {
+          "area": {
+            "$ref": "#/components/schemas/PieceArea",
+            "default": "OTHER"
+          },
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee User Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "PieceIn",
+        "type": "object"
+      },
+      "PieceOut": {
+        "properties": {
+          "area": {
+            "$ref": "#/components/schemas/PieceArea"
+          },
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name"
+          },
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee User Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "late": {
+            "title": "Late",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PieceStatus"
+          },
+          "status_changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Changed At"
+          }
+        },
+        "required": [
+          "id",
+          "event_id",
+          "name",
+          "area",
+          "status",
+          "assignee_user_id",
+          "assignee_name",
+          "due_date",
+          "late",
+          "notes",
+          "status_changed_at"
+        ],
+        "title": "PieceOut",
+        "type": "object"
+      },
+      "PieceStatus": {
+        "description": "Fases de una pieza a medida. Se puede ir y volver (un plano rechazado vuelve a diseño).",
+        "enum": [
+          "DESIGN",
+          "TO_BUY",
+          "IN_WORKSHOP",
+          "READY",
+          "MOUNTED"
+        ],
+        "title": "PieceStatus",
+        "type": "string"
+      },
+      "PieceUpdate": {
+        "properties": {
+          "area": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PieceArea"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee User Id"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PieceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PieceUpdate",
+        "type": "object"
+      },
+      "PiecesOut": {
+        "properties": {
+          "pieces": {
+            "items": {
+              "$ref": "#/components/schemas/PieceOut"
+            },
+            "title": "Pieces",
+            "type": "array"
+          },
+          "progress": {
+            "title": "Progress",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pieces",
+          "total",
+          "ready",
+          "progress"
+        ],
+        "title": "PiecesOut",
+        "type": "object"
+      },
       "Pipeline": {
         "properties": {
           "counts": {
@@ -13746,6 +14031,101 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/pieces": {
+      "get": {
+        "description": "Las piezas a medida del evento y su avance (% promedio de fases, cuántas listas).",
+        "operationId": "list_pieces_api_v1_events__event_id__pieces_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PiecesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Pieces",
+        "tags": [
+          "production"
+        ]
+      },
+      "post": {
+        "operationId": "add_piece_api_v1_events__event_id__pieces_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PieceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PieceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Piece",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/events/{event_id}/production": {
       "get": {
         "operationId": "get_production_api_v1_events__event_id__production_get",
@@ -14823,6 +15203,94 @@
         "summary": "Update Package",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/pieces/{piece_id}": {
+      "delete": {
+        "operationId": "delete_piece_api_v1_pieces__piece_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "piece_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Piece Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Piece",
+        "tags": [
+          "production"
+        ]
+      },
+      "patch": {
+        "description": "Cambiar la fase (diseño → a comprar → taller → listo → montado, o volver), el responsable…",
+        "operationId": "update_piece_api_v1_pieces__piece_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "piece_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Piece Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PieceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PieceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Piece",
+        "tags": [
+          "production"
         ]
       }
     },

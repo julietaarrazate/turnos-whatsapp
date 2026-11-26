@@ -6,10 +6,14 @@ from fastapi import APIRouter, Depends, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.production import service
+from app.modules.production import pieces, service
 from app.modules.production.schemas import (
     EventSupplierOut,
     EventSupplierUpdate,
+    PieceIn,
+    PieceOut,
+    PiecesOut,
+    PieceUpdate,
     ProductionOut,
     TaskIn,
     TaskOut,
@@ -55,3 +59,25 @@ def update_task(task_id: UUID, body: TaskUpdate, ctx: Manage, db: DbSession) -> 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task_id: UUID, ctx: Manage, db: DbSession) -> None:
     service.delete_task(db, ctx, task_id)
+
+
+@router.get("/events/{event_id}/pieces")
+def list_pieces(event_id: UUID, ctx: View, db: DbSession) -> PiecesOut:
+    """Las piezas a medida del evento y su avance (% promedio de fases, cuántas listas)."""
+    return pieces.list_pieces(db, ctx, event_id)
+
+
+@router.post("/events/{event_id}/pieces", status_code=status.HTTP_201_CREATED)
+def add_piece(event_id: UUID, body: PieceIn, ctx: Manage, db: DbSession) -> PieceOut:
+    return pieces.add_piece(db, ctx, event_id, body)
+
+
+@router.patch("/pieces/{piece_id}")
+def update_piece(piece_id: UUID, body: PieceUpdate, ctx: Manage, db: DbSession) -> PieceOut:
+    """Cambiar la fase (diseño → a comprar → taller → listo → montado, o volver), el responsable…"""
+    return pieces.update_piece(db, ctx, piece_id, body)
+
+
+@router.delete("/pieces/{piece_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_piece(piece_id: UUID, ctx: Manage, db: DbSession) -> None:
+    pieces.delete_piece(db, ctx, piece_id)
