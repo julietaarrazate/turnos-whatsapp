@@ -19,6 +19,8 @@ export function contentSecurityPolicy(nonce: string, dev = false, sentry = sentr
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' ${dev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
     "img-src 'self' blob: data:",
+    // Notas de voz: se escuchan antes de mandar (blob:) y después desde la API ('self').
+    "media-src 'self' blob:",
     "font-src 'self'",
     `connect-src 'self'${sentry ? ` ${sentry}` : ""}`,
     "worker-src 'self'",

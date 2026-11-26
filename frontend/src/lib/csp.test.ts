@@ -12,6 +12,7 @@ describe("contentSecurityPolicy", () => {
     expect(d.get("object-src")).toBe("object-src 'none'");
     expect(d.get("frame-ancestors")).toBe("frame-ancestors 'none'");
     expect(d.get("connect-src")).toBe("connect-src 'self'");
+    expect(d.get("media-src")).toBe("media-src 'self' blob:");
   });
 
   it("en desarrollo agrega lo que necesita React (eval y estilos inline)", () => {

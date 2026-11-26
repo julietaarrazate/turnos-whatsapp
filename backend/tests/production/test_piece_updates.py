@@ -120,3 +120,58 @@ def test_closed_event_takes_no_more_updates() -> None:
     blocked = _post(manager, world.ids["piece_id"], note="Tarde")
     assert (blocked.status_code, blocked.json()["code"]) == (409, "event_locked")
     assert len(_ok(manager.get(f"/api/v1/pieces/{world.ids['piece_id']}/updates"))) == 1
+
+
+WEBM = b"\x1a\x45\xdf\xa3" + b"\x00" * 300  # firma EBML/WebM, como graba Chrome
+OGG = b"OggS" + b"\x00" * 300
+M4A = b"\x00\x00\x00\x20ftypM4A " + b"\x00" * 300  # como graba el iPhone
+
+
+def _audio(data: bytes = WEBM, name: str = "nota.webm") -> dict[str, str]:
+    return {"filename": name, "file_base64": b64encode(data).decode()}
+
+
+def test_voice_note_alone_or_with_photo_and_it_plays_back() -> None:
+    world = build_org("a")
+    production = logged_in(world.members[Role.PRODUCTION])
+    piece_id = world.ids["piece_id"]
+
+    voice = _ok(_post(production, piece_id, audio=_audio()), 201)
+    assert (voice["has_audio"], voice["has_photo"], voice["note"]) == (True, False, None)
+    played = production.get(f"/api/v1/piece-updates/{voice['id']}/audio")
+    assert played.status_code == 200
+    assert played.headers["content-type"] == "audio/webm"
+    assert played.headers["x-content-type-options"] == "nosniff"
+    assert played.content == WEBM
+
+    both = _ok(_post(production, piece_id, photo=_photo(), audio=_audio(M4A, "nota.m4a")), 201)
+    assert (both["has_photo"], both["has_audio"]) == (True, True)
+    ogg = _ok(_post(production, piece_id, audio=_audio(OGG, "nota.ogg")), 201)
+    assert (
+        production.get(f"/api/v1/piece-updates/{ogg['id']}/audio").headers["content-type"]
+        == "audio/ogg"
+    )
+
+    # Un avance sin audio no tiene qué reproducir; el de otra persona ajena, tampoco.
+    note_only = _ok(_post(production, piece_id, note="Sin audio"), 201)
+    assert production.get(f"/api/v1/piece-updates/{note_only['id']}/audio").status_code == 404
+    crew = logged_in(world.members[Role.CREW])
+    assert crew.get(f"/api/v1/piece-updates/{voice['id']}/audio").status_code == 404
+
+    viewer = logged_in(world.members[Role.VIEWER])
+    item = _ok(viewer.get("/api/v1/activity"))["items"][3]
+    assert (item["kind"], item["has_audio"], item["update_id"]) == (
+        "piece.update_posted",
+        True,
+        voice["id"],
+    )
+
+
+def test_voice_note_must_be_audio_and_short() -> None:
+    world = build_org("a")
+    production = logged_in(world.members[Role.PRODUCTION])
+    piece_id = world.ids["piece_id"]
+    fake = _post(production, piece_id, audio=_audio(JPEG, "nota.webm"))
+    assert (fake.status_code, fake.json()["code"]) == (415, "upload_unsupported")
+    long = _post(production, piece_id, audio=_audio(WEBM + b"\x00" * (2 * 1024 * 1024), "x.webm"))
+    assert long.status_code in {413, 422}  # pasa el tope del JSON (422) o el del audio (413)

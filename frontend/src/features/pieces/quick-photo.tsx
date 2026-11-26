@@ -13,6 +13,7 @@ import { api, errorMessage, unwrap } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 
 import { usePostProgress } from "./piece-progress";
+import { VoiceRecorder } from "./voice-recorder";
 
 const PIECE_PAGE = /^\/events\/[^/]+\/pieces\/([^/]+)$/;
 
@@ -50,6 +51,7 @@ function QuickPhoto({ onClose, onSent }: { onClose: () => void; onSent: () => vo
   const pathname = usePathname();
   const [file, setFile] = useState<File | null>(null);
   const [note, setNote] = useState("");
+  const [audio, setAudio] = useState<Blob | null>(null);
   // En la ficha de una pieza, la foto va a esa pieza (se puede cambiar).
   const [pieceId, setPieceId] = useState<string | null>(() => PIECE_PAGE.exec(pathname)?.[1] ?? null);
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
@@ -66,7 +68,7 @@ function QuickPhoto({ onClose, onSent }: { onClose: () => void; onSent: () => vo
       className="flex flex-col gap-3 px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
       onSubmit={(e) => {
         e.preventDefault();
-        if (pieceId) post.mutate({ pieceId, note, file });
+        if (pieceId) post.mutate({ pieceId, note, file, audio });
       }}
     >
       <div className="flex items-center justify-between">
@@ -144,6 +146,7 @@ function QuickPhoto({ onClose, onSent }: { onClose: () => void; onSent: () => vo
         </ul>
       </fieldset>
 
+      {me.uploads_enabled ? <VoiceRecorder value={audio} onChange={setAudio} /> : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Nota (opcional)
         <textarea
@@ -155,7 +158,7 @@ function QuickPhoto({ onClose, onSent }: { onClose: () => void; onSent: () => vo
           className="rounded-lg border border-line bg-surface px-3 py-2 text-base font-normal sm:text-sm"
         />
       </label>
-      <Button type="submit" size="lg" loading={post.isPending} disabled={!pieceId || (!file && !note.trim())}>
+      <Button type="submit" size="lg" loading={post.isPending} disabled={!pieceId || (!file && !audio && !note.trim())}>
         Enviar avance
       </Button>
       {post.isError ? <Notice tone="error">{errorMessage(post.error)}</Notice> : null}

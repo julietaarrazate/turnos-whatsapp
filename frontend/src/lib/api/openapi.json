@@ -169,6 +169,10 @@
           "event": {
             "$ref": "#/components/schemas/ActivityEvent"
           },
+          "has_audio": {
+            "title": "Has Audio",
+            "type": "boolean"
+          },
           "has_photo": {
             "title": "Has Photo",
             "type": "boolean"
@@ -274,6 +278,7 @@
           "note",
           "update_id",
           "has_photo",
+          "has_audio",
           "created_at"
         ],
         "title": "ActivityOut",
@@ -375,6 +380,29 @@
           }
         },
         "title": "ApproveIn",
+        "type": "object"
+      },
+      "AudioIn": {
+        "description": "Una nota de voz grabada en el teléfono (WebM, Ogg o MP4), ≤ 1 minuto (2 MB).",
+        "properties": {
+          "file_base64": {
+            "maxLength": 2800000,
+            "minLength": 4,
+            "title": "File Base64",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "file_base64"
+        ],
+        "title": "AudioIn",
         "type": "object"
       },
       "AuditLogOut": {
@@ -2401,7 +2429,8 @@
           "RECEIPT",
           "PURCHASE_ORDER",
           "PROGRESS_PHOTO",
-          "PIECE_PLAN"
+          "PIECE_PLAN",
+          "VOICE_NOTE"
         ],
         "title": "DocumentKind",
         "type": "string"
@@ -7341,6 +7370,16 @@
       },
       "PieceUpdateIn": {
         "properties": {
+          "audio": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AudioIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "note": {
             "anyOf": [
               {
@@ -7378,6 +7417,10 @@
             "title": "Created At",
             "type": "string"
           },
+          "has_audio": {
+            "title": "Has Audio",
+            "type": "boolean"
+          },
           "has_photo": {
             "title": "Has Photo",
             "type": "boolean"
@@ -7410,6 +7453,7 @@
           "author_name",
           "note",
           "has_photo",
+          "has_audio",
           "created_at"
         ],
         "title": "PieceUpdateOut",
@@ -16248,6 +16292,48 @@
           }
         },
         "summary": "Get Piece Plan File",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/piece-updates/{update_id}/audio": {
+      "get": {
+        "description": "La nota de voz de un avance (para escucharla en la ficha o en Actividad).",
+        "operationId": "get_piece_update_audio_api_v1_piece_updates__update_id__audio_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "update_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Update Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Piece Update Audio",
         "tags": [
           "production"
         ]

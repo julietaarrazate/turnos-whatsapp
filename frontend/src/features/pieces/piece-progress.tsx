@@ -13,6 +13,8 @@ import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format/date";
 import { MAX_UPLOAD_BYTES, shrinkImage, toBase64, uploadName } from "@/lib/files";
 
+import { VoiceRecorder, voiceFilename } from "./voice-recorder";
+
 type Update = Schemas["PieceUpdateOut"];
 
 export const progressKey = (pieceId: string) => ["piece-progress", pieceId] as const;
@@ -22,6 +24,10 @@ const PHOTO = { maxSide: 1600, minBytes: 300 * 1024 };
 
 export function photoUrl(updateId: string): string {
   return `/api/v1/piece-updates/${updateId}/photo`;
+}
+
+export function audioUrl(updateId: string): string {
+  return `/api/v1/piece-updates/${updateId}/audio`;
 }
 
 export function usePieceProgress(pieceId: string) {
@@ -35,7 +41,17 @@ export function usePieceProgress(pieceId: string) {
 export function usePostProgress(onDone: () => void) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ pieceId, note, file }: { pieceId: string; note: string; file: File | null }) => {
+    mutationFn: async ({
+      pieceId,
+      note,
+      file,
+      audio = null,
+    }: {
+      pieceId: string;
+      note: string;
+      file: File | null;
+      audio?: Blob | null;
+    }) => {
       let photo: Schemas["PhotoIn"] | null = null;
       if (file) {
         const blob = await shrinkImage(file, PHOTO);
@@ -45,7 +61,11 @@ export function usePostProgress(onDone: () => void) {
       return unwrap(
         await api.POST("/api/v1/pieces/{piece_id}/updates", {
           params: { path: { piece_id: pieceId } },
-          body: { note: note.trim() || null, photo },
+          body: {
+            note: note.trim() || null,
+            photo,
+            audio: audio ? { filename: voiceFilename(audio.type), file_base64: await toBase64(audio) } : null,
+          },
         }),
       );
     },
@@ -61,10 +81,12 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
   const { me } = useSession();
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [audio, setAudio] = useState<Blob | null>(null);
   const [sent, setSent] = useState(false);
   const post = usePostProgress(() => {
     setNote("");
     setFile(null);
+    setAudio(null);
     setSent(true);
     onDone?.();
   });
@@ -79,7 +101,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
       onSubmit={(e) => {
         e.preventDefault();
         setSent(false);
-        post.mutate({ pieceId, note, file });
+        post.mutate({ pieceId, note, file, audio });
       }}
     >
       {me.uploads_enabled ? (
@@ -118,6 +140,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
       ) : (
         <p className="text-sm text-ink-muted">Las fotos se activan cuando se configure el espacio de archivos. Mientras, podés dejar una nota.</p>
       )}
+      {me.uploads_enabled ? <VoiceRecorder value={audio} onChange={setAudio} /> : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         Nota (opcional)
         <textarea
@@ -129,7 +152,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
           className="rounded-lg border border-line bg-surface px-3 py-2 text-base font-normal sm:text-sm"
         />
       </label>
-      <Button type="submit" size="lg" loading={post.isPending} disabled={!file && !note.trim()}>
+      <Button type="submit" size="lg" loading={post.isPending} disabled={!file && !audio && !note.trim()}>
         Enviar avance
       </Button>
       {post.isError ? <Notice tone="error">{errorMessage(post.error)}</Notice> : null}
@@ -156,6 +179,9 @@ function UpdateItem({ update }: { update: Update }) {
         <strong>{update.author_name}</strong>
         <span className="text-ink-muted"> · {formatDateTime(update.created_at)}</span>
       </p>
+      {update.has_audio ? (
+        <audio src={audioUrl(update.id)} controls preload="none" className="h-10 w-full" aria-label={`Nota de voz de ${update.author_name}`} />
+      ) : null}
       {update.note ? <p className="text-sm whitespace-pre-line">{update.note}</p> : null}
     </li>
   );

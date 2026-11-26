@@ -142,7 +142,11 @@ class PieceProgress(IdMixin, Base):
         tenant_fk("piece_id", "event_pieces", ondelete="CASCADE"),
         tenant_fk("event_id", "events", ondelete="CASCADE"),
         tenant_fk("photo_document_id", "documents"),
-        CheckConstraint("note IS NOT NULL OR photo_document_id IS NOT NULL", name="has_content"),
+        tenant_fk("audio_document_id", "documents"),
+        CheckConstraint(
+            "note IS NOT NULL OR photo_document_id IS NOT NULL OR audio_document_id IS NOT NULL",
+            name="has_content",
+        ),
         Index("ix_piece_updates_piece_created", "piece_id", "created_at"),
         Index("ix_piece_updates_event_created", "event_id", "created_at"),
     )
@@ -153,6 +157,7 @@ class PieceProgress(IdMixin, Base):
     author_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     note: Mapped[str | None] = mapped_column(Text)
     photo_document_id: Mapped[UUID | None]
+    audio_document_id: Mapped[UUID | None]  # nota de voz (≤ 1 minuto)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
