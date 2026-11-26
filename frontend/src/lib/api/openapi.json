@@ -15832,6 +15832,46 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/download": {
+      "get": {
+        "description": "Todo el evento en un .zip ordenado en carpetas (los comprobantes, solo si ve costos).",
+        "operationId": "download_event_api_v1_events__event_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Event",
+        "tags": [
+          "production"
+        ]
+      }
+    },
     "/api/v1/events/{event_id}/expected-files": {
       "post": {
         "description": "Agregar a la lista de archivos que el evento tiene que tener (devuelve la pestaña).",
