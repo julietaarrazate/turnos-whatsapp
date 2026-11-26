@@ -147,7 +147,7 @@ function AddFile({ eventId, pieces }: { eventId: string; pieces: { id: string; n
         if (ready) add.mutate();
       }}
     >
-      <div role="group" aria-label="Archivo o link" className="grid grid-cols-2 gap-1 rounded-lg bg-subtle p-1">
+      <div role="group" aria-label="Cómo se agrega" className="grid grid-cols-2 gap-1 rounded-lg bg-subtle p-1">
         {(
           [
             ["file", "Subir archivo"],
