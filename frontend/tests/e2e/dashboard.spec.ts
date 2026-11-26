@@ -34,3 +34,19 @@ test("reporte de rentabilidad con CSV e historial del cliente", async ({ page })
   await page.locator('main a[href^="/clients/"]:not([href="/clients/new"])').first().click();
   await expect(page.getByRole("region", { name: "Historial comercial" })).toContainText("Facturado histórico");
 });
+
+test("si el servidor quedó atrás en un deploy, el inicio igual carga", async ({ page }) => {
+  await login(page);
+  // Simula la API anterior: sin el pulso ni lo operativo de "para hacer hoy".
+  await page.route("**/api/v1/dashboard?*", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    delete body.active;
+    delete body.todo.operations;
+    await route.fulfill({ response, json: body });
+  });
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Pulso" }).getByRole("heading", { name: /Buen[oa]s/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Indicadores" })).toContainText("Enviado");
+  await expect(page.getByText("No se pudo cargar esta pantalla")).toHaveCount(0);
+});

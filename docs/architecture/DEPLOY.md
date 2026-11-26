@@ -7,7 +7,7 @@
 | Pieza | Dónde | Estado |
 |---|---|---|
 | Base de datos | Neon, proyecto `productoras-staging` (aws-us-east-1, Postgres 16), base `app` | ✅ Roles `app_migrator`/`app_runtime` creados por SQL (sin privilegios de Neon). Migraciones en 0003. RLS forzada verificada. |
-| API | Render, `productoras-api-staging` (Virginia, free, Docker), https://productoras-api-staging.onrender.com | ✅ En línea. Migra al arrancar. Despliega la rama de trabajo (staging de lo último); `main` es la versión estable. |
+| API | Render, `productoras-api-staging` (Virginia, free, Docker), https://productoras-api-staging.onrender.com | ✅ En línea. Migra al arrancar. Despliega la rama `claude/happy-maxwell-isce4u`, que el workflow `sync-render.yml` adelanta a `main` en cada push: backend y frontend quedan siempre en la misma versión, sin tocar Render. |
 | Frontend | Vercel, `productoras-web` (Hobby, Root Directory `frontend`, Next.js), https://productoras-web.vercel.app | ✅ En línea. Despliega `main` a producción. |
 | Email | — | Consola (sin Resend). Las invitaciones muestran su link en la app para mandarlo por WhatsApp; el de cambio de contraseña queda solo en los logs de Render. |
 | Archivos (comprobantes, OC) | — | Apagado hasta crear el bucket (sección 4b). La app no muestra "adjuntar". |

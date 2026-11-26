@@ -1,0 +1,40 @@
+name: Sincronizar el backend (Render)
+
+# Render publica la API desde la rama RENDER_BRANCH y Vercel publica el frontend desde main. Si
+# quedan en versiones distintas, la pantalla pide datos que el servidor no tiene (pasó el
+# 26/11/2026). Cada push a main adelanta esa rama a main y Render la publica solo.
+# Solo avanza (fast-forward): si la rama tuviera commits que no están en main, el push se rechaza
+# y este job falla a la vista, sin pisar nada.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: sync-render
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  RENDER_BRANCH: claude/happy-maxwell-isce4u
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Adelantar la rama de Render hasta main
+        run: |
+          git fetch origin "$RENDER_BRANCH" || true
+          if git rev-parse --verify --quiet "origin/$RENDER_BRANCH" >/dev/null &&
+             ! git merge-base --is-ancestor "origin/$RENDER_BRANCH" HEAD; then
+            echo "::error::$RENDER_BRANCH tiene commits que no están en main: no se pisa. Revisarla a mano."
+            exit 1
+          fi
+          git push origin "HEAD:refs/heads/$RENDER_BRANCH"
+          echo "Render va a publicar $(git rev-parse --short HEAD)."

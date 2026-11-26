@@ -54,7 +54,8 @@ function pendingText(p: Pending): string {
 
 function Todo({ data }: { data: Dashboard["todo"] }) {
   const items = [
-    ...data.operations.map((p) => ({
+    // `?? []`: si el servidor todavía no se actualizó (deploy a destiempo), la sección no aparece.
+    ...(data.operations ?? []).map((p) => ({
       count: p.count,
       text: pendingText(p),
       href: `/events/${p.event_id}/production`,
@@ -233,7 +234,7 @@ export function DashboardView({ greeting }: { greeting: string }) {
       {query.isError ? <Notice tone="error">{errorMessage(query.error)}</Notice> : null}
       {query.data ? (
         <>
-          <ActiveEvents events={query.data.active} />
+          <ActiveEvents events={query.data.active ?? []} />
           <Todo data={query.data.todo} />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-bold tracking-tight">Comercial</h2>
