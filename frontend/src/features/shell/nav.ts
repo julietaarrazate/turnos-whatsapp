@@ -36,21 +36,27 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * Barra inferior en mobile: 2 destinos, el botón central y 2 destinos. Cambia según el rol:
- * producción tiene la cámara al medio, "Actividad" y "Mis tareas" (como la maqueta); lo comercial,
- * "+", "Presupuestos" y "Más" (la configuración y el resto de las secciones).
+ * Barra inferior en mobile: 2 destinos, el botón central, 1 destino y "Más" (una hoja con todas
+ * las demás secciones). Cambia según el rol: producción tiene la cámara al medio y "Mis tareas";
+ * lo comercial, "+" y "Presupuestos". Actividad está a un toque en la campanita.
  */
 export interface MobileBar {
   left: string[];
-  right: string[];
+  right: string;
   center: "camera" | "create";
 }
 
 export function mobileBar(can: (permission: Permission) => boolean): MobileBar {
   const field = can("production.manage") && !can("budget.edit");
   return field
-    ? { left: ["/", "/events"], right: ["/activity", "/my-work"], center: "camera" }
-    : { left: ["/", "/events"], right: ["/budgets", "/settings"], center: "create" };
+    ? { left: ["/", "/events"], right: "/my-work", center: "camera" }
+    : { left: ["/", "/events"], right: "/budgets", center: "create" };
+}
+
+/** Lo que va en "Más": todo lo que no está en la barra, en el orden del menú. */
+export function moreItems(bar: MobileBar): NavItem[] {
+  const inBar = new Set([...bar.left, bar.right]);
+  return NAV_ITEMS.filter((item) => !inBar.has(item.href));
 }
 
 export function isActive(pathname: string, href: string): boolean {

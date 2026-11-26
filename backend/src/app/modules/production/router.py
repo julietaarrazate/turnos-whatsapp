@@ -10,6 +10,7 @@ from app.modules.auth import TenantContext, require
 from app.modules.production import activity, my_work, pieces, plans, service, updates
 from app.modules.production.schemas import (
     ActivityPage,
+    ActivitySeenIn,
     EventSupplierOut,
     EventSupplierUpdate,
     MyPieceUpdate,
@@ -28,6 +29,7 @@ from app.modules.production.schemas import (
     TaskIn,
     TaskOut,
     TaskUpdate,
+    UnreadOut,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["production"])
@@ -170,3 +172,15 @@ def get_activity(
 def get_piece_update_audio(update_id: UUID, ctx: OwnWork, db: DbSession) -> Response:
     """La nota de voz de un avance (para escucharla en la ficha o en Actividad)."""
     return updates.update_audio(db, ctx, update_id)
+
+
+@router.get("/activity/unread")
+def get_activity_unread(ctx: View, db: DbSession) -> UnreadOut:
+    """La campanita: movimientos de otros desde la última vez que se abrió Actividad."""
+    return activity.unread(db, ctx)
+
+
+@router.post("/activity/seen")
+def mark_activity_seen(body: ActivitySeenIn, ctx: View, db: DbSession) -> UnreadOut:
+    """Abrir Actividad apaga la campanita (para quien la abre, no para los demás)."""
+    return activity.mark_seen(db, ctx)

@@ -25,6 +25,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/activity/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Activity Seen
+         * @description Abrir Actividad apaga la campanita (para quien la abre, no para los demás).
+         */
+        post: operations["mark_activity_seen_api_v1_activity_seen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/activity/unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Activity Unread
+         * @description La campanita: movimientos de otros desde la última vez que se abrió Actividad.
+         */
+        get: operations["get_activity_unread_api_v1_activity_unread_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-logs": {
         parameters: {
             query?: never;
@@ -2136,6 +2176,11 @@ export interface components {
             /** Next Before */
             next_before: string | null;
         };
+        /**
+         * ActivitySeenIn
+         * @description Sin datos: marca "visto hasta ahora".
+         */
+        ActivitySeenIn: Record<string, never>;
         /** AmountOut */
         AmountOut: {
             /** Amount */
@@ -5397,6 +5442,16 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * UnreadOut
+         * @description La campanita: cuántos movimientos de otros hay desde la última vez que se miró.
+         */
+        UnreadOut: {
+            /** Count */
+            count: number;
+            /** Seen At */
+            seen_at: string | null;
+        };
         /** UpcomingEvent */
         UpcomingEvent: {
             /** Client Name */
@@ -5633,6 +5688,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_activity_seen_api_v1_activity_seen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivitySeenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_activity_unread_api_v1_activity_unread_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadOut"];
                 };
             };
         };

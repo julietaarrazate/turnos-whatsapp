@@ -59,3 +59,36 @@ def test_feed_shows_production_moves_newest_first() -> None:
     # El taller tiene su lista (Mis tareas), no la actividad de toda la productora.
     crew = logged_in(world.members[Role.CREW])
     assert crew.get("/api/v1/activity").status_code == 403
+
+
+def test_bell_counts_moves_of_others_until_activity_is_opened() -> None:
+    world = build_org("a")
+    owner = logged_in(world.members[Role.OWNER])
+    production = logged_in(world.members[Role.PRODUCTION])
+    piece_id = world.ids["piece_id"]
+
+    # Lo propio no avisa; lo de otros sí.
+    _ok(owner.patch(f"/api/v1/pieces/{piece_id}", json={"status": "TO_BUY"}))
+    assert _ok(owner.get("/api/v1/activity/unread"))["count"] == 0
+    _ok(production.patch(f"/api/v1/pieces/{piece_id}", json={"status": "IN_WORKSHOP"}))
+    _ok(production.post(f"/api/v1/pieces/{piece_id}/updates", json={"note": "Ya en taller"}), 201)
+    bell = _ok(owner.get("/api/v1/activity/unread"))
+    assert (bell["count"], bell["seen_at"]) == (2, None)
+
+    # Abrir Actividad apaga la campanita de quien la abre, no la de los demás.
+    seen = _ok(owner.post("/api/v1/activity/seen", json={}))
+    assert (seen["count"], seen["seen_at"] is not None) == (0, True)
+    assert _ok(owner.get("/api/v1/activity/unread"))["count"] == 0
+    assert _ok(production.get("/api/v1/activity/unread"))["count"] == 1  # el TO_BUY del dueño
+
+    _ok(production.patch(f"/api/v1/pieces/{piece_id}", json={"status": "READY"}))
+    again = _ok(owner.get("/api/v1/activity/unread"))
+    assert again["count"] == 1
+    assert again["seen_at"] is not None
+    # Marcar dos veces no duplica nada.
+    _ok(owner.post("/api/v1/activity/seen", json={}))
+    _ok(owner.post("/api/v1/activity/seen", json={}))
+    assert _ok(owner.get("/api/v1/activity/unread"))["count"] == 0
+
+    crew = logged_in(world.members[Role.CREW])
+    assert crew.get("/api/v1/activity/unread").status_code == 403

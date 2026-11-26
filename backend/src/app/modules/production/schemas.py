@@ -253,3 +253,14 @@ class ActivityOut(BaseModel):
 class ActivityPage(BaseModel):
     items: list[ActivityOut]
     next_before: datetime | None  # para pedir los anteriores
+
+
+class UnreadOut(BaseModel):
+    """La campanita: cuántos movimientos de otros hay desde la última vez que se miró."""
+
+    count: int  # hasta UNREAD_CAP; la pantalla muestra "99+"
+    seen_at: datetime | None  # para marcar como "nuevo" lo posterior
+
+
+class ActivitySeenIn(BaseModel):
+    """Sin datos: marca "visto hasta ahora"."""

@@ -313,6 +313,12 @@
         "title": "ActivityPage",
         "type": "object"
       },
+      "ActivitySeenIn": {
+        "description": "Sin datos: marca \"visto hasta ahora\".",
+        "properties": {},
+        "title": "ActivitySeenIn",
+        "type": "object"
+      },
       "AmountOut": {
         "properties": {
           "amount": {
@@ -11043,6 +11049,33 @@
         "title": "UnitOut",
         "type": "object"
       },
+      "UnreadOut": {
+        "description": "La campanita: cuántos movimientos de otros hay desde la última vez que se miró.",
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seen At"
+          }
+        },
+        "required": [
+          "count",
+          "seen_at"
+        ],
+        "title": "UnreadOut",
+        "type": "object"
+      },
       "UpcomingEvent": {
         "properties": {
           "client_name": {
@@ -11766,6 +11799,70 @@
           }
         },
         "summary": "Get Activity",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/activity/seen": {
+      "post": {
+        "description": "Abrir Actividad apaga la campanita (para quien la abre, no para los demás).",
+        "operationId": "mark_activity_seen_api_v1_activity_seen_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivitySeenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark Activity Seen",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/activity/unread": {
+      "get": {
+        "description": "La campanita: movimientos de otros desde la última vez que se abrió Actividad.",
+        "operationId": "get_activity_unread_api_v1_activity_unread_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Activity Unread",
         "tags": [
           "production"
         ]

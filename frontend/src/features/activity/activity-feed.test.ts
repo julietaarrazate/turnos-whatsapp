@@ -1,6 +1,6 @@
 import { describe as group, expect, it } from "vitest";
 
-import { describe, timeAgo } from "./activity-feed";
+import { describe, isNewSince, timeAgo } from "./activity-feed";
 
 const base = {
   id: "1",
@@ -39,5 +39,11 @@ group("actividad", () => {
     expect(timeAgo("2026-11-26T11:55:00Z", now)).toBe("hace 5 min");
     expect(timeAgo("2026-11-26T09:00:00Z", now)).toBe("hace 3 h");
     expect(timeAgo("2026-11-25T10:00:00Z", now)).toBe("ayer");
+  });
+
+  it("marca como nuevo lo posterior a la última vez que se miró", () => {
+    expect(isNewSince("2026-11-26T12:00:01Z", "2026-11-26T09:00:00-03:00")).toBe(true);
+    expect(isNewSince("2026-11-26T11:59:59Z", "2026-11-26T09:00:00-03:00")).toBe(false);
+    expect(isNewSince("2026-11-26T12:00:00Z", null)).toBe(false);
   });
 });

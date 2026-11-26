@@ -360,6 +360,7 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/my-work/pieces/{piece_id}"): {"status": "IN_WORKSHOP"},
     ("PATCH", "/api/v1/my-work/tasks/{task_id}"): {"status": "DONE"},
     ("POST", "/api/v1/pieces/{piece_id}/updates"): {"note": "Letras cortadas"},
+    ("POST", "/api/v1/activity/seen"): {},
     ("POST", "/api/v1/pieces/{piece_id}/plans"): {
         "title": "Plano de corte",
         "filename": "plano.pdf",

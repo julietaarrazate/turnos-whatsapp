@@ -10,6 +10,7 @@ import { useSession } from "@/features/auth/session";
 import { ApiError, api, errorMessage, unwrap } from "@/lib/api/client";
 import type { Schemas } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
+import { LIVE } from "@/lib/live";
 import { formatDateTime } from "@/lib/format/date";
 import { MAX_UPLOAD_BYTES, shrinkImage, toBase64, uploadName } from "@/lib/files";
 
@@ -32,6 +33,7 @@ export function audioUrl(updateId: string): string {
 
 export function usePieceProgress(pieceId: string) {
   return useQuery({
+    ...LIVE,
     queryKey: progressKey(pieceId),
     queryFn: async () =>
       unwrap(await api.GET("/api/v1/pieces/{piece_id}/updates", { params: { path: { piece_id: pieceId } } })),
@@ -138,7 +140,7 @@ export function ProgressForm({ pieceId, pieceName, onDone }: { pieceId: string; 
           </label>
         )
       ) : (
-        <p className="text-sm text-ink-muted">Las fotos se activan cuando se configure el espacio de archivos. Mientras, podés dejar una nota.</p>
+        <p className="text-sm text-ink-muted">Las fotos y las notas de voz se activan cuando se conecte el espacio de archivos. Mientras, podés dejar una nota escrita.</p>
       )}
       {me.uploads_enabled ? <VoiceRecorder value={audio} onChange={setAudio} /> : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
