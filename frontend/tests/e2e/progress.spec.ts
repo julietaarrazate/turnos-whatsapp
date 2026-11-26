@@ -80,7 +80,7 @@ test("producción: la cámara está a un toque (en el celular, el botón del med
   const sheet = production.getByRole("dialog", { name: "Foto de avance" });
   await sheet.getByLabel("Foto del avance").setInputFiles({ name: "totem.jpg", mimeType: "image/jpeg", buffer: JPEG });
   await sheet.getByRole("radio", { name: new RegExp(`Tótem ${suffix}`) }).check();
-  await sheet.getByLabel("Nota (opcional)").fill("Impreso, falta laminar");
+  await sheet.getByLabel("Nota (opcional)").fill(`Impreso, falta laminar ${suffix}`);
   await sheet.getByRole("button", { name: "Enviar avance" }).click();
   await expect(production.getByRole("status").filter({ hasText: "Avance enviado" })).toBeVisible();
 
@@ -88,12 +88,12 @@ test("producción: la cámara está a un toque (en el celular, el botón del med
   await production.goto("/activity");
   const moves = production.getByRole("region", { name: "Movimientos" });
   await expect(moves.getByText(`subió una foto de avance de Tótem ${suffix}`)).toBeVisible();
-  await expect(moves.getByText("“Impreso, falta laminar”")).toBeVisible();
+  await expect(moves.getByText(`“Impreso, falta laminar ${suffix}”`)).toBeVisible();
   await expect(moves.getByRole("img", { name: `Foto de avance de Tótem ${suffix}` })).toBeVisible();
   await context.close();
 
   const updates = await json<{ note: string; has_photo: boolean }[]>(
     await page.request.get(`/api/v1/pieces/${piece.id}/updates`, { headers: H }),
   );
-  expect(updates[0]).toMatchObject({ note: "Impreso, falta laminar", has_photo: true });
+  expect(updates[0]).toMatchObject({ note: `Impreso, falta laminar ${suffix}`, has_photo: true });
 });
