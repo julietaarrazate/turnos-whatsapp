@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, LogOut, Plus, Search } from "lucide-react";
+import { Camera, LogOut, Menu, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -13,7 +13,7 @@ import { CommandPalette } from "./command-palette";
 import { ActivityBell } from "@/features/activity/bell";
 import { QuickPhotoDialog } from "@/features/pieces/quick-photo";
 
-import { NAV_ITEMS, isActive, mobileBar } from "./nav";
+import { NAV_ITEMS, isActive, mobileBar, moreItems } from "./nav";
 
 const QUICK_ACTIONS: { label: string; href?: string; phase?: number }[] = [
   { label: "Nuevo presupuesto", href: "/budgets/new" },
@@ -90,7 +90,10 @@ function FullShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { me, logout, can } = useSession();
   const quickActions = useRef<HTMLDialogElement>(null);
+  const more = useRef<HTMLDialogElement>(null);
   const bar = mobileBar(can);
+  const extra = moreItems(bar);
+  const inMore = extra.some((item) => isActive(pathname, item.href));
   const byHref = (href: string) => NAV_ITEMS.find((item) => item.href === href)!;
   const [photo, setPhoto] = useState(false);
   const [sent, setSent] = useState(false);
@@ -229,25 +232,66 @@ function FullShell({ children }: { children: React.ReactNode }) {
               </button>
             )}
           </li>
-          {bar.right.map((href) => (href === "/settings" ? { ...byHref(href), label: "Más" } : byHref(href))).map(
-            ({ href, label, icon: Icon }) => (
+          {[byHref(bar.right)].map(({ href, label, icon: Icon }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                aria-current={isActive(pathname, href) ? "page" : undefined}
+                className={cn(
+                  "flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold",
+                  isActive(pathname, href) ? "text-brand" : "text-ink-muted",
+                )}
+              >
+                <Icon className="size-6" aria-hidden />
+                {label}
+              </Link>
+            </li>
+          ))}
+          <li>
+            <button
+              type="button"
+              onClick={() => more.current?.showModal()}
+              className={cn(
+                "flex h-full w-full flex-col items-center justify-center gap-0.5 text-xs font-semibold",
+                inMore ? "text-brand" : "text-ink-muted",
+              )}
+            >
+              <Menu className="size-6" aria-hidden />
+              Más
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      {/* "Más": todas las secciones que no entran en la barra */}
+      <dialog
+        ref={more}
+        aria-label="Más secciones"
+        onClick={(event) => event.target === more.current && more.current?.close()}
+        className="m-0 mt-auto w-full max-w-none rounded-t-2xl border-0 bg-surface p-0 backdrop:bg-ink/30"
+      >
+        <div className="mx-auto my-3 h-1 w-10 rounded-full bg-line" aria-hidden />
+        <nav aria-label="Más secciones" className="px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <ul className="grid grid-cols-3 gap-2">
+            {extra.map(({ href, label, icon: Icon }) => (
               <li key={href}>
                 <Link
                   href={href}
+                  onClick={() => more.current?.close()}
                   aria-current={isActive(pathname, href) ? "page" : undefined}
                   className={cn(
-                    "flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold",
-                    isActive(pathname, href) ? "text-brand" : "text-ink-muted",
+                    "flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold",
+                    isActive(pathname, href) ? "border-brand bg-brand/[0.06] text-brand" : "border-line text-ink",
                   )}
                 >
                   <Icon className="size-6" aria-hidden />
                   {label}
                 </Link>
               </li>
-            ),
-          )}
-        </ul>
-      </nav>
+            ))}
+          </ul>
+        </nav>
+      </dialog>
 
       {/* Bottom sheet de acciones rápidas */}
       <dialog

@@ -12,6 +12,15 @@ test("en el celular hay barra inferior y acciones rápidas", async ({ page, isMo
   await expect(page.getByRole("dialog", { name: "Crear" })).toBeVisible();
   await page.getByRole("link", { name: "Nuevo presupuesto" }).click();
   await expect(page).toHaveURL(/\/budgets\/new$/);
+
+  // "Más" abre todas las secciones que no entran en la barra (antes llevaba solo a Configuración).
+  await bottomNav.getByRole("button", { name: "Más" }).click();
+  const more = page.getByRole("dialog", { name: "Más secciones" });
+  for (const name of ["Mis tareas", "Actividad", "Catálogo", "Clientes", "Proveedores", "Reportes", "Configuración"]) {
+    await expect(more.getByRole("link", { name })).toBeVisible();
+  }
+  await more.getByRole("link", { name: "Clientes" }).click();
+  await expect(page).toHaveURL(/\/clients$/);
 });
 
 test("en desktop hay sidebar y ⌘K navega", async ({ page, isMobile }) => {

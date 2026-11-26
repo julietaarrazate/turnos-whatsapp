@@ -68,10 +68,10 @@ test("producción: la cámara está a un toque (en el celular, el botón del med
   const production = await context.newPage();
   await login(production, "/", PRODUCTION);
   if (isMobile) {
-    // Barra de producción (como la maqueta): Inicio · Eventos · [cámara] · Actividad · Mis tareas.
+    // Barra de producción: Inicio · Eventos · [cámara] · Mis tareas · Más (Actividad, en la campanita).
     const bar = production.getByRole("navigation", { name: "Principal" }).last();
     await expect(bar.getByRole("link", { name: "Mis tareas" })).toBeVisible();
-    await expect(bar.getByRole("link", { name: "Actividad" })).toBeVisible();
+    await expect(bar.getByRole("button", { name: "Más" })).toBeVisible();
     await expect(bar.getByRole("link", { name: "Presupuestos" })).toHaveCount(0);
   }
   // Uno solo visible: el del medio de la barra (celular) o el del menú lateral (computadora).
