@@ -2,6 +2,7 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
+  ClipboardCheck,
   FileText,
   Home,
   Package,
@@ -20,6 +21,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Inicio", icon: Home },
+  { href: "/my-work", label: "Mis tareas", icon: ClipboardCheck },
   { href: "/events", label: "Eventos", icon: CalendarDays },
   { href: "/budgets", label: "Presupuestos", icon: FileText },
   { href: "/catalog", label: "Catálogo", icon: Package },

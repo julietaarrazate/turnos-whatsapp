@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useSession } from "@/features/auth/session";
 import { FollowUpCard } from "@/features/budgets/follow-up-card";
 import { DashboardView } from "@/features/dashboard/dashboard";
+import { MyWork } from "@/features/my-work/my-work";
 
 function greeting(): string {
   const hour = Number(
@@ -18,6 +19,8 @@ export default function DashboardPage() {
   const { me, can } = useSession();
   const firstName = me.user.name.split(" ")[0];
   const title = `${greeting()}, ${firstName}`;
+  // Taller/montaje: su inicio es lo que tiene asignado.
+  if (!can("org.view")) return <MyWork />;
   if (can("dashboard.view")) {
     return (
       <div className="flex flex-col gap-5">
@@ -30,7 +33,11 @@ export default function DashboardPage() {
     <>
       <PageHeader title={title} description="Lo que pasa hoy en tu productora." />
       <section className="rounded-xl border border-line bg-surface p-6 text-sm text-ink-muted">
-        Tus eventos y tareas están en{" "}
+        Lo que tenés asignado está en{" "}
+        <Link href="/my-work" className="text-accent underline">
+          Mis tareas
+        </Link>
+        , y los eventos en{" "}
         <Link href="/events" className="text-accent underline">
           Eventos
         </Link>

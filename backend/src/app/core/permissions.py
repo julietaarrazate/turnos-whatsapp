@@ -31,12 +31,14 @@ class Permission(StrEnum):
     PRODUCTION_MANAGE = "production.manage"
     EXPENSES_EDIT = "expenses.edit"
     EVENT_CLOSE = "event.close"
+    WORK_OWN = "work.own"  # "Mis tareas": ver y mover las piezas y tareas asignadas a uno
 
 
 P = Permission
 
 _COMMERCIAL = {
     P.ORG_VIEW,
+    P.WORK_OWN,
     P.MEMBERS_VIEW,
     P.DASHBOARD_VIEW,
     P.COST_VIEW,
@@ -70,9 +72,18 @@ ROLE_PERMISSIONS: Mapping[Role, frozenset[Permission]] = {
     Role.QUOTER: frozenset(_COMMERCIAL),
     # Producción ve costos (paga proveedores) pero nunca márgenes.
     Role.PRODUCTION: frozenset(
-        {P.ORG_VIEW, P.MEMBERS_VIEW, P.COST_VIEW, P.PRODUCTION_MANAGE, P.EXPENSES_EDIT}
+        {
+            P.ORG_VIEW,
+            P.MEMBERS_VIEW,
+            P.COST_VIEW,
+            P.PRODUCTION_MANAGE,
+            P.EXPENSES_EDIT,
+            P.WORK_OWN,
+        }
     ),
-    Role.VIEWER: frozenset({P.ORG_VIEW, P.MEMBERS_VIEW, P.DASHBOARD_VIEW}),
+    Role.VIEWER: frozenset({P.ORG_VIEW, P.MEMBERS_VIEW, P.DASHBOARD_VIEW, P.WORK_OWN}),
+    # Taller/montaje: ni presupuestos, ni clientes, ni plata. Solo lo que tiene asignado.
+    Role.CREW: frozenset({P.WORK_OWN}),
 }
 
 # Configuración de la organización: si VIEWER puede ver costos y márgenes.

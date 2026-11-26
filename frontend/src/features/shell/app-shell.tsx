@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { ROLE_LABELS } from "@/features/auth/roles";
 import { useSession } from "@/features/auth/session";
 import { cn } from "@/lib/cn";
 
@@ -54,7 +55,35 @@ function openPalette() {
   window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
 }
 
+/** Taller/montaje: sin menú ni "+", solo lo suyo. El servidor igual le niega todo lo demás. */
+function CrewShell({ children }: { children: React.ReactNode }) {
+  const { me, logout } = useSession();
+  return (
+    <div className="min-h-dvh">
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-brand px-4 text-white">
+        <OrganizationSwitcher />
+        <span className="truncate text-sm text-white/80">· {me.user.name}</span>
+        <button
+          type="button"
+          onClick={logout}
+          aria-label="Cerrar sesión"
+          className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white"
+        >
+          <LogOut className="size-5" aria-hidden />
+        </button>
+      </header>
+      <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-10">{children}</main>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { can } = useSession();
+  if (!can("org.view")) return <CrewShell>{children}</CrewShell>;
+  return <FullShell>{children}</FullShell>;
+}
+
+function FullShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { me, logout } = useSession();
   const quickActions = useRef<HTMLDialogElement>(null);
@@ -103,7 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2 border-t border-line p-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{me.user.name}</p>
-            <p className="truncate text-xs text-ink-muted">{me.role}</p>
+            <p className="truncate text-xs text-ink-muted">{me.role ? ROLE_LABELS[me.role] : null}</p>
           </div>
           <button
             type="button"

@@ -6,10 +6,13 @@ from fastapi import APIRouter, Depends, status
 from app.core.db import DbSession
 from app.core.permissions import Permission
 from app.modules.auth import TenantContext, require
-from app.modules.production import pieces, service
+from app.modules.production import my_work, pieces, service
 from app.modules.production.schemas import (
     EventSupplierOut,
     EventSupplierUpdate,
+    MyPieceUpdate,
+    MyTaskUpdate,
+    MyWorkOut,
     PieceIn,
     PieceOut,
     PiecesOut,
@@ -24,6 +27,7 @@ router = APIRouter(prefix="/api/v1", tags=["production"])
 
 View = Annotated[TenantContext, Depends(require(Permission.ORG_VIEW))]
 Manage = Annotated[TenantContext, Depends(require(Permission.PRODUCTION_MANAGE))]
+OwnWork = Annotated[TenantContext, Depends(require(Permission.WORK_OWN))]
 
 
 @router.post("/events/{event_id}/start-production")
@@ -81,3 +85,21 @@ def update_piece(piece_id: UUID, body: PieceUpdate, ctx: Manage, db: DbSession) 
 @router.delete("/pieces/{piece_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_piece(piece_id: UUID, ctx: Manage, db: DbSession) -> None:
     pieces.delete_piece(db, ctx, piece_id)
+
+
+@router.get("/my-work")
+def get_my_work(ctx: OwnWork, db: DbSession) -> MyWorkOut:
+    """Mis tareas: piezas y tareas asignadas a quien consulta, pendientes, en eventos abiertos."""
+    return my_work.my_work(db, ctx)
+
+
+@router.patch("/my-work/pieces/{piece_id}")
+def move_my_piece(piece_id: UUID, body: MyPieceUpdate, ctx: OwnWork, db: DbSession) -> PieceOut:
+    """Cambiar la fase de una pieza propia. La de otra persona responde 404."""
+    return my_work.move_my_piece(db, ctx, piece_id, body.status)
+
+
+@router.patch("/my-work/tasks/{task_id}")
+def move_my_task(task_id: UUID, body: MyTaskUpdate, ctx: OwnWork, db: DbSession) -> TaskOut:
+    """Marcar una tarea propia en curso o hecha. La de otra persona responde 404."""
+    return my_work.move_my_task(db, ctx, task_id, body.status)

@@ -337,6 +337,8 @@ SAMPLE_BODIES: dict[tuple[str, str], Body] = {
     ("PATCH", "/api/v1/tasks/{task_id}"): {"status": "DONE"},
     ("POST", "/api/v1/events/{event_id}/pieces"): {"name": "Mostrador", "area": "CARPENTRY"},
     ("PATCH", "/api/v1/pieces/{piece_id}"): {"status": "IN_WORKSHOP"},
+    ("PATCH", "/api/v1/my-work/pieces/{piece_id}"): {"status": "IN_WORKSHOP"},
+    ("PATCH", "/api/v1/my-work/tasks/{task_id}"): {"status": "DONE"},
     ("POST", "/api/v1/events/{event_id}/expenses"): lambda w: {
         "description": "Flete extra",
         "amount": "15000",

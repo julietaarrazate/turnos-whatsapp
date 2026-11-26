@@ -8,6 +8,7 @@ class Role(StrEnum):
     QUOTER = "QUOTER"
     PRODUCTION = "PRODUCTION"
     VIEWER = "VIEWER"
+    CREW = "CREW"  # taller / montaje: solo ve y mueve lo que tiene asignado
 
 
 class TaxCondition(StrEnum):

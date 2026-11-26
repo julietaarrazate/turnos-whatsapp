@@ -104,3 +104,48 @@ class PieceUpdate(BaseModel):
     assignee_user_id: UUID | None = None
     due_date: date | None = None
     notes: str | None = Field(default=None, max_length=2000)
+
+
+# --- Mis tareas (taller / montaje) ----------------------------------------------------------
+
+
+class WorkEvent(BaseModel):
+    id: UUID
+    number: int
+    name: str
+    mount_date: date | None  # inicio menos días de armado; None = fecha a confirmar
+
+
+class MyPiece(BaseModel):
+    id: UUID
+    name: str
+    area: PieceArea
+    status: PieceStatus
+    due_date: date | None
+    late: bool
+    notes: str | None
+    event: WorkEvent
+
+
+class MyTask(BaseModel):
+    id: UUID
+    title: str
+    status: TaskStatus
+    due_date: date | None
+    late: bool
+    event: WorkEvent
+
+
+class MyWorkOut(BaseModel):
+    """Lo asignado a quien consulta, pendiente, en eventos abiertos: lo atrasado primero."""
+
+    pieces: list[MyPiece]
+    tasks: list[MyTask]
+
+
+class MyPieceUpdate(BaseModel):
+    status: PieceStatus
+
+
+class MyTaskUpdate(BaseModel):
+    status: TaskStatus

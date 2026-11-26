@@ -57,6 +57,7 @@ Cada dato se carga **una sola vez** y alimenta todo lo que sigue.
 | Productor/a comercial | QUOTER | Armar presupuestos rápido, enviarlos y seguirlos. | Desktop (armar), celular (ajustar, compartir) |
 | Jefe/a de producción | PRODUCTION | Ejecutar el evento aprobado, contratar proveedores y cargar costos reales. | Celular en campo |
 | Socio/a, contador/a | VIEWER | Consultar sin modificar. | Ambos |
+| Taller / montaje | CREW | Ver lo que tiene asignado (piezas y tareas) y avisar en qué está. | Celular en taller y en predio |
 | **Cliente final** (externo) | — (link público) | Ver la propuesta, aceptarla o rechazarla y descargar el PDF. | Celular |
 | Proveedor (externo, V2+) | — | Recibir pedidos de cotización y órdenes de compra. | — |
 
@@ -488,28 +489,30 @@ Todas las métricas son **sin IVA**, en la moneda base de la organización (ARS)
 
 Roles fijos en el MVP (los roles personalizados quedan para V2). Una persona puede tener un rol distinto en cada organización.
 
-| Capacidad | OWNER | ADMIN | MANAGER | QUOTER | PRODUCTION | VIEWER |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| Ver dashboard comercial | ✓ | ✓ | ✓ | propio | — | ✓ |
-| **Ver costos de proveedor** | ✓ | ✓ | ✓ | ✓ | ✓ | config. |
-| **Ver markup / margen / ganancia** | ✓ | ✓ | ✓ | ✓ | — | config. |
-| Clientes: crear/editar | ✓ | ✓ | ✓ | ✓ | — | — |
-| Proveedores y catálogo: editar | ✓ | ✓ | ✓ | — | — | — |
-| **Cambiar costos / aumento masivo / importar** | ✓ | ✓ | ✓ | — | — | — |
-| Configuración de pricing (markups por categoría, margen mínimo) | ✓ | ✓ | — | — | — | — |
-| Presupuestos: crear/editar borrador | ✓ | ✓ | ✓ | ✓ | — | — |
-| Pisar markup por línea | ✓ | ✓ | ✓ | ✓ | — | — |
-| Enviar propuesta | ✓ | ✓ | ✓ | ✓ | — | — |
-| Aprobar manualmente (con OC) / marcar perdido | ✓ | ✓ | ✓ | — | — | — |
-| Iniciar producción / gestionar tareas | ✓ | ✓ | ✓ | — | ✓ | — |
-| Cargar costos reales | ✓ | ✓ | ✓ | — | ✓ | — |
-| Cerrar evento | ✓ | ✓ | ✓ | — | — | — |
-| Usuarios y roles | ✓ | ✓ | — | — | — | — |
-| Datos fiscales, facturación del SaaS, borrar organización | ✓ | — | — | — | — | — |
-| Ver audit log | ✓ | ✓ | — | — | — | — |
+| Capacidad | OWNER | ADMIN | MANAGER | QUOTER | PRODUCTION | VIEWER | CREW |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Ver dashboard comercial | ✓ | ✓ | ✓ | propio | — | ✓ | — |
+| **Ver costos de proveedor** | ✓ | ✓ | ✓ | ✓ | ✓ | config. | — |
+| **Ver markup / margen / ganancia** | ✓ | ✓ | ✓ | ✓ | — | config. | — |
+| Clientes: crear/editar | ✓ | ✓ | ✓ | ✓ | — | — | — |
+| Proveedores y catálogo: editar | ✓ | ✓ | ✓ | — | — | — | — |
+| **Cambiar costos / aumento masivo / importar** | ✓ | ✓ | ✓ | — | — | — | — |
+| Configuración de pricing (markups por categoría, margen mínimo) | ✓ | ✓ | — | — | — | — | — |
+| Presupuestos: crear/editar borrador | ✓ | ✓ | ✓ | ✓ | — | — | — |
+| Pisar markup por línea | ✓ | ✓ | ✓ | ✓ | — | — | — |
+| Enviar propuesta | ✓ | ✓ | ✓ | ✓ | — | — | — |
+| Aprobar manualmente (con OC) / marcar perdido | ✓ | ✓ | ✓ | — | — | — | — |
+| Iniciar producción / gestionar tareas | ✓ | ✓ | ✓ | — | ✓ | — | — |
+| Cargar costos reales | ✓ | ✓ | ✓ | — | ✓ | — | — |
+| Cerrar evento | ✓ | ✓ | ✓ | — | — | — | — |
+| Usuarios y roles | ✓ | ✓ | — | — | — | — | — |
+| Datos fiscales, facturación del SaaS, borrar organización | ✓ | — | — | — | — | — | — |
+| Ver audit log | ✓ | ✓ | — | — | — | — | — |
+| Mis tareas: ver y mover lo asignado a uno | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 - "propio" = solo sus presupuestos y eventos.
 - "config." = la organización decide si VIEWER ve costos y márgenes.
+- **CREW (Taller/Montaje) solo tiene "Mis tareas"**: no ve presupuestos, clientes, eventos ni plata; lo de otra persona responde 404.
 - **PRODUCTION ve costos pero no márgenes**: necesita saber cuánto pagarle al proveedor, no cuánto gana la productora.
 - La ocultación de campos se hace **en el servidor** (los campos no viajan), no escondiéndolos en la UI.
 

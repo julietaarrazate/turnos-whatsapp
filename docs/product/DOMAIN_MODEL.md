@@ -55,7 +55,7 @@ flowchart LR
 |---|---|---|
 | `organizations` | `name`, `legal_name`, `tax_id` (CUIT), `tax_condition` (`RI` / `MONOTRIBUTO` / `EXENTO`), `base_currency` (ARS), `timezone`, `logo_document_id`, `brand_color`, `settings` (JSONB tipado) | La raíz del tenant. `settings` incluye redondeo, vigencia por defecto, margen mínimo, días de antigüedad de costos, umbral de "para seguir", modo de propuesta por defecto y si VIEWER ve costos y márgenes. |
 | `users` | `email` (único global), `name`, `password_hash`, `is_active`, `last_login_at` | **Global**: una persona puede estar en varias organizaciones |
-| `memberships` 🏢 | `user_id`, `role` (`OWNER` / `ADMIN` / `MANAGER` / `QUOTER` / `PRODUCTION` / `VIEWER`), `status` (`INVITED` / `ACTIVE` / `DISABLED`) | Único por (`organization_id`, `user_id`). Al menos un OWNER activo por organización. |
+| `memberships` 🏢 | `user_id`, `role` (`OWNER` / `ADMIN` / `MANAGER` / `QUOTER` / `PRODUCTION` / `VIEWER` / `CREW`), `status` (`INVITED` / `ACTIVE` / `DISABLED`) | Único por (`organization_id`, `user_id`). Al menos un OWNER activo por organización. |
 | `invitations` 🏢 | `email`, `role`, `token_hash`, `expires_at`, `accepted_at` | |
 | `auth_sessions` | `user_id`, `family_id`, `refresh_token_hash`, `active_organization_id`, `expires_at`, `revoked_at`, `ip`, `user_agent` | Rotación con detección de reutilización |
 | `number_sequences` 🏢 | `kind` (`event`, `budget`, `proposal`), `next_value` | Numeración humana por organización |
