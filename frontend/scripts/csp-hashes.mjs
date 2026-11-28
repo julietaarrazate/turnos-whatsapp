@@ -50,6 +50,11 @@ if (process.argv[1]?.endsWith("csp-hashes.mjs")) {
     writeFileSync(metaPath, JSON.stringify(meta, null, 2));
     pages++;
   }
-  if (pages === 0) throw new Error("No encontré páginas armadas de antemano en .next/server/app");
+  if (pages === 0) {
+    // Diagnóstico temporal: dónde deja las páginas el armado de Vercel.
+    const { execSync } = await import("node:child_process");
+    console.log(execSync("ls -la; ls -la .next .next/server 2>&1 | head -60; ls -la .vercel/output 2>&1 | head; find . -name '*.html' -not -path './node_modules/*' 2>/dev/null | head -20; env | grep -i -E 'NEXT_|ADAPTER|VERCEL_' | cut -c1-80 | sort", { encoding: "utf8" }));
+    throw new Error("No encontré páginas armadas de antemano en .next/server/app");
+  }
   console.log(`CSP con huellas en ${pages} páginas armadas de antemano`);
 }
