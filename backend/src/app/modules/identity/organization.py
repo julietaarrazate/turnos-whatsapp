@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
 from uuid import UUID
@@ -37,6 +38,8 @@ class Organization(IdMixin, TimestampMixin, Base):
         server_default="America/Argentina/Buenos_Aires",
     )
     settings: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    # Pausada desde el panel de la plataforma: nadie de la organización puede usarla.
+    suspended_at: Mapped[datetime | None]
 
     @property
     def follow_up_days(self) -> int:

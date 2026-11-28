@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response, status
 
-from app.core.config import get_settings
+from app.core.config import get_settings, is_platform_admin
 from app.core.db import AppSession, DbSession
 from app.core.errors import AppError, ensure
 from app.core.rate_limit import enforce
@@ -97,6 +97,7 @@ def _me(db: AppSession, auth: service.AuthContext) -> MeResponse:
         ],
         uploads_enabled=get_storage() is not None,
         pin_enabled=user.pin_hash is not None,
+        platform_admin=is_platform_admin(user.email),
     )
 
 

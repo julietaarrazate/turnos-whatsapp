@@ -80,6 +80,9 @@ class DbContext:
     user_id: UUID | None = None
     # Hash de un token público (invitación, propuesta): capacidad para leer esa fila puntual.
     token_hash: str | None = None
+    # Panel de la dueña de la plataforma: habilita SOLO leer la lista de organizaciones
+    # (política ``platform_admin_read``). Los datos de cada una se leen entrando a su contexto.
+    platform_admin: bool = False
 
 
 _CONTEXT_KEY = "db_context"
@@ -89,9 +92,11 @@ def _apply_context(connection: Connection, ctx: DbContext) -> None:
     connection.execute(
         text(
             "SELECT set_config('app.org_id', :org, true), set_config('app.user_id', :usr, true),"
-            " set_config('app.token_hash', :tok, true)"
+            " set_config('app.token_hash', :tok, true),"
+            " set_config('app.platform_admin', :adm, true)"
         ),
         {
+            "adm": "on" if ctx.platform_admin else "",
             "org": str(ctx.organization_id) if ctx.organization_id else "",
             "usr": str(ctx.user_id) if ctx.user_id else "",
             "tok": ctx.token_hash or "",

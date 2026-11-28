@@ -19,6 +19,7 @@ from app.modules import (
     events,
     finance,
     organizations,
+    platform,
     pricing,
     production,
     proposals,
@@ -66,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(documents.router)
     app.include_router(dashboard.router)
     app.include_router(push.router)
+    app.include_router(platform.router)
     push.install()
     return app
 

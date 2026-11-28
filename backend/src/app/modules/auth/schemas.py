@@ -62,6 +62,7 @@ class MeResponse(BaseModel):
     memberships: list[MembershipOut]
     uploads_enabled: bool  # hay dónde guardar archivos (comprobantes, OC)
     pin_enabled: bool = False  # bloqueo de pantalla con PIN activado
+    platform_admin: bool = False  # dueña de la plataforma: ve el panel de administración
 
 
 class PasskeyCredential(BaseModel):

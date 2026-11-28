@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # Un día muy cargado de uso normal son ~100 fotos achicadas (~25 MB).
     storage_daily_bytes: int = 300 * 1024**2
 
+    # Dueña de la plataforma: emails (separados por coma) que ven el panel de administración
+    # (/admin). Para el resto, ese panel y su API no existen (404). Nunca se escriben en el repo.
+    platform_admins: str = ""
+
     # Observabilidad
     sentry_dsn: str | None = None
     sentry_traces_sample_rate: float = 0.1
@@ -96,6 +100,11 @@ class Settings(BaseSettings):
                 "STORAGE_BACKEND=s3 necesita S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY"
             )
         return self
+
+
+def is_platform_admin(email: str) -> bool:
+    admins = {e.strip().lower() for e in get_settings().platform_admins.split(",") if e.strip()}
+    return email.strip().lower() in admins
 
 
 @lru_cache

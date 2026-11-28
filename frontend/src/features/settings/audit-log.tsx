@@ -11,7 +11,7 @@ import { EVENT_STATUS_LABELS } from "@/features/events/status";
 import { api, errorMessage, unwrap } from "@/lib/api/client";
 import { formatDateTime } from "@/lib/format/date";
 
-const ACTION_LABELS: Record<string, string> = {
+export const ACTION_LABELS: Record<string, string> = {
   "org.settings_changed": "Cambió la configuración de la organización",
   "org.fiscal_changed": "Cambió los datos fiscales",
   "org.pricing_settings_changed": "Cambió la configuración de precios",

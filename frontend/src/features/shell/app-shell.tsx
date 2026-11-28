@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, LogOut, Menu, Plus, Search, UserRound, X } from "lucide-react";
+import { Camera, LogOut, Menu, Plus, Search, ShieldCheck, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -179,6 +179,15 @@ function FullShell({ children }: { children: React.ReactNode }) {
             ))}
           </ul>
         </nav>
+        {me.platform_admin ? (
+          <Link
+            href="/admin"
+            className="mx-3 mb-2 flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-subtle hover:text-ink"
+          >
+            <ShieldCheck className="size-4" aria-hidden />
+            Administración
+          </Link>
+        ) : null}
         <ShareApp className="mx-3 mb-2 w-auto" />
         <ThemePicker className="mx-3 mb-2" />
         <div className="flex items-center gap-2 border-t border-line p-3">
@@ -237,7 +246,11 @@ function FullShell({ children }: { children: React.ReactNode }) {
           </div>
           <nav aria-label="Secciones" className="flex-1 overflow-y-auto p-2">
             <ul className="flex flex-col gap-0.5">
-              {[...NAV_ITEMS, { href: "/settings/account", label: "Mi perfil", icon: UserRound }].map(({ href, label, icon: Icon }) => (
+              {[
+                ...NAV_ITEMS,
+                { href: "/settings/account", label: "Mi perfil", icon: UserRound },
+                ...(me.platform_admin ? [{ href: "/admin", label: "Administración", icon: ShieldCheck }] : []),
+              ].map(({ href, label, icon: Icon }) => (
                 <li key={href}>
                   <Link
                     href={href}
