@@ -40,6 +40,12 @@ class Organization(IdMixin, TimestampMixin, Base):
     settings: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     # Pausada desde el panel de la plataforma: nadie de la organización puede usarla.
     suspended_at: Mapped[datetime | None]
+    # Creada desde "Crear cuenta": nadie la usa hasta que la dueña de la plataforma la aprueba.
+    pending_approval: Mapped[bool] = mapped_column(default=False, server_default="false")
+
+    @property
+    def usable(self) -> bool:
+        return self.suspended_at is None and not self.pending_approval
 
     @property
     def follow_up_days(self) -> int:

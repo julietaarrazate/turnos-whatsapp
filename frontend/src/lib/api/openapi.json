@@ -6452,6 +6452,17 @@
             "title": "Memberships",
             "type": "array"
           },
+          "pending_organization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Organization"
+          },
           "permissions": {
             "items": {
               "type": "string"
@@ -8493,6 +8504,10 @@
             "title": "Name",
             "type": "string"
           },
+          "pending_approval": {
+            "title": "Pending Approval",
+            "type": "boolean"
+          },
           "suspended_at": {
             "anyOf": [
               {
@@ -8511,6 +8526,7 @@
           "name",
           "created_at",
           "suspended_at",
+          "pending_approval",
           "members",
           "events",
           "budgets",
@@ -11193,6 +11209,48 @@
         "title": "SheetImportIn",
         "type": "object"
       },
+      "SignupIn": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 320,
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "organization_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string"
+          },
+          "website": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Website",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "organization_name",
+          "email",
+          "password"
+        ],
+        "title": "SignupIn",
+        "type": "object"
+      },
       "StatusChangeIn": {
         "properties": {
           "reason": {
@@ -13244,6 +13302,42 @@
         ]
       }
     },
+    "/api/v1/admin/organizations/{organization_id}/approve": {
+      "post": {
+        "operationId": "approve_organization_api_v1_admin_organizations__organization_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Organization",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/admin/organizations/{organization_id}/reactivate": {
       "post": {
         "operationId": "reactivate_organization_api_v1_admin_organizations__organization_id__reactivate_post",
@@ -14105,6 +14199,48 @@
           }
         },
         "summary": "Refresh",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/signup": {
+      "post": {
+        "description": "Crear cuenta: persona + productora, que queda esperando aprobación.",
+        "operationId": "create_account_api_v1_auth_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Account",
         "tags": [
           "auth"
         ]

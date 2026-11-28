@@ -12,6 +12,7 @@ import { api, errorMessage, unwrap } from "@/lib/api/client";
 import { formatDateTime } from "@/lib/format/date";
 
 export const ACTION_LABELS: Record<string, string> = {
+  "org.signed_up": "Creó la cuenta de la productora",
   "org.settings_changed": "Cambió la configuración de la organización",
   "org.fiscal_changed": "Cambió los datos fiscales",
   "org.pricing_settings_changed": "Cambió la configuración de precios",

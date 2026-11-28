@@ -19,6 +19,7 @@ from app.modules.auth import AuthSession, PlatformContext
 from app.modules.budgets import Budget
 from app.modules.events import Event
 from app.modules.identity import Membership, Organization, User
+from app.modules.notifications import Email
 from app.modules.platform.schemas import (
     OrgMemberOut,
     PlatformActivityOut,
@@ -28,6 +29,7 @@ from app.modules.platform.schemas import (
     PlatformUserOut,
     UserOrgOut,
 )
+from app.modules.platform.signup import approval_email
 
 log = structlog.get_logger()
 
@@ -99,6 +101,7 @@ def overview(db: AppSession, ctx: PlatformContext) -> PlatformOverview:
                 name=org.name,
                 created_at=org.created_at,
                 suspended_at=org.suspended_at,
+                pending_approval=org.pending_approval,
                 members=member_out,
                 events=events or 0,
                 budgets=budgets or 0,
@@ -220,3 +223,23 @@ def revoke_session(db: AppSession, ctx: PlatformContext, session_id: UUID) -> No
         session_id=str(session_id),
         user_id=str(session.user_id),
     )
+
+
+def approve_organization(
+    db: AppSession, ctx: PlatformContext, organization_id: UUID
+) -> list[Email]:
+    set_context(db, DbContext(organization_id=organization_id))
+    org = db.get(Organization, organization_id)
+    if org is None:
+        raise _hidden()
+    emails = approval_email(db, organization_id) if org.pending_approval else []
+    org.pending_approval = False
+    org.suspended_at = None
+    db.flush()
+    set_context(db, DbContext(user_id=ctx.user_id))
+    log.info(
+        "platform.organization_approved",
+        admin_id=str(ctx.user_id),
+        organization_id=str(organization_id),
+    )
+    return emails

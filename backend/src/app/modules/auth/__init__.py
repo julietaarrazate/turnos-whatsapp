@@ -9,8 +9,15 @@ from app.modules.auth.dependencies import (
     require,
 )
 from app.modules.auth.models import AuthSession, Invitation
-from app.modules.auth.router import router
-from app.modules.auth.service import AuthContext, ClientInfo, TenantContext, create_invitation
+from app.modules.auth.router import router, start_session
+from app.modules.auth.schemas import MeResponse, Password
+from app.modules.auth.service import (
+    AuthContext,
+    ClientInfo,
+    TenantContext,
+    create_invitation,
+    find_user_by_email,
+)
 
 __all__ = [
     "AuthContext",
@@ -19,11 +26,15 @@ __all__ = [
     "ClientInfo",
     "CurrentAuth",
     "Invitation",
+    "MeResponse",
+    "Password",
     "PlatformAdmin",
     "PlatformContext",
     "Public",
     "TenantContext",
     "create_invitation",
+    "find_user_by_email",
     "require",
     "router",
+    "start_session",
 ]

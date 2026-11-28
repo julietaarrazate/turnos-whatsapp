@@ -3,6 +3,6 @@
 Solo lo ve quien figura en PLATFORM_ADMINS; para el resto la API responde 404.
 """
 
-from app.modules.platform.router import router
+from app.modules.platform.router import router, signup_router
 
-__all__ = ["router"]
+__all__ = ["router", "signup_router"]

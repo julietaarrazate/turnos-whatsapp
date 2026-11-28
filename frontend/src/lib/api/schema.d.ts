@@ -65,6 +65,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/organizations/{organization_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Organization */
+        post: operations["approve_organization_api_v1_admin_organizations__organization_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/organizations/{organization_id}/reactivate": {
         parameters: {
             query?: never;
@@ -462,6 +479,26 @@ export interface paths {
         put?: never;
         /** Refresh */
         post: operations["refresh_api_v1_auth_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Account
+         * @description Crear cuenta: persona + productora, que queda esperando aprobación.
+         */
+        post: operations["create_account_api_v1_auth_signup_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4606,6 +4643,8 @@ export interface components {
             active_organization_id: string | null;
             /** Memberships */
             memberships: components["schemas"]["MembershipOut"][];
+            /** Pending Organization */
+            pending_organization?: string | null;
             /** Permissions */
             permissions: string[];
             /**
@@ -5334,6 +5373,8 @@ export interface components {
             members: components["schemas"]["OrgMemberOut"][];
             /** Name */
             name: string;
+            /** Pending Approval */
+            pending_approval: boolean;
             /** Suspended At */
             suspended_at: string | null;
         };
@@ -6176,6 +6217,25 @@ export interface components {
             /** Sheet */
             sheet?: string | null;
         };
+        /** SignupIn */
+        SignupIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Name */
+            name: string;
+            /** Organization Name */
+            organization_name: string;
+            /** Password */
+            password: string;
+            /**
+             * Website
+             * @default
+             */
+            website?: string;
+        };
         /** StatusChangeIn */
         StatusChangeIn: {
             /** Reason */
@@ -6814,6 +6874,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UnreadOut"];
+                };
+            };
+        };
+    };
+    approve_organization_api_v1_admin_organizations__organization_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -7535,6 +7624,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    create_account_api_v1_auth_signup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

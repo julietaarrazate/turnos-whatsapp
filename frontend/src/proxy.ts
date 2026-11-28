@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy } from "@/lib/csp";
 
 /** Páginas que se ven sin sesión: auth, la offline de la PWA y la propuesta pública. */
-const PUBLIC = /^\/(login|invite|reset-password|offline|p|a)(\/|$)/;
+const PUBLIC = /^\/(login|signup|invite|reset-password|offline|p|a)(\/|$)/;
 
 /** Las únicas páginas que se arman en el momento (leen datos del servidor al armarse). El resto
  * se arma de antemano y trae su CSP con la huella de cada script (scripts/csp-hashes.mjs). */

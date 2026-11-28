@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { Notice } from "@/components/ui/notice";
+import { PendingApproval } from "@/features/auth/pending-approval";
 import { SessionProvider, useMeQuery } from "@/features/auth/session";
 import { AppShell } from "@/features/shell/app-shell";
 import { errorMessage } from "@/lib/api/client";
@@ -23,6 +24,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Notice tone="error">{errorMessage(me.error)}</Notice>
       </div>
     );
+  }
+  if (me.data.active_organization_id === null && me.data.pending_organization) {
+    return <PendingApproval organization={me.data.pending_organization} />;
   }
   if (me.data.active_organization_id === null) {
     return (

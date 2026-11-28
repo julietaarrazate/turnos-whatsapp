@@ -91,6 +91,12 @@ export function LoginForm() {
       <Link href="/reset-password" className="text-center text-sm text-accent hover:underline">
         Olvidé mi contraseña
       </Link>
+      <p className="text-center text-sm text-ink-muted">
+        ¿No tenés cuenta?{" "}
+        <Link href="/signup" className="text-accent hover:underline">
+          Creá una
+        </Link>
+      </p>
     </form>
   );
 }
