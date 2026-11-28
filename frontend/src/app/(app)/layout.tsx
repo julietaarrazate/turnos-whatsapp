@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Notice } from "@/components/ui/notice";
 import { SessionProvider, useMeQuery } from "@/features/auth/session";
 import { AppShell } from "@/features/shell/app-shell";
@@ -26,8 +28,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="mx-auto max-w-sm p-6">
         <Notice>
-          Tu usuario no pertenece a ninguna organización activa. Pedí una invitación a quien administre la tuya.
+          Tu usuario no tiene ninguna organización activa: puede que no te hayan invitado todavía o que el acceso
+          esté pausado. Escribile a quien te dio acceso a Handie.
         </Notice>
+        {me.data.platform_admin ? (
+          <Link href="/admin" className="mt-4 block text-center text-sm font-semibold text-brand underline">
+            Ir al panel de administración
+          </Link>
+        ) : null}
       </div>
     );
   }

@@ -28,13 +28,24 @@ PUBLIC_ROUTES = {
     "POST /api/v1/public/approvals/{token}/decision",
 }
 
+# Panel de la dueña de la plataforma: 404 para cualquier otra persona (tests/platform_admin).
+PLATFORM_ROUTES = {
+    "GET /api/v1/admin/overview",
+    "POST /api/v1/admin/users/{user_id}/suspend",
+    "POST /api/v1/admin/users/{user_id}/reactivate",
+    "POST /api/v1/admin/organizations/{organization_id}/suspend",
+    "POST /api/v1/admin/organizations/{organization_id}/reactivate",
+    "POST /api/v1/admin/sessions/{session_id}/close",
+}
+
 
 def test_every_route_declares_exactly_one_access_level() -> None:
     routes = api_routes()
     assert routes
     for route in routes:
-        assert route.access in {"public", "authenticated", "permission"}, (
-            f"{route.id} declara acceso '{route.access}': usá Public, CurrentAuth o require()"
+        assert route.access in {"public", "authenticated", "permission", "platform"}, (
+            f"{route.id} declara acceso '{route.access}': usá Public, CurrentAuth, require() o"
+            " PlatformAdmin"
         )
 
 
@@ -42,6 +53,13 @@ def test_public_routes_are_exactly_the_reviewed_list() -> None:
     public = {r.id for r in api_routes() if r.access == "public"}
     assert public == PUBLIC_ROUTES, (
         "Una ruta pública nueva tiene que revisarse y agregarse a PUBLIC_ROUTES"
+    )
+
+
+def test_platform_routes_are_exactly_the_reviewed_list() -> None:
+    platform = {r.id for r in api_routes() if r.access == "platform"}
+    assert platform == PLATFORM_ROUTES, (
+        "Una ruta nueva del panel de la plataforma tiene que revisarse y agregarse acá"
     )
 
 

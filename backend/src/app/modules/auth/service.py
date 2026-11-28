@@ -85,7 +85,12 @@ def active_memberships(db: AppSession, user_id: UUID) -> list[tuple[Membership, 
     rows = db.execute(
         select(Membership, Organization)
         .join(Organization, Organization.id == Membership.organization_id)
-        .where(Membership.user_id == user_id, Membership.status == MembershipStatus.ACTIVE)
+        .where(
+            Membership.user_id == user_id,
+            Membership.status == MembershipStatus.ACTIVE,
+            # Pausada desde el panel de la plataforma: no se puede entrar ni elegir.
+            Organization.suspended_at.is_(None),
+        )
         .order_by(Membership.created_at)
     ).all()
     return [(m, o) for m, o in rows]
@@ -237,6 +242,11 @@ def resolve_access_token(db: AppSession, raw: str | None) -> AuthContext:
         # La membresía se revocó: el acceso se corta en el próximo request, sin esperar al JWT.
         raise AppError(403, "membership_inactive", "Ya no tenés acceso a esta organización")
     membership, org = row
+    if org.suspended_at is not None:
+        # Organización pausada: la sesión sigue viva pero sin organización, así que ningún
+        # endpoint de negocio responde (``require`` pide organización activa).
+        set_context(db, DbContext(user_id=user.id))
+        return AuthContext(user.id, session.id, None, None, None, frozenset())
     role = Role(membership.role)
     return AuthContext(
         user_id=user.id,

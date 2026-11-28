@@ -27,6 +27,7 @@ jobs:
       ENV: local
       COOKIE_SECURE: "false"
       RATE_LIMIT_ENABLED: "false"  # todos los tests ingresan con el mismo usuario
+      PLATFORM_ADMINS: admin@demo.example.com  # usuario del seed que ve el panel de la plataforma
     steps:
       - uses: actions/checkout@v7
       - run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f infra/postgres/init.sql
