@@ -1,8 +1,15 @@
-import { EventExpenses } from "@/features/events/event-expenses";
+import { STATIC_ID } from "@/lib/static-id";
+
+import { View } from "./view";
 
 export const metadata = { title: "Gastos del evento" };
 
-export default async function Page({ params }: PageProps<"/events/[id]/expenses">) {
-  const { id } = await params;
-  return <EventExpenses id={id} />;
+// Plantilla armada de antemano: el ID real lo lee la pantalla de la dirección (ver next.config).
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return [{ id: STATIC_ID }];
+}
+
+export default function Page() {
+  return <View />;
 }

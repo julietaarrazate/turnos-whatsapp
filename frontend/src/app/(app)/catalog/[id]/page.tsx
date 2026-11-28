@@ -1,8 +1,15 @@
-import { ProductDetail } from "@/features/catalog/product-detail";
+import { STATIC_ID } from "@/lib/static-id";
+
+import { View } from "./view";
 
 export const metadata = { title: "Producto" };
 
-export default async function Page({ params }: PageProps<"/catalog/[id]">) {
-  const { id } = await params;
-  return <ProductDetail id={id} />;
+// Plantilla armada de antemano: el ID real lo lee la pantalla de la dirección (ver next.config).
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return [{ id: STATIC_ID }];
+}
+
+export default function Page() {
+  return <View />;
 }

@@ -14,7 +14,23 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${API_ORIGIN}/api/:path*` }];
+    return {
+      // Las pantallas con ID se arman una sola vez como plantilla (`_`) y la pantalla lee el ID
+      // real de la dirección (src/lib/route-params.ts): abren al instante, sin pasar por el
+      // servidor de Vercel. "new", "import"… son pantallas propias, no IDs.
+      beforeFiles: [
+        { source: "/events/:id((?!_$)[^/]+)", destination: "/events/_" },
+        { source: "/events/:id((?!_$)[^/]+)/pieces/:piece((?!_$)[^/]+)", destination: "/events/_/pieces/_" },
+        { source: "/events/:id((?!_$)[^/]+)/:tab(budgets|expenses|files|pieces|production|profitability)", destination: "/events/_/:tab" },
+        { source: "/budgets/:id((?!_$|new$)[^/]+)", destination: "/budgets/_" },
+        { source: "/budgets/:id((?!_$|new$)[^/]+)/compare", destination: "/budgets/_/compare" },
+        { source: "/catalog/:id((?!_$|new$|import$|bulk-increase$|packages$)[^/]+)", destination: "/catalog/_" },
+        { source: "/clients/:id((?!_$|new$)[^/]+)", destination: "/clients/_" },
+        { source: "/suppliers/:id((?!_$|new$)[^/]+)", destination: "/suppliers/_" },
+      ],
+      afterFiles: [{ source: "/api/:path*", destination: `${API_ORIGIN}/api/:path*` }],
+      fallback: [],
+    };
   },
   async headers() {
     return [

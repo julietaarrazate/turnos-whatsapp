@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext } from "react";
 
 import { api, unwrap } from "@/lib/api/client";
+
+import { useSessionKeepAlive } from "./keep-alive";
 import type { Me } from "@/lib/api/types";
 
 /** Permisos tal como los define el backend (app/core/permissions.py). */
@@ -53,6 +55,7 @@ export function useMeQuery() {
 export function SessionProvider({ me, children }: { me: Me; children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  useSessionKeepAlive();
 
   const can = useCallback((permission: Permission) => me.permissions.includes(permission), [me]);
 

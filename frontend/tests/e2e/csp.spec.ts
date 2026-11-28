@@ -14,16 +14,19 @@ async function watchViolations(page: Page) {
   return () => page.evaluate(() => (window as unknown as { __cspViolations: string[] }).__cspViolations);
 }
 
-test("las páginas mandan una CSP con nonce y ninguna pantalla la viola", async ({ page }) => {
+test("las páginas armadas de antemano traen su CSP con huellas y ninguna pantalla la viola", async ({ page }) => {
   const violations = await watchViolations(page);
   const response = await page.goto("/login");
   const csp = response?.headers()["content-security-policy"] ?? "";
-  expect(csp).toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/);
+  // Página armada de antemano: solo los scripts de la app y los de la página, por su huella.
+  expect(csp).toMatch(/script-src 'self'( 'sha256-[A-Za-z0-9+/=]+')+;/);
   expect(csp).not.toContain("unsafe-inline");
+  expect(csp).toContain("frame-ancestors 'none'");
   await expect(page.getByRole("button", { name: "Ingresar" })).toBeVisible();
 
   await login(page);
-  for (const path of ["/budgets", "/events", "/catalog", "/clients", "/suppliers", "/reports", "/settings/members"]) {
+  // Incluye una pantalla con ID: es la plantilla armada de antemano, con el ID de la dirección.
+  for (const path of ["/budgets", "/events", "/events/00000000-0000-0000-0000-000000000000/pieces", "/catalog", "/clients", "/suppliers", "/reports", "/settings/members"]) {
     await page.goto(path);
     await expect(page.getByRole("button", { name: /^(Cerrar sesión|Abrir menú)$/ }).first()).toBeVisible();
   }

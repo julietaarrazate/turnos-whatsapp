@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { rendersOnRequest } from "@/proxy";
+
 import { contentSecurityPolicy, sentryOrigin } from "./csp";
+import { hashPolicy } from "./csp-policy.mjs";
 
 const directives = (csp: string) => new Map(csp.split("; ").map((d) => [d.split(" ")[0], d] as const));
 
@@ -34,5 +37,28 @@ describe("sentryOrigin", () => {
     ["", null],
   ])("%s → %s", (dsn, expected) => {
     expect(sentryOrigin(dsn)).toBe(expected);
+  });
+});
+
+describe("hashPolicy (páginas armadas de antemano)", () => {
+  it("solo deja los scripts de la app y los de la página por su huella, sin inline", () => {
+    const d = directives(hashPolicy(["sha256-AAA=", "sha256-BBB=", "sha256-AAA="]));
+    expect(d.get("script-src")).toBe("script-src 'self' 'sha256-AAA=' 'sha256-BBB='");
+    expect(d.get("style-src")).toBe("style-src 'self'");
+    expect(d.get("frame-ancestors")).toBe("frame-ancestors 'none'");
+  });
+});
+
+describe("qué páginas se arman en el momento", () => {
+  it.each([
+    ["/p/abc", true],
+    ["/a/abc", true],
+    ["/invite/abc", true],
+    ["/reset-password/abc", true],
+    ["/reset-password", false],
+    ["/events/123", false],
+    ["/login", false],
+  ])("%s → %s", (path, expected) => {
+    expect(rendersOnRequest(path)).toBe(expected);
   });
 });
