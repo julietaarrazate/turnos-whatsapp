@@ -6,6 +6,10 @@ from app.main import create_app
 from tests.auth.test_login import login
 from tests.factories import DEFAULT_PASSWORD, create_member
 
+# Otra clave de prueba, derivada de la de los factories (no es un secreto).
+NEW_PASSWORD = DEFAULT_PASSWORD[::-1] + "-2"
+WRONG_PASSWORD = DEFAULT_PASSWORD + "-x"
+
 
 def _client() -> TestClient:
     return TestClient(create_app(), headers={"X-Requested-With": "fetch"})
@@ -22,17 +26,17 @@ def test_rename_and_change_password_closes_the_other_sessions(client: TestClient
 
     wrong = client.post(
         "/api/v1/auth/password",
-        json={"current_password": "otra-cosa-123", "new_password": "nueva-clave-segura"},
+        json={"current_password": WRONG_PASSWORD, "new_password": NEW_PASSWORD},
     )
     assert (wrong.status_code, wrong.json()["code"]) == (422, "wrong_password")
     ok = client.post(
         "/api/v1/auth/password",
-        json={"current_password": DEFAULT_PASSWORD, "new_password": "nueva-clave-segura"},
+        json={"current_password": DEFAULT_PASSWORD, "new_password": NEW_PASSWORD},
     )
     assert ok.status_code == 204
     assert client.get("/api/v1/auth/me").status_code == 200  # esta sesión sigue
     assert other_phone.get("/api/v1/auth/me").status_code == 401  # el otro teléfono no
-    login(_client(), member.email, "nueva-clave-segura")
+    login(_client(), member.email, NEW_PASSWORD)
 
 
 def test_pin_lock_unlocks_and_five_mistakes_close_the_session(client: TestClient) -> None:
