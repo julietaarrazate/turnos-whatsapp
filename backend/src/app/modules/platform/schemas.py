@@ -1,7 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
+
+from app.modules.auth import Password
 
 
 class OrgMemberOut(BaseModel):
@@ -17,6 +19,7 @@ class PlatformOrgOut(BaseModel):
     name: str
     created_at: datetime
     suspended_at: datetime | None
+    pending_approval: bool
     members: list[OrgMemberOut]
     events: int
     budgets: int
@@ -69,3 +72,12 @@ class PlatformOverview(BaseModel):
     users: list[PlatformUserOut]
     sessions: list[PlatformSessionOut]
     activity: list[PlatformActivityOut]
+
+
+class SignupIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    organization_name: str = Field(min_length=1, max_length=200)
+    email: EmailStr = Field(max_length=320)
+    password: str = Password
+    # Campo trampa: invisible para las personas; los robots que llenan todo lo completan.
+    website: str = Field(default="", max_length=200)

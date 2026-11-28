@@ -6,6 +6,8 @@ from tests.security.harness import api_routes
 
 PUBLIC_ROUTES = {
     "POST /api/v1/auth/login",
+    # Crear cuenta: rate limit por IP, campo trampa y la productora queda esperando aprobación.
+    "POST /api/v1/auth/signup",
     "POST /api/v1/auth/refresh",
     "POST /api/v1/auth/logout",
     "POST /api/v1/auth/password-reset",
@@ -36,6 +38,7 @@ PLATFORM_ROUTES = {
     "POST /api/v1/admin/organizations/{organization_id}/suspend",
     "POST /api/v1/admin/organizations/{organization_id}/reactivate",
     "POST /api/v1/admin/sessions/{session_id}/close",
+    "POST /api/v1/admin/organizations/{organization_id}/approve",
 }
 
 

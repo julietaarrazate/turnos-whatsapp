@@ -73,6 +73,21 @@ def _unauthorized(code: str = "unauthenticated", detail: str = "Sesión inválid
     return AppError(401, code, detail)
 
 
+def pending_organization(db: AppSession, user_id: UUID) -> str | None:
+    """Organización del usuario que espera aprobación (requiere contexto de usuario)."""
+    return db.scalar(
+        select(Organization.name)
+        .join(Membership, Membership.organization_id == Organization.id)
+        .where(
+            Membership.user_id == user_id,
+            Membership.status == MembershipStatus.ACTIVE,
+            Organization.pending_approval.is_(True),
+            Organization.suspended_at.is_(None),
+        )
+        .limit(1)
+    )
+
+
 def find_user_by_email(db: AppSession, email: str) -> User | None:
     return db.execute(
         select(User).where(func.lower(User.email) == email.strip().lower())
@@ -90,6 +105,7 @@ def active_memberships(db: AppSession, user_id: UUID) -> list[tuple[Membership, 
             Membership.status == MembershipStatus.ACTIVE,
             # Pausada desde el panel de la plataforma: no se puede entrar ni elegir.
             Organization.suspended_at.is_(None),
+            Organization.pending_approval.is_(False),
         )
         .order_by(Membership.created_at)
     ).all()
@@ -185,11 +201,12 @@ def refresh(db: AppSession, raw_token: str | None, client: ClientInfo) -> Issued
     user = db.get(User, session.user_id)
     if user is None or not user.is_active:
         raise _unauthorized()
+    # Si la organización activa dejó de estar disponible (o no había ninguna, p. ej. una cuenta
+    # recién aprobada o reactivada), la sesión pasa a la primera disponible.
     organization_id = session.active_organization_id
-    if organization_id is not None:
-        valid_orgs = {m.organization_id for m, _ in active_memberships(db, user.id)}
-        if organization_id not in valid_orgs:
-            organization_id = next(iter(valid_orgs), None)
+    valid_orgs = [m.organization_id for m, _ in active_memberships(db, user.id)]
+    if organization_id not in valid_orgs:
+        organization_id = valid_orgs[0] if valid_orgs else None
     return _issue_tokens(db, user, organization_id, client, session=session)
 
 
@@ -242,9 +259,9 @@ def resolve_access_token(db: AppSession, raw: str | None) -> AuthContext:
         # La membresía se revocó: el acceso se corta en el próximo request, sin esperar al JWT.
         raise AppError(403, "membership_inactive", "Ya no tenés acceso a esta organización")
     membership, org = row
-    if org.suspended_at is not None:
-        # Organización pausada: la sesión sigue viva pero sin organización, así que ningún
-        # endpoint de negocio responde (``require`` pide organización activa).
+    if not org.usable:
+        # Organización pausada o esperando aprobación: la sesión sigue viva pero sin
+        # organización, así que ningún endpoint de negocio responde (``require`` pide una activa).
         set_context(db, DbContext(user_id=user.id))
         return AuthContext(user.id, session.id, None, None, None, frozenset())
     role = Role(membership.role)

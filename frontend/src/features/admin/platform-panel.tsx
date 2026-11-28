@@ -140,12 +140,21 @@ function Stat({ label, value, hint }: { label: string; value: number; hint?: str
 
 function Summary({ data, now }: { data: PlatformOverview; now: number }) {
   const paused = data.organizations.filter((o) => o.suspended_at).length;
+  const waiting = data.organizations.filter((o) => o.pending_approval && !o.suspended_at);
   const suspended = data.users.filter((u) => !u.is_active).length;
   const recent = data.users.filter((u) => u.last_seen_at && now - new Date(u.last_seen_at).getTime() < RECENT_MS);
   const events = data.organizations.reduce((sum, o) => sum + o.events, 0);
   const budgets = data.organizations.reduce((sum, o) => sum + o.budgets, 0);
   return (
     <div className="flex flex-col gap-6">
+      {waiting.length ? (
+        <Notice>
+          {waiting.length === 1
+            ? `“${waiting[0].name}” creó una cuenta y espera tu aprobación.`
+            : `${waiting.length} cuentas nuevas esperan tu aprobación.`}{" "}
+          Las aprobás o rechazás en Organizaciones.
+        </Notice>
+      ) : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Stat label="Organizaciones" value={data.organizations.length} hint={paused ? `${paused} pausada(s)` : undefined} />
         <Stat label="Personas" value={data.users.length} hint={suspended ? `${suspended} suspendida(s)` : undefined} />
@@ -164,7 +173,7 @@ function Summary({ data, now }: { data: PlatformOverview; now: number }) {
 
 type AdminAction =
   | { kind: "user"; id: string; verb: "suspend" | "reactivate" }
-  | { kind: "organization"; id: string; verb: "suspend" | "reactivate" }
+  | { kind: "organization"; id: string; verb: "suspend" | "reactivate" | "approve" }
   | { kind: "session"; id: string };
 
 async function runAction(action: AdminAction): Promise<void> {
@@ -183,7 +192,9 @@ async function runAction(action: AdminAction): Promise<void> {
       unwrap(
         action.verb === "suspend"
           ? await api.POST("/api/v1/admin/organizations/{organization_id}/suspend", { params })
-          : await api.POST("/api/v1/admin/organizations/{organization_id}/reactivate", { params }),
+          : action.verb === "approve"
+            ? await api.POST("/api/v1/admin/organizations/{organization_id}/approve", { params })
+            : await api.POST("/api/v1/admin/organizations/{organization_id}/reactivate", { params }),
       );
       return;
     }
@@ -216,7 +227,11 @@ function Organizations({ orgs }: { orgs: PlatformOrg[] }) {
                 {org.name}
                 {org.suspended_at ? (
                   <span className="rounded-full bg-danger-fill/10 px-2 py-0.5 text-xs font-semibold text-danger">
-                    Pausada
+                    {org.pending_approval ? "Rechazada" : "Pausada"}
+                  </span>
+                ) : org.pending_approval ? (
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-ink">
+                    Esperando aprobación
                   </span>
                 ) : null}
               </h3>
@@ -224,12 +239,35 @@ function Organizations({ orgs }: { orgs: PlatformOrg[] }) {
                 Creada el {formatDateTime(org.created_at)} · Última actividad: {timeAgo(org.last_activity_at)}
               </p>
             </div>
-            {org.suspended_at ? (
+            {org.pending_approval && !org.suspended_at ? (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  loading={action.busy(org.id)}
+                  onClick={() => action.mutate({ kind: "organization", id: org.id, verb: "approve" })}
+                >
+                  Aprobar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={action.busy(org.id)}
+                  onClick={() => {
+                    if (window.confirm(`¿Rechazar la cuenta de “${org.name}”? No va a poder usar Handie.`))
+                      action.mutate({ kind: "organization", id: org.id, verb: "suspend" });
+                  }}
+                >
+                  Rechazar
+                </Button>
+              </div>
+            ) : org.suspended_at ? (
               <Button
                 size="sm"
                 variant="secondary"
                 loading={action.busy(org.id)}
-                onClick={() => action.mutate({ kind: "organization", id: org.id, verb: "reactivate" })}
+                onClick={() =>
+                  action.mutate({ kind: "organization", id: org.id, verb: org.pending_approval ? "approve" : "reactivate" })
+                }
               >
                 Reactivar
               </Button>

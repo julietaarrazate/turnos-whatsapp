@@ -68,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router)
     app.include_router(push.router)
     app.include_router(platform.router)
+    app.include_router(platform.signup_router)
     push.install()
     return app
 

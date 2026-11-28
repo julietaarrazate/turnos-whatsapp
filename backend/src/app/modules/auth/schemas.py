@@ -63,6 +63,8 @@ class MeResponse(BaseModel):
     uploads_enabled: bool  # hay dónde guardar archivos (comprobantes, OC)
     pin_enabled: bool = False  # bloqueo de pantalla con PIN activado
     platform_admin: bool = False  # dueña de la plataforma: ve el panel de administración
+    # Se registró y su productora espera la aprobación de la dueña de la plataforma.
+    pending_organization: str | None = None
 
 
 class PasskeyCredential(BaseModel):

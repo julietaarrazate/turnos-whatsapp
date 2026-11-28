@@ -98,7 +98,19 @@ def _me(db: AppSession, auth: service.AuthContext) -> MeResponse:
         uploads_enabled=get_storage() is not None,
         pin_enabled=user.pin_hash is not None,
         platform_admin=is_platform_admin(user.email),
+        pending_organization=(
+            service.pending_organization(db, user.id) if auth.organization_id is None else None
+        ),
     )
+
+
+def start_session(
+    db: AppSession, response: Response, user: User, client: service.ClientInfo
+) -> MeResponse:
+    """Abre una sesión para alguien recién verificado (p. ej. al crear su cuenta)."""
+    tokens = service.login_user(db, user, client)
+    _set_cookies(response, tokens)
+    return _me_for_tokens(db, tokens)
 
 
 def _me_for_tokens(db: AppSession, tokens: service.IssuedTokens) -> MeResponse:
