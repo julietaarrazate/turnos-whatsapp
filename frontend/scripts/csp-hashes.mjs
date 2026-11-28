@@ -1,23 +1,12 @@
-// Después de `next build`: a cada página armada de antemano le pone su CSP con la huella (hash
-// sha256) de cada script que Next escribió dentro del HTML. La CSP viaja como encabezado de la
-// página (el archivo .meta que Next sirve junto al .html). Así la página es estática —abre al
-// instante— y aun así un script inyectado no corre: no tiene la huella.
+// Entre los dos `next build`: junta la huella (hash sha256) de cada script que Next escribió dentro
+// de las páginas armadas de antemano y la guarda en .csp-hashes.json. El segundo armado la sirve
+// como CSP (next.config.ts). Así las páginas son estáticas —abren al instante— y aun así un script
+// inyectado no corre: no tiene la huella.
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { hashPolicy } from "../src/lib/csp-policy.mjs";
-
-const APP = join(process.cwd(), ".next", "server", "app");
 const INLINE = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
-
-function sentryOrigin() {
-  try {
-    return process.env.NEXT_PUBLIC_SENTRY_DSN ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).origin : null;
-  } catch {
-    return null;
-  }
-}
 
 /** Las huellas de los scripts escritos dentro de un HTML. */
 export function inlineHashes(html) {
@@ -36,25 +25,26 @@ function* htmlFiles(dir) {
 }
 
 if (process.argv[1]?.endsWith("csp-hashes.mjs")) {
-  const sentry = sentryOrigin();
+  // Las páginas armadas de antemano: en .next/server/app (local) o en el caché de rutas (Vercel).
+  const hashes = new Set();
   let pages = 0;
-  for (const html of htmlFiles(APP)) {
-    const metaPath = html.replace(/\.html$/, ".meta");
-    let meta;
-    try {
-      meta = JSON.parse(readFileSync(metaPath, "utf8"));
-    } catch {
-      meta = {};
-    }
-    meta.headers = { ...meta.headers, "content-security-policy": hashPolicy(inlineHashes(readFileSync(html, "utf8")), sentry) };
-    writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+  for (const html of htmlFiles(join(process.cwd(), ".next", "server"))) {
+    for (const hash of inlineHashes(readFileSync(html, "utf8"))) hashes.add(hash);
     pages++;
   }
-  if (pages === 0) {
-    // Diagnóstico temporal: dónde deja las páginas el armado de Vercel.
-    const { execSync } = await import("node:child_process");
-    console.log(execSync("ls -la; ls -la .next .next/server 2>&1 | head -60; ls -la .vercel/output 2>&1 | head; find . -name '*.html' -not -path './node_modules/*' 2>/dev/null | head -20; env | grep -i -E 'NEXT_|ADAPTER|VERCEL_' | cut -c1-80 | sort", { encoding: "utf8" }));
-    throw new Error("No encontré páginas armadas de antemano en .next/server/app");
+  if (pages === 0) throw new Error("No encontré páginas armadas de antemano en .next/server");
+  const file = join(process.cwd(), ".csp-hashes.json");
+  const found = [...hashes].sort();
+  if (process.argv.includes("--check")) {
+    // Después del segundo armado: la CSP que quedó servida tiene que cubrir cada script.
+    const served = new Set(existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : []);
+    const missing = found.filter((h) => !served.has(h));
+    if (missing.length > 0) {
+      throw new Error(`La CSP no cubre ${missing.length} scripts del segundo armado: cambiaron entre armados`);
+    }
+    console.log(`CSP verificada: cubre los ${found.length} scripts de ${pages} páginas`);
+  } else {
+    writeFileSync(file, JSON.stringify(found, null, 2));
+    console.log(`CSP: ${found.length} huellas de ${pages} páginas armadas de antemano`);
   }
-  console.log(`CSP con huellas en ${pages} páginas armadas de antemano`);
 }
