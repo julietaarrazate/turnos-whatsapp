@@ -22,6 +22,7 @@ from app.modules import (
     pricing,
     production,
     proposals,
+    push,
 )
 
 
@@ -64,6 +65,8 @@ def create_app() -> FastAPI:
     app.include_router(finance.router)
     app.include_router(documents.router)
     app.include_router(dashboard.router)
+    app.include_router(push.router)
+    push.install()
     return app
 
 

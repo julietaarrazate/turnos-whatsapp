@@ -10014,6 +10014,92 @@
         "title": "PublicTotals",
         "type": "object"
       },
+      "PushEndpointIn": {
+        "properties": {
+          "endpoint": {
+            "maxLength": 1000,
+            "title": "Endpoint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint"
+        ],
+        "title": "PushEndpointIn",
+        "type": "object"
+      },
+      "PushKeysIn": {
+        "properties": {
+          "auth": {
+            "maxLength": 100,
+            "minLength": 10,
+            "title": "Auth",
+            "type": "string"
+          },
+          "p256dh": {
+            "maxLength": 200,
+            "minLength": 10,
+            "title": "P256Dh",
+            "type": "string"
+          }
+        },
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushKeysIn",
+        "type": "object"
+      },
+      "PushStatusOut": {
+        "properties": {
+          "devices": {
+            "title": "Devices",
+            "type": "integer"
+          },
+          "public_key": {
+            "title": "Public Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "public_key",
+          "devices"
+        ],
+        "title": "PushStatusOut",
+        "type": "object"
+      },
+      "PushSubscriptionIn": {
+        "description": "Lo que devuelve ``PushSubscription.toJSON()`` en el navegador.",
+        "properties": {
+          "endpoint": {
+            "maxLength": 1000,
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeysIn"
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushSubscriptionIn",
+        "type": "object"
+      },
+      "PushTestOut": {
+        "properties": {
+          "sent": {
+            "title": "Sent",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sent"
+        ],
+        "title": "PushTestOut",
+        "type": "object"
+      },
       "ReasonIn": {
         "properties": {
           "reason": {
@@ -19732,6 +19818,118 @@
         "summary": "Public Reject",
         "tags": [
           "public"
+        ]
+      }
+    },
+    "/api/v1/push": {
+      "get": {
+        "operationId": "push_status_api_v1_push_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Push Status",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/api/v1/push/subscriptions": {
+      "post": {
+        "description": "Este dispositivo empieza a recibir avisos.",
+        "operationId": "subscribe_api_v1_push_subscriptions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Subscribe",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/api/v1/push/test": {
+      "post": {
+        "description": "Manda un aviso de prueba a los dispositivos de quien lo pide.",
+        "operationId": "test_api_v1_push_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushTestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Test",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/api/v1/push/unsubscribe": {
+      "post": {
+        "operationId": "unsubscribe_api_v1_push_unsubscribe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushEndpointIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unsubscribe",
+        "tags": [
+          "push"
         ]
       }
     },
