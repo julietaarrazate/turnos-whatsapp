@@ -1,8 +1,15 @@
-import { EventSummary } from "@/features/events/event-detail";
+import { STATIC_ID } from "@/lib/static-id";
+
+import { View } from "./view";
 
 export const metadata = { title: "Evento" };
 
-export default async function Page({ params }: PageProps<"/events/[id]">) {
-  const { id } = await params;
-  return <EventSummary id={id} />;
+// Plantilla armada de antemano: el ID real lo lee la pantalla de la dirección (ver next.config).
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return [{ id: STATIC_ID }];
+}
+
+export default function Page() {
+  return <View />;
 }

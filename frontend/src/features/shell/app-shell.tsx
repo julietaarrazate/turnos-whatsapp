@@ -1,11 +1,13 @@
 "use client";
 
-import { Camera, LogOut, Menu, Plus, Search } from "lucide-react";
+import { Camera, LogOut, Menu, Plus, Search, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { HandieMark } from "@/components/brand/handie-logo";
 import { ROLE_LABELS } from "@/features/auth/roles";
+import { AppLock } from "@/features/account/app-lock";
 import { PasskeyOffer } from "@/features/account/passkey-settings";
 import { useSession } from "@/features/auth/session";
 import { cn } from "@/lib/cn";
@@ -74,15 +76,23 @@ function CrewShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-bar px-4 text-white">
         <OrganizationSwitcher />
         <span className="truncate text-sm text-white/80">· {me.user.name}</span>
+        <Link
+          href="/settings/account"
+          aria-label="Mi perfil"
+          className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white"
+        >
+          <UserRound className="size-5" aria-hidden />
+        </Link>
         <button
           type="button"
           onClick={() => confirmLogout(logout)}
           aria-label="Cerrar sesión"
-          className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white"
         >
           <LogOut className="size-5" aria-hidden />
         </button>
       </header>
+      <AppLock />
       <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-10">
         <PasskeyOffer />
         {children}
@@ -102,6 +112,7 @@ function FullShell({ children }: { children: React.ReactNode }) {
   const { me, logout, can } = useSession();
   const quickActions = useRef<HTMLDialogElement>(null);
   const more = useRef<HTMLDialogElement>(null);
+  const drawer = useRef<HTMLDialogElement>(null);
   const bar = mobileBar(can);
   const extra = moreItems(bar);
   const inMore = extra.some((item) => isActive(pathname, item.href));
@@ -187,20 +198,92 @@ function FullShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Header (mobile) */}
-      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-bar px-4 text-white lg:hidden">
-        <OrganizationSwitcher />
-        <span className="ml-auto" />
-        <ActivityBell />
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-2 bg-bar px-2 text-white lg:hidden">
         <button
           type="button"
-          onClick={() => confirmLogout(logout)}
-          aria-label="Cerrar sesión"
-          className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white"
+          aria-label="Abrir menú"
+          onClick={() => drawer.current?.showModal()}
+          className="flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15"
         >
-          <LogOut className="size-5" aria-hidden />
+          <Menu className="size-6" aria-hidden />
         </button>
+        <span className="min-w-0 flex-1 truncate">
+          <OrganizationSwitcher />
+        </span>
+        <ActivityBell />
       </header>
 
+      {/* Menú desplegable (mobile): todas las secciones, la organización, el tema y la cuenta */}
+      <dialog
+        ref={drawer}
+        aria-label="Menú"
+        onClick={(event) => event.target === drawer.current && drawer.current?.close()}
+        className="m-0 h-dvh max-h-none w-[85vw] max-w-xs border-0 bg-surface p-0 backdrop:bg-black/40 lg:hidden"
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex h-14 shrink-0 items-center gap-2 bg-bar px-3 text-white">
+            <HandieMark className="size-8" />
+            <span className="flex-1 text-lg font-extrabold tracking-tight">
+              handie<span className="text-magenta">.</span>
+            </span>
+            <button
+              type="button"
+              aria-label="Cerrar menú"
+              onClick={() => drawer.current?.close()}
+              className="flex size-10 items-center justify-center rounded-full hover:bg-white/15"
+            >
+              <X className="size-5" aria-hidden />
+            </button>
+          </div>
+          <nav aria-label="Secciones" className="flex-1 overflow-y-auto p-2">
+            <ul className="flex flex-col gap-0.5">
+              {[...NAV_ITEMS, { href: "/settings/account", label: "Mi perfil", icon: UserRound }].map(({ href, label, icon: Icon }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={() => drawer.current?.close()}
+                    aria-current={isActive(pathname, href) ? "page" : undefined}
+                    className={cn(
+                      "flex min-h-12 items-center gap-3 rounded-xl px-3 text-base",
+                      isActive(pathname, href) ? "bg-brand/[0.08] font-semibold text-brand" : "text-ink hover:bg-subtle",
+                    )}
+                  >
+                    <Icon className="size-5" aria-hidden />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="flex shrink-0 flex-col gap-3 border-t border-line p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            {me.memberships.length > 1 ? (
+              <label className="flex flex-col gap-1 text-xs font-semibold text-ink-muted">
+                Organización
+                <OrganizationSwitcher />
+              </label>
+            ) : null}
+            <ThemePicker />
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-fill text-sm font-bold text-white">
+                {me.user.name.trim().charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{me.user.name}</p>
+                <p className="truncate text-xs text-ink-muted">{me.role ? ROLE_LABELS[me.role] : null}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => confirmLogout(logout)}
+              className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-base font-semibold text-danger hover:bg-danger/10"
+            >
+              <LogOut className="size-5" aria-hidden /> Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      <AppLock />
       <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28 lg:px-8 lg:pb-10">
         <PasskeyOffer />
         {children}

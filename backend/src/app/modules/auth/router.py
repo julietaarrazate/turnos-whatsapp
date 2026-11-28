@@ -9,7 +9,7 @@ from app.core.db import AppSession, DbSession
 from app.core.errors import AppError, ensure
 from app.core.rate_limit import enforce
 from app.core.storage import get_storage
-from app.modules.auth import passkeys, service
+from app.modules.auth import account, passkeys, service
 from app.modules.auth.dependencies import (
     ACCESS_COOKIE,
     REFRESH_COOKIE,
@@ -27,8 +27,12 @@ from app.modules.auth.schemas import (
     MeResponse,
     PasskeyCredential,
     PasskeyOut,
+    PasswordChange,
     PasswordResetConfirm,
     PasswordResetRequest,
+    PinCheckOut,
+    PinIn,
+    ProfileUpdate,
     SwitchOrganizationRequest,
     UserOut,
 )
@@ -92,6 +96,7 @@ def _me(db: AppSession, auth: service.AuthContext) -> MeResponse:
             for m, o in memberships
         ],
         uploads_enabled=get_storage() is not None,
+        pin_enabled=user.pin_hash is not None,
     )
 
 
@@ -230,3 +235,43 @@ def passkey_register(
 @router.delete("/passkeys/{passkey_id}", status_code=status.HTTP_204_NO_CONTENT)
 def passkey_delete(passkey_id: UUID, auth: CurrentAuth, db: DbSession) -> None:
     passkeys.delete_passkey(db, auth, passkey_id)
+
+
+# --- Mi perfil: nombre, contraseña y bloqueo con PIN -----------------------------------
+
+
+@router.patch("/me")
+def update_profile(body: ProfileUpdate, auth: CurrentAuth, db: DbSession) -> MeResponse:
+    account.rename(db, auth.user_id, body.name)
+    return _me(db, auth)
+
+
+@router.post("/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(body: PasswordChange, auth: CurrentAuth, db: DbSession, client: Client) -> None:
+    """Cambia la contraseña; las demás sesiones (otros teléfonos) se cierran."""
+    enforce(f"password-change:user:{auth.user_id}", limit=10, window_seconds=900)
+    account.change_password(
+        db, auth.user_id, auth.session_id, body.current_password, body.new_password
+    )
+
+
+@router.put("/pin", status_code=status.HTTP_204_NO_CONTENT)
+def set_pin(body: PinIn, auth: CurrentAuth, db: DbSession) -> None:
+    """Activa o cambia el PIN del bloqueo de pantalla."""
+    account.set_pin(db, auth.user_id, body.pin)
+
+
+@router.delete("/pin", status_code=status.HTTP_204_NO_CONTENT)
+def remove_pin(auth: CurrentAuth, db: DbSession) -> None:
+    account.remove_pin(db, auth.user_id)
+
+
+@router.post("/pin/check")
+def check_pin(body: PinIn, auth: CurrentAuth, db: DbSession, response: Response) -> PinCheckOut:
+    """Destraba la pantalla. A los 5 intentos mal seguidos se cierra la sesión."""
+    enforce(f"pin:user:{auth.user_id}", limit=20, window_seconds=900)
+    left = account.check_pin(db, auth.user_id, auth.session_id, body.pin)
+    ok = left == account.MAX_PIN_FAILURES
+    if left == 0:
+        _clear_cookies(response)
+    return PinCheckOut(ok=ok, attempts_left=left)

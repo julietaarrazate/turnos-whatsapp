@@ -51,7 +51,7 @@ export async function renewSession(
 let refreshing: Promise<RefreshResult> | null = null;
 
 /** Un solo refresh a la vez aunque varias requests reciban 401 juntas (evita el reuso). */
-function refreshSession(): Promise<RefreshResult> {
+export function refreshSession(): Promise<RefreshResult> {
   refreshing ??= renewSession(() =>
     fetch("/api/v1/auth/refresh", { method: "POST", headers: CSRF_HEADERS, credentials: "same-origin" }),
   ).finally(() => {

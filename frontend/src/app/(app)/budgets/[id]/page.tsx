@@ -1,14 +1,21 @@
-import { BudgetEditor } from "@/features/budgets/budget-editor";
+import { Suspense } from "react";
+
+import { STATIC_ID } from "@/lib/static-id";
+
+import { View } from "./view";
 
 export const metadata = { title: "Presupuesto" };
 
-export default async function Page({ params, searchParams }: PageProps<"/budgets/[id]">) {
-  const { id } = await params;
-  const query = await searchParams;
-  // Después de "Duplicar": cuántos costos y markups cambiaron respecto del original.
-  const copied =
-    typeof query.costos === "string" && typeof query.reglas === "string"
-      ? { costs: Number(query.costos) || 0, rules: Number(query.reglas) || 0 }
-      : undefined;
-  return <BudgetEditor budgetId={id} copied={copied} />;
+// Plantilla armada de antemano: el ID real lo lee la pantalla de la dirección (ver next.config).
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return [{ id: STATIC_ID }];
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <View />
+    </Suspense>
+  );
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { login } from "./helpers";
+import { login, logout } from "./helpers";
 
 /** Huella simulada: Chromium trae un "autenticador virtual" que hace de lector de huellas. */
 test("activar la huella y después entrar sin email ni contraseña", async ({ page, context }) => {
@@ -23,13 +23,11 @@ test("activar la huella y después entrar sin email ni contraseña", async ({ pa
   await offer.getByRole("button", { name: "Activar" }).click();
   await expect(page.getByText("Listo: la próxima vez entrás con tu huella o cara.")).toBeVisible();
 
-  page.once("dialog", (dialog) => void dialog.accept());
-  await page.getByRole("button", { name: "Cerrar sesión" }).first().click();
-  await expect(page).toHaveURL(/\/login/);
+  await logout(page);
 
   await page.getByRole("button", { name: "Entrar con huella o cara" }).click();
   await expect(page).not.toHaveURL(/\/login/);
-  await expect(page.getByRole("button", { name: "Cerrar sesión" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Cerrar sesión|Abrir menú)$/ }).first()).toBeVisible();
   // Ya activada: el aviso no vuelve a aparecer.
   await expect(page.getByRole("region", { name: "Entrar más rápido" })).toHaveCount(0);
 

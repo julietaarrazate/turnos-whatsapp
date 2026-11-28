@@ -1,11 +1,21 @@
-import { CompareVersions } from "@/features/budgets/compare-versions";
+import { Suspense } from "react";
+
+import { STATIC_ID } from "@/lib/static-id";
+
+import { View } from "./view";
 
 export const metadata = { title: "Comparar versiones" };
 
-export default async function Page({ params, searchParams }: PageProps<"/budgets/[id]/compare">) {
-  const { id } = await params;
-  const query = await searchParams;
-  const from = Number(query.from) || 1;
-  const to = Number(query.to) || from + 1;
-  return <CompareVersions budgetId={id} from={from} to={to} />;
+// Plantilla armada de antemano: el ID real lo lee la pantalla de la dirección (ver next.config).
+export const dynamicParams = false;
+export function generateStaticParams() {
+  return [{ id: STATIC_ID }];
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <View />
+    </Suspense>
+  );
 }
