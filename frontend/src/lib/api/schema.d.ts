@@ -164,7 +164,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Profile */
+        patch: operations["update_profile_api_v1_auth_me_patch"];
         trace?: never;
     };
     "/api/v1/auth/passkeys": {
@@ -253,6 +254,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Password
+         * @description Cambia la contraseña; las demás sesiones (otros teléfonos) se cierran.
+         */
+        post: operations["change_password_api_v1_auth_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/password-reset": {
         parameters: {
             query?: never;
@@ -281,6 +302,47 @@ export interface paths {
         put?: never;
         /** Password Reset Confirm */
         post: operations["password_reset_confirm_api_v1_auth_password_reset_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Pin
+         * @description Activa o cambia el PIN del bloqueo de pantalla.
+         */
+        put: operations["set_pin_api_v1_auth_pin_put"];
+        post?: never;
+        /** Remove Pin */
+        delete: operations["remove_pin_api_v1_auth_pin_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/pin/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Pin
+         * @description Destraba la pantalla. A los 5 intentos mal seguidos se cierra la sesión.
+         */
+        post: operations["check_pin_api_v1_auth_pin_check_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4444,6 +4506,11 @@ export interface components {
             memberships: components["schemas"]["MembershipOut"][];
             /** Permissions */
             permissions: string[];
+            /**
+             * Pin Enabled
+             * @default false
+             */
+            pin_enabled?: boolean;
             role: components["schemas"]["Role"] | null;
             /** Uploads Enabled */
             uploads_enabled: boolean;
@@ -4807,6 +4874,13 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** PasswordChange */
+        PasswordChange: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
         /** PasswordResetConfirm */
         PasswordResetConfirm: {
             /** Password */
@@ -4967,6 +5041,18 @@ export interface components {
             ready: number;
             /** Total */
             total: number;
+        };
+        /** PinCheckOut */
+        PinCheckOut: {
+            /** Attempts Left */
+            attempts_left: number;
+            /** Ok */
+            ok: boolean;
+        };
+        /** PinIn */
+        PinIn: {
+            /** Pin */
+            pin: string;
         };
         /** Pipeline */
         Pipeline: {
@@ -5315,6 +5401,11 @@ export interface components {
             suppliers: components["schemas"]["EventSupplierOut"][];
             /** Tasks */
             tasks: components["schemas"]["TaskOut"][];
+        };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /** Name */
+            name: string;
         };
         /**
          * ProfitabilityOut
@@ -6641,6 +6732,39 @@ export interface operations {
             };
         };
     };
+    update_profile_api_v1_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     passkey_list_api_v1_auth_passkeys_get: {
         parameters: {
             query?: never;
@@ -6800,6 +6924,37 @@ export interface operations {
             };
         };
     };
+    change_password_api_v1_auth_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     password_reset_request_api_v1_auth_password_reset_post: {
         parameters: {
             query?: never;
@@ -6852,6 +7007,88 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_pin_api_v1_auth_pin_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_pin_api_v1_auth_pin_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    check_pin_api_v1_auth_pin_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PinCheckOut"];
+                };
             };
             /** @description Validation Error */
             422: {

@@ -17,7 +17,16 @@ export async function login(page: Page, next = "/", user = OWNER) {
   await page.getByRole("button", { name: "Ingresar" }).click();
   // Esperar a que la app autenticada esté montada (no solo a que cambie la URL).
   await expect(page).not.toHaveURL(/\/login/);
-  await expect(page.getByRole("button", { name: "Cerrar sesión" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Cerrar sesión|Abrir menú)$/ }).first()).toBeVisible();
+}
+
+/** En el celular, "Cerrar sesión" está en el menú desplegable; en la compu, en la barra lateral. */
+export async function logout(page: Page) {
+  const menu = page.getByRole("button", { name: "Abrir menú" });
+  if (await menu.isVisible()) await menu.click();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Cerrar sesión" }).first().click();
+  await expect(page).toHaveURL(/\/login/);
 }
 
 export const H = { "X-Requested-With": "fetch" };

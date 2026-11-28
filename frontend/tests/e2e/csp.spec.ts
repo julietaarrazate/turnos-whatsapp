@@ -25,7 +25,7 @@ test("las páginas mandan una CSP con nonce y ninguna pantalla la viola", async 
   await login(page);
   for (const path of ["/budgets", "/events", "/catalog", "/clients", "/suppliers", "/reports", "/settings/members"]) {
     await page.goto(path);
-    await expect(page.getByRole("button", { name: "Cerrar sesión" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /^(Cerrar sesión|Abrir menú)$/ }).first()).toBeVisible();
   }
   // Navegación del lado del cliente (sin recargar).
   await page.getByRole("link", { name: "Presupuestos", exact: true }).filter({ visible: true }).first().click();

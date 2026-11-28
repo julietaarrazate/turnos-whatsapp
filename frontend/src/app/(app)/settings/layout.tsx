@@ -12,7 +12,7 @@ const TABS: { href: string; label: string; permission?: Permission }[] = [
   { href: "/settings/members", label: "Usuarios y roles", permission: "members.view" },
   { href: "/settings/audit", label: "Auditoría", permission: "audit.view" },
   // Lo propio de cada persona (huella, cara): todos lo ven.
-  { href: "/settings/account", label: "Mi cuenta" },
+  { href: "/settings/account", label: "Mi perfil" },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

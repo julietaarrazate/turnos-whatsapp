@@ -36,6 +36,8 @@ test("cerrar sesión", async ({ page }) => {
   await login(page);
   await expect(page.getByRole("heading", { name: /Buen[oa]s/ })).toBeVisible();
   // Primero pregunta: si la persona dice que no, sigue adentro.
+  const menu = page.getByRole("button", { name: "Abrir menú" });
+  if (await menu.isVisible()) await menu.click();
   page.once("dialog", (dialog) => void dialog.dismiss());
   await page.getByRole("button", { name: "Cerrar sesión" }).first().click();
   await expect(page.getByRole("heading", { name: /Buen[oa]s/ })).toBeVisible();

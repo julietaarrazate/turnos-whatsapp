@@ -61,6 +61,7 @@ class MeResponse(BaseModel):
     permissions: list[str]
     memberships: list[MembershipOut]
     uploads_enabled: bool  # hay dónde guardar archivos (comprobantes, OC)
+    pin_enabled: bool = False  # bloqueo de pantalla con PIN activado
 
 
 class PasskeyCredential(BaseModel):
@@ -74,3 +75,21 @@ class PasskeyOut(BaseModel):
     name: str
     created_at: datetime
     last_used_at: datetime | None
+
+
+class ProfileUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(max_length=PASSWORD_MAX_LENGTH)
+    new_password: str = Password
+
+
+class PinIn(BaseModel):
+    pin: str = Field(min_length=4, max_length=4)
+
+
+class PinCheckOut(BaseModel):
+    ok: bool
+    attempts_left: int  # 0 = se cerró la sesión: hay que volver a entrar

@@ -12,7 +12,7 @@ const SETTINGS_ITEMS = [
   { href: "/settings/pricing", label: "Configuración · Precios" },
   { href: "/settings/members", label: "Configuración · Usuarios y roles" },
   { href: "/settings/audit", label: "Configuración · Auditoría" },
-  { href: "/settings/account", label: "Mi cuenta · Entrar con huella o cara" },
+  { href: "/settings/account", label: "Mi perfil · Contraseña, PIN, huella y avisos" },
 ];
 
 function normalize(text: string): string {

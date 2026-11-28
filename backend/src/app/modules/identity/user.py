@@ -17,3 +17,6 @@ class User(IdMixin, TimestampMixin, Base):
     password_hash: Mapped[str | None] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(default=True, server_default="true")
     last_login_at: Mapped[datetime | None]
+    # Bloqueo de pantalla: PIN de 4 dígitos (hash argon2) y los intentos fallidos seguidos.
+    pin_hash: Mapped[str | None] = mapped_column(String(255))
+    pin_failures: Mapped[int] = mapped_column(default=0, server_default="0")
